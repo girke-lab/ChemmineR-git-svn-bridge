@@ -1,0 +1,56 @@
+changelog
+	version 1.1.2
+		- allow missing $$$$ at the last line of SDF
+		- made max uploaded compounds a configurable option
+		- document change
+
+	version 1.1.1
+		- updated Vignette
+		- sdf.visualize now accepts dataframe for argument 'extra'
+		- sdf.visualize now accepts names for reference.note
+		- cluster.sizestat now handles clustering result with multiple cutoffs
+
+	version 1.1.0
+		- enhanced cluster.visualize
+		- add db.subset
+
+	version 1.0.9
+		- check cmp.similarity arguments
+		- improved compound visualization: now allow a reference compound
+		- now search has built-in visualization
+
+	version 1.0.8
+		- sdf.visualize reads CIDs and allows extra description on
+		  compounds
+		- in cmp.cluster, is.similarity is now the default
+		- db.explain now returns value rather than printing it
+		- cluster.visualize now outputs to EPS and PDF
+
+	version 1.0.7
+		- document changes
+		- add `quite' options to many functions
+		- more robust parsing
+		- better handling of progress messages
+
+	version 1.0.6
+		- add sdf.visualize
+
+	version 1.0.5
+		- use readLines instead of scan in parsing MOL table
+
+	version 1.0.4
+		- fix unclosed I/O connections
+
+	version 1.0.3
+		- add cmp.duplicated
+		- rename 'cluster' to 'cmp.cluster'
+		- column names of clustering result now contain no space
+	
+	version 1.0.2
+		- cluster now accepts ... arguments for cmp.similarity
+
+	version 1.0.1
+		- add sdf.subset
+		- add db.explain
+		- add cluster.sizestat
+		- add cluster.visualize
