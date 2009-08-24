@@ -1,10 +1,11 @@
 Package: ChemmineR
 Type: Package
 Title: A Compound Data Mining Framework
-Version: 1.5.0
-Date: 2008-10-12
+Version: 1.5.1
+Date: 2009-08-24
 Author: Y. Eddie Cao, Anna Charisi, Thomas Girke
 Maintainer: Y. Eddie Cao<ycao@bioinfo.ucr.edu>
 Description: ChemMineR is an open source compound mining framework. It contains functions for atom descriptor calculation, structure similarity searching, clustering of compound libraries and various utilities for managing complex compound data. It also offers a wide range of visualization functions for compound clusters and chemical structures. The package is integrated with the online ChemMine environment and allows bidirectional communications between the two services.
 License: GPL (>=2)
+URL: http://bioweb.ucr.edu/ChemMineV2/chemminer/
 biocViews: Clustering
