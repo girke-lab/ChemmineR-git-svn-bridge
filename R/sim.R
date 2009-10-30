@@ -281,6 +281,9 @@ if (is.null(getOption('chemminer.max.upload')))
 cmp.similarity <- function(a, b, mode=1, worst=0)
 {
     # check argument, make sure they are vectors and not lists
+    if (is.null(a) || is.null(b))
+        return(0)
+
     if (class(b) != "numeric" || class(a) != "numeric") {
         stop("Both arguments must be descriptors in the form of vectors.\n",
     "Did you use \"[]\" instead of \"[[]]\" to index the descriptor ",
