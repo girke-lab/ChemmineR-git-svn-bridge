@@ -1,7 +1,7 @@
 Package: ChemmineR
 Type: Package
 Title: A Compound Data Mining Framework
-Version: 1.7.1
+Version: 1.8.0
 Date: 2009-10-30
 Author: Y. Eddie Cao, Anna Charisi, Thomas Girke
 Maintainer: Y. Eddie Cao<ycao@bioinfo.ucr.edu>
