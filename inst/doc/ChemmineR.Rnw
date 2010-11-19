@@ -21,7 +21,7 @@
 \newcommand{\Rclass}[1]{{\textit{#1}}}
 
 <<echo=FALSE>>=
-options(width=60)
+options(width=70)
 @
 %\parindent 0in
 
@@ -29,12 +29,12 @@ options(width=60)
 
 \begin{document}
 \title{ChemmineR: A Compound Mining Toolkit for Chemical Genomics in R}
-\author{Yiqun Cao \\ Anna Charisi \\ Thomas Girke}
+\author{Yiqun Cao \\ Tyler Backman \\ Yan Wang \\ Thomas Girke}
 \maketitle
 
 \section*{Introduction}
 
-The \Rpackage{ChemmineR} package includes functions for calculating atom pair descriptors of chemical compounds  \citep{carhart1985apm, chen2002psm, Guha2007a}, structural similarity searching, clustering of compound libraries, and visualization of cluster results and chemical structures. These utilities are often important for the assembly of compound libraries and typical analysis routines of chemical genomics screening projects. An overview of all functions is illustrated in Fig. \ref{fig:overview}. The \Rfunction{cmp.parse} function accepts an SD file (SDF) of a whole library, parses it, and generates a descriptor database for all the compounds in the library. Similarly, the \Rfunction{cmp.parse1} function accepts an SDF for a single compound, parses it, and generates a descriptor vector for that compound. The \Rfunction{cmp.similarity} function computes atom pair-based similarities between two compounds using by default the Tanimoto coefficient as similarity measure. Searching for compounds in a library that are similar to a query structure can be accomplished with the \Rfunction{cmp.search} function. The \Rfunction{cmp.cluster} , \Rfunction{cluster.sizestat}, and \Rfunction{cluster.visualize} functions together allow binning clustering of compounds in a parsed library. The \Rfunction{sdf.subset} function provides utiliies for managing and subsetting libraries in SDF format, while the \Rfunction{sdf.visualize} function converts their compounds into images of chemical structures on HTML pages. \Rpackage{ChemmineR} integrates well with the online ChemMine \citep{girke2005ccm} portal which provides access to extensive compound annotations and web-based chemoinformatic tools.
+The \Rpackage{ChemmineR} package includes functions for calculating atom pair descriptors of chemical compounds  \citep{carhart1985apm, chen2002psm}, structural similarity searching, clustering of compound libraries, and visualization of cluster results and chemical structures. An overview of all functions is illustrated in Fig. \ref{fig:overview}. The \Rfunction{cmp.parse} function accepts an SD file (SDF) of a whole library, parses it, and generates a descriptor database for all the compounds in the library. Similarly, the \Rfunction{cmp.parse1} function accepts an SDF for a single compound, parses it, and generates a descriptor vector for that compound. The \Rfunction{cmp.similarity} function computes atom pair-based similarities between two compounds using by default the Tanimoto coefficient as similarity measure. Searching for compounds in a library that are similar to a query structure can be accomplished with the \Rfunction{cmp.search} function. The \Rfunction{cmp.cluster} , \Rfunction{cluster.sizestat}, and \Rfunction{cluster.visualize} functions together allow binning clustering of compounds in a parsed library. The \Rfunction{sdf.subset} function provides utiliies for managing and subsetting libraries in SDF format, while the \Rfunction{sdf.visualize} function converts their compounds into images of chemical structures on HTML pages. \Rpackage{ChemmineR} integrates well with the online ChemMine \citep{girke2005ccm} portal which provides access to extensive compound annotations and web-based chemoinformatic tools.
 
 \begin{figure}[bthp]
   \centering
@@ -55,7 +55,6 @@ library(ChemmineR)
 The following command lists all functions available in the package:
 <<eval=FALSE>>=
 library(help=ChemmineR)
-options(chemminer.max.upload=100)
 @
 The package contains a PDF manual, which can be loaded in the standard way:
 <<eval=FALSE>>=
@@ -126,9 +125,7 @@ db.explain(db$descdb[[1]][1:5])
 \section*{Removing Duplicated Compounds}
 
 The \Rfunction{cmp.duplicated}
-function can be used to quickly identify and remove duplicated compounds in imported compound databases. In most cases the method will identify the duplicates correctly. However, users have to be aware that the atom pair algorithm will treat isomers, conformers and other smaller structural variants as identical compounds. If it is important to retain those variants in the data set then the function \Rfunction{cmp.duplicated} should not be used. The support of InChI stings will overcome this limitation in the future.  
-
-The function takes a descriptor database as the only required argument and returns the duplication information as a logical vector.
+function can be used to quickly identify and remove duplicated compounds in imported compound databases. It takes a descriptor database as the only required argument and returns the duplication information as a logical vector.
 
 To demo this feature on the imported sample data set, one can create a duplication with the following command.
 <<>>=
@@ -150,18 +147,7 @@ db$sdfsegs <- db$sdfsegs[!dup]
 @
 
 \section*{Pairwise Compound Comparisons}
-The \Rfunction{cmp.similarity} function computes the atom pair similarity between two compounds using the Tanimoto coefficient as similarity measure. The Tanimoto coefficient between the atom pair descriptors of two compounds (CMP A and CMP B) is calculated here according to the following formula:
-
-\begin{center}
-Tanimoto coefficient = $c/(a + b + c)$ 
-
-$a$ = count of atom pair descriptors in CMP A but not in CMP B  
-
-$b$ = count of atom pair descriptors in CMP B but not in CMP A  
-
-$c$ = count of atom pair descriptors shared by CMP A and CMP B  
-\end{center}
-
+The \Rfunction{cmp.similarity} computes the atom pair similarity between two compounds using the Tanimoto coefficient as similarity measure.
 
 <<>>=
 similarity <- cmp.similarity(db$descdb[[1]], db$descdb[[2]])
@@ -314,10 +300,7 @@ Note: the \Rfunction{sdf.visualize} function depends on the original SDF file fr
 
 \section*{Binning Clustering}
 
-Compound libraries can be clustered into discrete similarity groups with the binning clustering function \Rfunction{cmp.cluster}. 
-This binning clustering method is optimized for the typical compound library analysis routines for high-throughput screening projects. The algorithm uses single-linkage clustering to join compounds into similarity groups, where every member in a cluster shares with at least one other member a similarity value above a user-specified threshold. The algorithm is optimized for speed and memory efficiency by avoiding the calculation of an all-against-all distance matrix. This is achieved by calculating on-the-fly only the distance values that are required in each clustering step. Because an optimum similarity threshold is often unknown, a series of binning clustering results can be calculated simultaneously for several user-specified thresholds. Cluster results for several thresholds can be calculated almost with the same speed as for a single threshold by issuing multiple clustering processes simultaneously, but calculating the required distances only once.
-
-The function requires as input a descriptor database as well as a similarity threshold. The binning clustering result is returned in form of a data frame. Single linkage is used for cluster joining. The function calculates the required compound-to-compound distance information on the fly, while a memory-intensive distance matrix is only created upon user request via the \Rfunarg{save.distances} argument (see below).
+Compound libraries can be clustered into discrete similarity groups with the binning clustering function \Rfunction{cmp.cluster}. The function requires as input a descriptor database as well as a similarity threshold. The binning clustering result is returned in form of a data frame. Single linkage is used for cluster joining. The function calculates the required compound-to-compound distance information on the fly, while a memory-intensive distance matrix is only created upon user request via the \Rfunarg{save.distances} argument (see below).
 
 <<>>=
 clusters <- cmp.cluster(db, cutoff=0.65, quiet=TRUE)
@@ -386,14 +369,10 @@ coord <- cluster.visualize(db, clusters, 3, dimensions=3, quiet=TRUE)
 library(scatterplot3d)
 scatterplot3d(coord)
 @
-% drawing requires scatterplot3d, so we include pre-generated figure
-\begin{figure}[bthp]
-  \centering
-   \includegraphics[width=.6\textwidth]{scatterplot.pdf} 
-   \caption{3D MDS plot generated using coordinate information returned by \Rfunction{cluster.visualize} and the \Rpackage{scatterplot3d} package.}
-   \label{fig:mds}
-\end{figure}
-
+<<fig=TRUE,echo=FALSE>>
+coord <- cluster.visualize(db, clusters, 3, dimensions=3, quiet=TRUE)
+if(suppressWarnings(require(require(scatterplot3d)))) scatterplot3d(coord)
+@
 
 The data returned by the \Rfunction{cluster.visualize} can also be inspected with the fully interactive \Rpackage{rggobi} data visulalization system. The GGobi software and its dependencies can be obtained from the GGobi project site (\url{http://www.ggobi.org/rggobi}). The following commands demonstrate the import of the generated MDS data set into \Rpackage{rggobi}.
 <<eval=FALSE>>=
