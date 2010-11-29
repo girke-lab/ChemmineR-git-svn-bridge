@@ -92,6 +92,6 @@ sdfid(sdf)
 
 ## Plot molecule structure of SDF 
 plot(sdf) # plots to R graphics device
-sdf.visualize(sdf) # viewing in browser
+# sdf.visualize(sdf) # viewing in browser
 }
 \keyword{classes}

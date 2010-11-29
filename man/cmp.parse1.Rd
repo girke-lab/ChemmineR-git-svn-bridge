@@ -36,7 +36,6 @@ and similarity coefficients", in \emph{J Chem Inf Comput Sci}.}
     \code{\link{cmp.similarity}}}
 \examples{
 # load an SDF file from web and parse it
-structure <- cmp.parse1(
-    "http://bioweb.ucr.edu/ChemMineV2/compound/Aurora/b32:NNQS2MBRHAZTI===/sdf")
+structure <- cmp.parse1("http://bioweb.ucr.edu/ChemMineV2/compound/Aurora/b32:NNQS2MBRHAZTI===/sdf")
 }
 \keyword{utilities}

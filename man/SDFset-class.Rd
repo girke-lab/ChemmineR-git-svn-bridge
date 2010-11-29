@@ -137,7 +137,7 @@ grepSDFset("650001", sdfset, field="datablock", mode="subset") # To return index
 
 ## Plot molecule structure of SDF 
 plot(sdfset[1:4]) # plots to R graphics device
-sdf.visualize(sdfset[1:4]) # viewing in browser
+# sdf.visualize(sdfset[1:4]) # viewing in browser
 
 }
 \keyword{classes}

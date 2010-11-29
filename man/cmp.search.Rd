@@ -83,7 +83,7 @@ cmp.search(db, query, cutoff=0.4, return.score=TRUE)
 cmp.search(db, query, cutoff=10, return.score=TRUE)
 
 # you may visualize the search result in ChemMine
-cmp.search(db, query, cutoff=10, visualize=TRUE, visualize.browse=FALSE, visualize.query=url)
+\dontrun{cmp.search(db, query, cutoff=10, visualize=TRUE, visualize.browse=FALSE, visualize.query=url)}
 
 ## in the next session, you may use load a saved db and do the search:
 load("db.rda")
