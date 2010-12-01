@@ -51,8 +51,7 @@ setReplaceMethod(f="[", signature="SDFstr", definition=function(x, i, j, value) 
 })
 
 ## Define behavior of "[" operator for SDFstr 
-setMethod(f="[", signature="SDFstr",
-	definition=function(x, i, ..., drop) {
+setMethod(f="[", signature="SDFstr", definition=function(x, i, ..., drop) {
 		x@a <- x@a[i]                   
 		return(x)
 })
@@ -358,7 +357,10 @@ setReplaceMethod(f="[", signature="SDFset", definition=function(x, i, j, value) 
 
 ## Behavior of "[" operator for SDFset 
 setMethod(f="[", signature="SDFset", definition=function(x, i, ..., drop) {
-	if(is.character(i)) { 
+	if(is.logical(i)) {
+                i <- which(i)
+        }
+        if(is.character(i)) { 
 		ids <-seq(along=x@ID); names(ids) <- x@ID
 		i <- ids[i]
 	}
@@ -619,6 +621,9 @@ setReplaceMethod(f="[", signature="APset", definition=function(x, i, j, value) {
 
 ## Behavior of "[" operator for APset 
 setMethod(f="[", signature="APset", definition=function(x, i, ..., drop) {
+	if(is.logical(i)) {
+                i <- which(i)
+        }
 	if(is.character(i)) { 
 		ids <- seq(along=x@ID)
 		names(ids) <- x@ID
