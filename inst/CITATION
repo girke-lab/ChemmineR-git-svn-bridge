@@ -1,4 +1,4 @@
-## To check rendering of citation in R, run readCitationFile("CITATION")
+## To check rendering of citation, run readCitationFile("CITATION")
 
 citHeader("To cite package 'ChemmineR' in publications use:")
      
