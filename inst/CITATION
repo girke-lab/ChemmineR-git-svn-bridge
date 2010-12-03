@@ -9,7 +9,7 @@ vers <- paste("R package version", meta$Version)
 
 citEntry(entry="Article",
         author = "Cao, Y and Charisi, A and Cheng, L C and Jiang, T and Girke, T",
-        title = "ChemmineR: a compound mining framework for R",
+        title = "{ChemmineR: a compound mining framework for R}",
         journal = "Bioinformatics",
         year = "2008",
         volume = "24",
