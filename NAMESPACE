@@ -37,7 +37,7 @@ export(
 
     ## Utilities
     ## Source: AllClasses.R
-    "makeUnique", "atomcountMA", "MW", "MF", 
+    "validSDF", "makeUnique", "atomcountMA", "MW", "MF", 
     "datablock2ma", "splitNumChar",  
     "grepSDFset", 
    

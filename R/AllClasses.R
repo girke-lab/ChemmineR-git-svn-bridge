@@ -127,7 +127,9 @@ setClass("SDF", representation(header="character", atomblock="matrix", bondblock
 .sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
 	if(length(countpos)==0) { countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) }
+	if(length(countpos)==0) { countpos <- 4 }
 	countline <- sdf[countpos]
+        if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) { countline <- "  0  0" } # Create dummy countline if it contains non-numeric values 
 	Natom <- as.numeric(substring(countline, 1, 3))
 	Nbond <- as.numeric(substring(countline, 4, 6))
 	start <- c(header=1, atom=countpos+1, bond=countpos+Natom+1, extradata=countpos+Natom+Nbond+1)
@@ -139,35 +141,47 @@ setClass("SDF", representation(header="character", atomblock="matrix", bondblock
 	
 	## Atom block
 	ab2matrix <- function(ct=sdf[index["atom",1]:index["atom",2]]) {
-		ct <- gsub("^ {1,}", "", ct)
-		ctlist <- strsplit(ct, " {1,}")
-		ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
-		myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
-		Ncol <- length(ctlist[[1]])
-		ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
-		return(ctma)
+		if((index["atom","end"] - index["atom","start"]) < 1) {
+                        ctma <- matrix(c(0,0)) # Creates dummy matrix in case there is none.
+                } else {
+                        ct <- gsub("^ {1,}", "", ct)
+		        ctlist <- strsplit(ct, " {1,}")
+		        ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
+		        myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
+		        Ncol <- length(ctlist[[1]])
+		        ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
+		}
+                return(ctma)
 	}
 	atomblock <- ab2matrix(ct=sdf[index["atom",1]:index["atom",2]])
 	
 	## Bond block
 	bb2matrix <- function(ct=sdf[index["bond",1]:index["bond",2]]) {
-		ct <- gsub("^(...)(...)(...)(...)(...)(...)(...)", "\\1 \\2 \\3 \\4 \\5 \\6 \\7", ct)
-		ct <- gsub("^ {1,}", "", ct)
-		ctlist <- strsplit(ct, " {1,}")
-		ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
-		Ncol <- length(ctlist[[1]])
-		ctma <- matrix(as.numeric(ctma), nrow=length(ct), ncol=Ncol, dimnames=list(1:length(ct), paste("C", 1:Ncol, sep="")))	
-		return(ctma)
+		if((index["bond","end"] - index["bond","start"]) < 1) {
+                        ctma <- matrix(c(0,0)) # Creates dummy matrix in case there is none.
+                } else {
+                    ct <- gsub("^(...)(...)(...)(...)(...)(...)(...)", "\\1 \\2 \\3 \\4 \\5 \\6 \\7", ct)
+                    ct <- gsub("^ {1,}", "", ct)
+                    ctlist <- strsplit(ct, " {1,}")
+                    ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
+                    Ncol <- length(ctlist[[1]])
+                    ctma <- matrix(as.numeric(ctma), nrow=length(ct), ncol=Ncol, dimnames=list(1:length(ct), paste("C", 1:Ncol, sep="")))	
+		}
+                return(ctma)
 	}
 	bondblock <- bb2matrix(ct=sdf[index["bond",1]:index["bond",2]])
 	
 	## SDF name/value block
 	ex2vec <- function(extradata=sdf[index["extradata",1]:index["extradata",2]]) {
-		exstart <- grep("^>", extradata)
-		names(exstart) <- gsub("^>.*<|>", "", extradata[exstart])
-		exindex <- cbind(start=exstart, end=c(exstart[-1], length(extradata)+1)-1)
-		exvec <- sapply(rownames(exindex), function(x) paste(extradata[(exindex[x,1]+1):(exindex[x,2]-1)], collapse=" __ "))
-		return(exvec)
+                exstart <- grep("^>", extradata)
+		if(length(exstart)==0) { 
+                        exvec <- vector("character", length=0) 
+                } else {
+                    names(exstart) <- gsub("^>.*<|>", "", extradata[exstart])
+                    exindex <- cbind(start=exstart, end=c(exstart[-1], length(extradata)+1)-1)
+                    exvec <- sapply(rownames(exindex), function(x) paste(extradata[(exindex[x,1]+1):(exindex[x,2]-1)], collapse=" __ "))
+		}
+                return(exvec)
 	}
 	
 	if(tail2vec==TRUE) {
@@ -308,7 +322,12 @@ read.SDFset <- function(sdfstr=sdfstr, ...) {
 	## Iterate over SDFstr components	
 	sdfset <- lapply(seq(along=sdfstr@a), function(x) .sdfParse(sdfstr2list(sdfstr)[[x]], ...))
 	sdfset <- new("SDFset", SDF=sdfset, ID=paste("CMP", seq(along=sdfset), sep=""))
-	return(sdfset)
+        ## Validity check of SDFs based on atom/bond block column numbers
+	ab <- atomblock(sdfset); abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
+        bb <- bondblock(sdfset); bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
+        badsdf <- abcol < 3 | bbcol < 3
+        if(sum(badsdf)!=0) warning(paste(c(sum(badsdf), " invalid SDFs detected. To fix, run: valid <- validSDF(sdfset); sdfset <- sdfset[valid]")))
+        return(sdfset)
 }
 
 ## Accessor methods for SDFset class
@@ -719,8 +738,19 @@ apset2descdb <- function(apset) {
 ## (5) Utilities ##
 ###################
 
+#################################################
+## (5.1) Detect Invalid SDFs in SDFset Objects ##
+#################################################
+validSDF <- function(x) {
+        if(class(x)!="SDFset") warning("x needs to be of class SDFset")
+	ab <- atomblock(sdfset); abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
+        bb <- bondblock(sdfset); bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
+        validsdf <- abcol >= 3 | bbcol >= 3
+        return(validsdf)
+}
+
 ######################################################################
-## (5.1) Create Unique CMP Names by Appending a Counter to Duplates ##
+## (5.2) Create Unique CMP Names by Appending a Counter to Duplates ##
 ######################################################################
 makeUnique <- function(x, silent=FALSE) {
 	if(all(!duplicated(x))) {
@@ -738,9 +768,9 @@ makeUnique <- function(x, silent=FALSE) {
 }
 
 ###############################
-## (5.2) Molecule Properties ##
+## (5.3) Molecule Properties ##
 ###############################
-## (5.2.1) Atom count matrix
+## (5.3.1) Atom count matrix
 atomcountMA <- function(x) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
 	atomcountlist <- atomcount(x) 	
@@ -752,7 +782,7 @@ atomcountMA <- function(x) {
 	return(myMA)
 }
 
-## (5.2.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
+## (5.3.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
 data(atomprop); atomprop <- atomprop # Import MW data frame from /data into workspace.
 MW <- function(x, mw=atomprop) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
@@ -765,7 +795,7 @@ MW <- function(x, mw=atomprop) {
 	return(MW)
 }
 
-## (5.2.3) Molecular formula
+## (5.3.3) Molecular formula
 MF <- function(x) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
 	propma <- atomcountMA(x)
@@ -784,9 +814,9 @@ MF <- function(x) {
 }
 
 ##############################################################
-## (5.3) Convert SDF Tail to Numeric and Character Matrices ##
+## (5.4) Convert SDF Tail to Numeric and Character Matrices ##
 ##############################################################
-## (5.3.1) Store everything in one character matrix
+## (5.4.1) Store everything in one character matrix
 datablock2ma <- function(datablocklist=datablock(sdfset), cleanup=" \\(.*", ...) {
 	if(exists("cleanup")) for(i in seq(along=datablocklist)) names(datablocklist[[i]]) <- gsub(cleanup, "", names(datablocklist[[i]])) # Required if name tags contain compound ids
         columns <- unique(unlist(lapply(seq(along=datablocklist), function(x) names(datablocklist[[x]]))))
@@ -798,7 +828,7 @@ datablock2ma <- function(datablocklist=datablock(sdfset), cleanup=" \\(.*", ...)
 # Usage:
 # blockmatrix <- datablock2ma(datablocklist=datablock(sdfset))
 
-## (5.3.2) Split SDF tail matrix into character and numeric matrices
+## (5.4.2) Split SDF tail matrix into character and numeric matrices
 splitNumChar <- function(blockmatrix=blockmatrix) {
 	# Define function to check for valid numeric values in a character vector
 	numberAble <- function(myvec, type=c("single", "vector"), extras = c(".", "NA")) {
@@ -824,10 +854,10 @@ splitNumChar <- function(blockmatrix=blockmatrix) {
 # numchar <- splitNumChar(blockmatrix=blockmatrix)
 
 #################################
-## (5.4.) String Search Method ##
+## (5.5.) String Search Method ##
 #################################
 
-## (5.4.1) String search function for SDFset
+## (5.5.1) String search function for SDFset
 grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case=TRUE, ...) {
 	## Generate search vector and index for desired field in SDFset
 	if(field=="header" | field==1) {

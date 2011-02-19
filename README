@@ -1,4 +1,16 @@
 changelog
+	version 2.1.5
+		- added validSDF function
+
+	version 2.1.4
+		- minor bug fixes
+	
+        version 2.1.3
+		- minor bug fixes
+        
+        version 2.1.2
+		- minor bug fixes
+
 	version 2.1.1
 		- introduced S4 classes for all object types
 		- added full support for processing SD files
