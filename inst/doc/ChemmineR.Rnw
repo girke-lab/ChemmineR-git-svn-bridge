@@ -1,4 +1,5 @@
-%
+% Manual compile
+% Sweave("ChemmineR.Rnw"); system("pdflatex ChemmineR.tex; bibtex ChemmineR; pdflatex ChemmineR.tex; pdflatex ChemmineR.tex")
 % NOTE -- ONLY EDIT THE .Rnw FILE!!!  The .tex file is
 % likely to be overwritten.
 %
@@ -28,42 +29,79 @@ options(width=70)
 \bibliographystyle{plainnat}
 
 \begin{document}
-\title{ChemmineR: A Compound Mining Toolkit for Chemical Genomics in R}
-\author{Yiqun Cao \\ Tyler Backman \\ Yan Wang \\ Thomas Girke}
+\title{ChemmineR-V2: Analysis of Small Molecule and Screening Data}
+\author{Yiqun Cao, Tyler Backman, Yan Wang, Thomas Girke}
 \maketitle
 
 \section*{Introduction}
 
-The \Rpackage{ChemmineR} package includes functions for calculating atom pair descriptors of chemical compounds  \citep{carhart1985apm, chen2002psm}, structural similarity searching, clustering of compound libraries, and visualization of cluster results and chemical structures. An overview of all functions is illustrated in Fig. \ref{fig:overview}. The \Rfunction{cmp.parse} function accepts an SD file (SDF) of a whole library, parses it, and generates a descriptor database for all the compounds in the library. Similarly, the \Rfunction{cmp.parse1} function accepts an SDF for a single compound, parses it, and generates a descriptor vector for that compound. The \Rfunction{cmp.similarity} function computes atom pair-based similarities between two compounds using by default the Tanimoto coefficient as similarity measure. Searching for compounds in a library that are similar to a query structure can be accomplished with the \Rfunction{cmp.search} function. The \Rfunction{cmp.cluster} , \Rfunction{cluster.sizestat}, and \Rfunction{cluster.visualize} functions together allow binning clustering of compounds in a parsed library. The \Rfunction{sdf.subset} function provides utiliies for managing and subsetting libraries in SDF format, while the \Rfunction{sdf.visualize} function converts their compounds into images of chemical structures on HTML pages. \Rpackage{ChemmineR} integrates well with the online ChemMine \citep{girke2005ccm} portal which provides access to extensive compound annotations and web-based chemoinformatic tools.
+\Rpackage{ChemmineR} is an R package for analyzing small molecule and screening data. It contains functions for processing SDFs (structure data files), structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays \citep{carhart1985apm, chen2002psm}. In addition, it offers visualization functions for compound clustering results and chemical structures. The integration of chemoinformatic tools with the R programming environment has many advantages, such as easy access to a wide spectrum of statistical methods, machine learning algorithms and graphic utilities. The first version of this package was published in \cite{Cao2008c}. Since then many additional utilities have been added to the package and many more are under development for future releases. 
 
 \begin{figure}[bthp]
   \centering
-   \includegraphics[width=\textwidth]{overview.pdf} 
+   \includegraphics[width=\textwidth]{overview.png}
    \caption{Overview of functions provided in the \Rpackage{ChemmineR}
    package.}
    \label{fig:overview}
 \end{figure}
 
-\section*{Installing the Package}
-Users can download the package from the download page (\url{http://bioweb.ucr.edu/ChemMineV2/chemminer/download}) for the OS of their choice, and then use the \Rfunction{install.packages("...", repos=NULL)} command to install the package. More detailed instructions for Mac, Linux and Windows can be found in the online manual  (\url{http://bioweb.ucr.edu/ChemMineV2/chemminer/tutorial}).
+\section*{Getting Started}
 
-\section*{Loading the Package and Its Documentation}
-The package can be loaded with the standard \Rfunction{library} function:
-%<<>>=
-%library(ChemmineR)
-%@
-%The following command lists all functions available in the package:
-%<<eval=FALSE>>=
-%library(help=ChemmineR)
-%@
-%The package contains a PDF manual, which can be loaded in the standard way:
-%<<eval=FALSE>>=
-%vignette("ChemmineR")
-%@
+\subsection*{Installation}
+The R software for running ChemmineR can be downloaded from CRAN (\url{http://cran.at.r-project.org/}). The ChemmineR package can be installed from R using the \Rfunction{bioLite} install command. 
+<<eval=FALSE>>=
+source("http://bioconductor.org/biocLite.R") # Sources the biocLite.R installation script.
+biocLite(ChemmineR) # Installs the package.
+@
 
-\section*{Compound Database Import from SDF}
+\subsection*{Loading the Package and Documentation}
 
-The \Rfunction{cmp.parse} function imports SDFs containing the data for one or many compounds. It returns a searchable atom pair database, which can be used for structural similarity searching, clustering, and SDF manipulation. The only argument of this function is the path (or URL) to the file containing the SDF information. 
+<<eval=TRUE, keep.source=TRUE>>=
+library(ChemmineR) # Loads the package
+@
+<<eval=FALSE, keep.source=TRUE>>=
+library(help=ChemmineR) # Lists all functions and classes 
+
+vignette("ChemmineR") # Opens this PDF manual from R
+@
+
+\section*{One Minute Tutorial}
+The following code gives an interactive overview of the most important functionalities provided by ChemmineR.
+It creates an instance of the \Rfunction{SDFset} class using as sample data set the first 100 compounds from PubChem's SD file "Compound\_00650001\_00675000.sdf.gz" (\url{ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/}).
+
+<<eval=FALSE, keep.source=TRUE>>=
+data(sdfsample); sdfset <- sdfsample
+sdfset
+sdfset[[1]] # To view summary of many SDFs use: view(sdfset[1:4])
+@
+
+\noindent The SD files can be imported with the \Rfunction{read.SDFset} function.
+<<eval=FALSE, keep.source=TRUE>>=
+sdfset <- read.SDFset("http://faculty.ucr.edu/~tgirke/Documents/
+                       R_BioCond/Samples/sdfsample.sdf")
+
+## Miscellaneous accessor methods for SDFset container
+header(sdfset[1:4])
+atomblock(sdfset[1:4])
+atomcount(sdfset[1:4])
+bondblock(sdfset[1:4])
+datablock(sdfset[1:4])
+
+## Assigning compound IDs and keeping them unique
+cid(sdfset); sdfid(sdfset)
+unique_ids <- makeUnique(sdfid(sdfset))
+cid(sdfset) <- unique_ids
+
+## Converting the data blocks in SDFset to matrix
+blockmatrix <- datablock2ma(datablocklist=datablock(sdfset)) # Converts data block to matrix 
+numchar <- splitNumChar(blockmatrix=blockmatrix) # Splits to numeric and character matrix
+numchar[[1]][1:4,]; numchar[[2]][1:4,]
+
+## Compute atom frequency matrix, molecular weight and formula
+propma <- data.frame(MF=MF(sdfset), MW=MW(sdfset), atomcountMA(sdfset))
+@
+
+
 
 
 %<<>>=
