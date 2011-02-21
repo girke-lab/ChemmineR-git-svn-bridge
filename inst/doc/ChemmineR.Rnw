@@ -35,7 +35,7 @@
 \rfoot{\thepage}
 
 <<echo=FALSE>>=
-options(width=50)
+options(width=80)
 @
 %\parindent 0in
 
@@ -49,12 +49,12 @@ options(width=50)
 \section{Introduction}
 \markboth{Introduction}{} % Only required to print section title in header field without numbering. 
 
-\Rpackage{ChemmineR} is an R package for analyzing small molecule and screening data. It contains functions for processing SDFs (structure data files), structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays. 
+\Rpackage{ChemmineR} is an R package for analyzing small molecule and screening data. It contains functions for processing SDFs (structure data files), molecule depictions, structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays. 
 
 \begin{figure}[bthp]
   \centering
    \includegraphics[width=\textwidth]{overview.png}
-   \caption{Overview of functions provided by the \Rpackage{ChemmineR}
+   \caption{Selected functionalities provided by the \Rpackage{ChemmineR}
    package.}
    \label{fig:overview}
 \end{figure}
@@ -81,19 +81,22 @@ library(help="ChemmineR") # Lists all functions and classes
 vignette("ChemmineR") # Opens this PDF manual from R
 @
 
-\subsection{One Minute Tutorial}
+\subsection{Five Minute Tutorial}
 The following code gives an overview of the most important functionalities provided by \Rpackage{ChemmineR}. Copy and paste of the commands into the R console will demonstrate these utilities. \\
 
 \noindent Create Instances of \Rclass{SDFset} class:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=TRUE, keep.source=TRUE>>=
 data(sdfsample)
 sdfset <- sdfsample
-sdfset
-view(sdfset[1:4])
-sdfset[[1]]
+sdfset # Returns summary of SDFset
+sdfset[1:4] # Subsetting of object 
+sdfset[[1]] # Returns summarized content of one SDF
+<<eval=FALSE, keep.source=TRUE>>=
+view(sdfset[1:4]) # Returns summarized content of many SDFs, not printed here
+as(sdfset[1:4], "list") # Returns complete content of many SDFs, not printed here
 @
 
-\noindent This object class is created during the import of an SD file:
+\noindent An \Rclass{SDFset} is created during the import of an SD file:
 <<eval=FALSE, keep.source=TRUE>>=
 sdfset <- read.SDFset("http://faculty.ucr.edu/~tgirke/Documents/
                        R_BioCond/Samples/sdfsample.sdf")
@@ -101,45 +104,61 @@ sdfset <- read.SDFset("http://faculty.ucr.edu/~tgirke/Documents/
 
 \noindent Miscellaneous accessor methods for \Rclass{SDFset} container:
 <<eval=FALSE, keep.source=TRUE>>=
-header(sdfset[1:4])
-atomblock(sdfset[1:4])
-atomcount(sdfset[1:4])
-bondblock(sdfset[1:4])
-datablock(sdfset[1:4])
+header(sdfset[1:4]) # Not printed here
+<<eval=TRUE, keep.source=TRUE>>=
+header(sdfset[[1]])
+<<eval=FALSE, keep.source=TRUE>>=
+atomblock(sdfset[1:4]) # Not printed here
+<<eval=TRUE, keep.source=TRUE>>=
+atomblock(sdfset[[1]])[1:4,]
+<<eval=FALSE, keep.source=TRUE>>=
+bondblock(sdfset[1:4]) # Not printed here
+<<eval=TRUE, keep.source=TRUE>>=
+bondblock(sdfset[[1]])[1:4,] 
+<<eval=FALSE, keep.source=TRUE>>=
+datablock(sdfset[1:4]) # Not printed here
+<<eval=TRUE, keep.source=TRUE>>=
+datablock(sdfset[[1]])[1:4]
 @
 
 \noindent Assigning compound IDs and keeping them unique:
-<<eval=FALSE, keep.source=TRUE>>=
-cid(sdfset); sdfid(sdfset)
+<<eval=TRUE, keep.source=TRUE>>=
+cid(sdfset)[1:4] # Returns IDs from SDFset object
+sdfid(sdfset)[1:4] # Returns IDs from SD file header block
 unique_ids <- makeUnique(sdfid(sdfset))
 cid(sdfset) <- unique_ids
 @
 
-\noindent Converting the data blocks in \Rclass{SDFset} to a matrix:
-<<eval=FALSE, keep.source=TRUE>>=
+\noindent Converting the data blocks in an \Rclass{SDFset} to a matrix:
+<<eval=TRUE, keep.source=TRUE>>=
 blockmatrix <- datablock2ma(datablocklist=datablock(sdfset))
    # Converts data block to matrix   
 numchar <- splitNumChar(blockmatrix=blockmatrix) 
    # Splits to numeric and character matrix
-numchar[[1]][1:4,]
-numchar[[2]][1:4,]
+numchar[[1]][1:2,1:2] # Slice of numeric matrix
+numchar[[2]][1:2,10:11] # Slice of character matrix
 @
 
 \noindent Compute atom frequency matrix, molecular weight and formula:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=TRUE, keep.source=TRUE>>=
 propma <- data.frame(MF=MF(sdfset), MW=MW(sdfset), atomcountMA(sdfset))
 propma[1:4, ]
 @
 
 \noindent Assign matrix data to data block:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=TRUE, keep.source=TRUE>>=
 datablock(sdfset) <- propma
-view(sdfset[1:4])
+datablock(sdfset[1])
 @
 
-\noindent String Searching in \Rclass{SDFset}:
+\noindent String searching in \Rclass{SDFset} ():
 <<eval=FALSE, keep.source=TRUE>>=
 grepSDFset("650001", sdfset, field="datablock", mode="subset") 
+   # Returns summary view of matches. Not printed here.
+.
+@
+<<eval=TRUE, keep.source=TRUE>>=
+grepSDFset("650001", sdfset, field="datablock", mode="index") 
 @
 
 \noindent Export SDFset to SD file:
@@ -148,20 +167,26 @@ write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE)
 @
 
 \noindent Plot molecule structure of one or many SDFs:
+<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+plot(sdfset[1:4], print=FALSE) # Plots structures to R graphics device
 <<eval=FALSE, keep.source=TRUE>>=
-plot(sdfset[1:4]) # plots to R graphics device
-sdf.visualize(sdfset[1:4]) # viewing in web browser
+sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 @
+\begin{figure}[bthp]
+  \centering
+   \includegraphics[width=\textwidth]{visualizescreenshot.pdf} 
+   \caption{Visualization webpage created by calling \Rfunction{sdf.visualize}.}
+   \label{fig:visualize}
+\end{figure}
 
 \noindent Structure similarity searching and clustering:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=TRUE, keep.source=TRUE>>=
 apset <- sdf2ap(sdfset) 
    # Generate atom pair descriptor database for searching
-cmp.search(apset, apset[1], type=3, cutoff = 0.3) 
+cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
    # Search apset database with single compound.
-cmp.cluster(db=apset, cutoff = c(0.65, 0.5))[1:4,] 
+cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,] 
    # Binning clustering using variable similarity cutoffs.
-.
 @
 
 \section{Overview of Classes and Functions}
@@ -496,7 +521,9 @@ The function \Rfunction{sdf2ap} computes atom pair descriptors for one or many c
 <<eval=TRUE, keep.source=TRUE>>=
 ap <- sdf2ap(sdfset[[1]]) # For single compound
 ap
+<<eval=FALSE, keep.source=TRUE>>=
 apset <- sdf2ap(sdfset) # For many compounds. 
+<<eval=TRUE, keep.source=TRUE>>=
 view(apset[1:4])
 @
 
@@ -521,7 +548,7 @@ cmp.similarity(apset[1], apset[1])
 \subsection{Similarity Searching}
 The \Rfunction{cmp.search} function searches an atom pair database for compounds that are similar to a query compound. The following example returns a data frame where the rows are sorted by the Tanimoto similarity score (best to worst). The first column contains the indices of the matching compounds in the database. The argument cutoff can be a similarity cutoff, meaning only compounds with a similarity value larger than this cutoff will be returned; or it can be an integer value restricting how many compounds will be returned. When supplying a cutoff of 0, the function will return the similarity values for every compound in the database.
 <<eval=TRUE, keep.source=TRUE>>=
-cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
+cmp.search(apset, apset[1], type=3, cutoff = 0.2, quiet=TRUE) 
 @
 
 \noindent Return main components of APset objects:
