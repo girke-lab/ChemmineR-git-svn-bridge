@@ -43,13 +43,14 @@ options(width=80)
 
 \begin{document}
 \title{ChemmineR-V2: Analysis of Small Molecule and Screening Data}
-\author{Yiqun Cao, Tyler Backman, Yan Wang, Thomas Girke}
+\author{Yiqun Cao, Tyler Backman, Yan Wang, Thomas Girke \\
+ Email contact: thomas.girke@ucr.edu}
 \maketitle
 
 \section{Introduction}
 \markboth{Introduction}{} % Only required to print section title in header field without numbering. 
 
-\Rpackage{ChemmineR} is an R package for analyzing small molecule and screening data. It contains functions for processing SDFs (structure data files), molecule depictions, structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays. 
+\Rpackage{ChemmineR} is an R package for analyzing small molecule and screening data. Its new version ChemmineR-V2 contains functions for processing SDFs (structure data files), molecule depictions, structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays. 
 
 \begin{figure}[bthp]
   \centering
@@ -174,7 +175,7 @@ sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 @
 \begin{figure}[bthp]
   \centering
-   \includegraphics[width=\textwidth]{visualizescreenshot.pdf} 
+   \includegraphics[width=\textwidth]{visualizescreenshot.png} 
    \caption{Visualization webpage created by calling \Rfunction{sdf.visualize}.}
    \label{fig:visualize}
 \end{figure}
@@ -302,6 +303,7 @@ as(sdfstr, "SDFset")
 @
 
 \section{Export of Compounds}
+\markboth{Export of Compounds}{} % Only required to print section title in header field without numbering. 
 \noindent Write objects of classes \Rclass{SDFset/SDFstr/SDF} to SD file:
 <<eval=FALSE, keep.source=TRUE>>=
 write.SDF(sdfset[1:4], file="sub.sdf")
@@ -335,6 +337,7 @@ cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 @
 
 \section{Working with SDF/SDFset Classes}
+\markboth{Working with SDF/SDFset Classes}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods are available to return the different data components of \Rclass{SDF/SDFset} containers in batches. The following examples 
 list the most important ones. To save space their content is not printed in the manual. 
 <<eval=FALSE, keep.source=TRUE>>=
@@ -423,6 +426,7 @@ as(sdfset[1:4], "SDFstr")
 @
 
 \section{Molecular Property Functions}
+\markboth{Molecular Property Functions}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods and functions are available to compute basic compound descriptors, such as molecular formula (MF), molecular weigth (MW) and atom frequencies. 
 <<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
 propma <- atomcountMA(sdfset)
@@ -465,6 +469,7 @@ numchar[[1]][1:4,]; numchar[[2]][1:4,]
 @
 
 \section{Rendering Chemical Structure Images}
+\markboth{Rendering Chemical Structure Images}{} % Only required to print section title in header field without numbering. 
 \subsection{R Graphics Device}
 A new plotting function for compound structures has been added to the package recently. This function uses the native R graphics device for generating compound depictions. At this point this function is still in an experimental developmental stage but should become stable soon.  \\
 
@@ -489,7 +494,7 @@ sdf.visualize(sdfset[1:4])
 @
 \begin{figure}[bthp]
   \centering
-   \includegraphics[width=\textwidth]{visualizescreenshot.pdf} 
+   \includegraphics[width=\textwidth]{visualizescreenshot.png} 
    \caption{Visualization webpage created by calling \Rfunction{sdf.visualize}.}
    \label{fig:visualize}
 \end{figure}

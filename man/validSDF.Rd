@@ -4,7 +4,7 @@
 Validity check of SDFset
 }
 \description{
-Performs a validity check of SDFs stored in \code{SDFset} objects. Currently, the function tests whether each block has at least three columns. The function returns a logical vector with \code{TRUE} values for valid compounds and \code{FALSE} values for invalid ones.
+Performs a validity check of SDFs stored in \code{SDFset} objects. Currently, the function tests whether the atom block and the bond block in each \code{SDF} component of an \code{SDFset} have at least three columns. The function returns a logical vector with \code{TRUE} values for valid compounds and \code{FALSE} values for invalid ones.
 }
 \usage{
 validSDF(x)
