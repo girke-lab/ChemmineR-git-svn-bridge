@@ -558,7 +558,7 @@ cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE)
 
 \noindent Return main components of APset objects:
 <<eval=FALSE, keep.source=TRUE>>=
-cid(apset[1:4]) # Compound IDs from apset
+cid(apset[1:4]) # Compound IDs
 ap(apset[1:4]) # Atom pair descriptors
 db.explain(apset[1]) # Return atom pairs in human readable format
 @
