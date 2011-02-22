@@ -553,7 +553,7 @@ cmp.similarity(apset[1], apset[1])
 \subsection{Similarity Searching}
 The \Rfunction{cmp.search} function searches an atom pair database for compounds that are similar to a query compound. The following example returns a data frame where the rows are sorted by the Tanimoto similarity score (best to worst). The first column contains the indices of the matching compounds in the database. The argument cutoff can be a similarity cutoff, meaning only compounds with a similarity value larger than this cutoff will be returned; or it can be an integer value restricting how many compounds will be returned. When supplying a cutoff of 0, the function will return the similarity values for every compound in the database.
 <<eval=TRUE, keep.source=TRUE>>=
-cmp.search(apset, apset[1], type=3, cutoff = 0.2, quiet=TRUE) 
+cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
 @
 
 \noindent Return main components of APset objects:
