@@ -83,7 +83,7 @@ vignette("ChemmineR") # Opens this PDF manual from R
 @
 
 \subsection{Five Minute Tutorial}
-The following code gives an overview of the most important functionalities provided by \Rpackage{ChemmineR}. Copy and paste of the commands into the R console will demonstrate these utilities. \\
+The following code gives an overview of the most important functionalities provided by \Rpackage{ChemmineR}. Copy and paste of the commands into the R console will demonstrate their utilities. \\
 
 \noindent Create Instances of \Rclass{SDFset} class:
 <<eval=TRUE, keep.source=TRUE>>=
