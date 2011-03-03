@@ -168,8 +168,10 @@ write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE)
 @
 
 \noindent Plot molecule structure of one or many SDFs:
-<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
 plot(sdfset[1:4], print=FALSE) # Plots structures to R graphics device
+@
+
 <<eval=FALSE, keep.source=TRUE>>=
 sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 @
@@ -181,9 +183,14 @@ sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 \end{figure}
 
 \noindent Structure similarity searching and clustering:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=FALSE, keep.source=TRUE>>=
 apset <- sdf2ap(sdfset) 
    # Generate atom pair descriptor database for searching
+.
+@
+<<eval=TRUE, keep.source=TRUE>>=
+data(apset)
+   # Load sample apset data provided by library.
 cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
    # Search apset database with single compound.
 cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,] 
@@ -428,10 +435,11 @@ as(sdfset[1:4], "SDFstr")
 \section{Molecular Property Functions}
 \markboth{Molecular Property Functions}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods and functions are available to compute basic compound descriptors, such as molecular formula (MF), molecular weigth (MW) and atom frequencies. 
-<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<boxplot, eval=FALSE, fig=TRUE, keep.source=TRUE>>=
 propma <- atomcountMA(sdfset)
 boxplot(propma, col="blue", main="Atom Frequency")
 @
+
 <<eval=FALSE, keep.source=TRUE>>=
 boxplot(rowSums(propma), main="All Atom Frequency")   
 @
@@ -474,7 +482,7 @@ numchar[[1]][1:4,]; numchar[[2]][1:4,]
 A new plotting function for compound structures has been added to the package recently. This function uses the native R graphics device for generating compound depictions. At this point this function is still in an experimental developmental stage but should become stable soon.  \\
 
 \noindent Plot Compound Structures with R's graphics device
-<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct2, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
 data(sdfsample); sdfset <- sdfsample
 plot(sdfset[1:4], print=FALSE) # 'print=TRUE' returns SDF summaries
 @
@@ -532,6 +540,20 @@ apset <- sdf2ap(sdfset) # For many compounds.
 view(apset[1:4])
 @
 
+\noindent Return main components of APset objects:
+<<eval=FALSE, keep.source=TRUE>>=
+cid(apset[1:4]) # Compound IDs
+ap(apset[1:4]) # Atom pair descriptors
+db.explain(apset[1]) # Return atom pairs in human readable format
+@
+
+\noindent Coerce APset to other objects:
+<<eval=FALSE, keep.source=TRUE>>=
+apset2descdb(apset) # Returns old list-style AP database
+tmp <- as(apset, "list") # Returns list
+as(tmp, "APset") # Converts list back to APset
+@
+
 \subsection{Large SDF and Atom Pair Databases}
 When working with large data sets it is often desirable to save the \Rclass{SDFset} and \Rclass{APset} containers as binary R objects to files for later use. This way they can be loaded very quickly into a new R session without recreating them every time from scratch. \\ 
 
@@ -555,28 +577,163 @@ The \Rfunction{cmp.search} function searches an atom pair database for compounds
 <<eval=TRUE, keep.source=TRUE>>=
 cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
 @
-
-\noindent Return main components of APset objects:
-<<eval=FALSE, keep.source=TRUE>>=
-cid(apset[1:4]) # Compound IDs
-ap(apset[1:4]) # Atom pair descriptors
-db.explain(apset[1]) # Return atom pairs in human readable format
+Alternatively, the function can return the matches in form of an index or a named vector if the \Rfunarg{type} argument is set to \Rfunarg{1} or \Rfunarg{2}, respectively. 
+<<eval=TRUE, keep.source=TRUE>>=
+cmp.search(apset, apset[1], type=1, cutoff = 0.3, quiet=TRUE) 
+cmp.search(apset, apset[1], type=2, cutoff = 0.3, quiet=TRUE) 
 @
 
-\noindent Coerce APset to other objects:
-<<eval=FALSE, keep.source=TRUE>>=
-apset2descdb(apset) # Returns old list-style AP database
-tmp <- as(apset, "list") # Returns list
-as(tmp, "APset") # Converts list back to APset
+\subsection{Visualize Similarity Search Results}
+The \Rfunction{cmp.search} function allows to visualize the chemical structures for the search results. Similar but more flexible chemical structure rendering functions are \Rfunction{plot} and \Rfunction{sdf.visualize} described above. By setting the visualize argument in \Rfunction{cmp.search} to \Rfunarg{TRUE}, the matching compounds and their scores can be visualized with a standard web browser. Depending on the \Rfunarg{visualize.browse} argument, an URL will be printed or a webpage will be opened showing the structures of the matching compounds along with their scores.\\ 
+
+\noindent View similarity search results in R's graphics device:
+<<search_result, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+cid(sdfset) <- cid(apset) # Assure compound name consistency among objects.
+plot(sdfset[names(cmp.search(apset, apset[6], type=2, cutoff=4, quiet=TRUE))], 
+     print=FALSE)
 @
 
-
-
-
-\section{Clustering Compound Structures}
-\markboth{Clustering Compound Structures}{} % Only required to print section title in header field without numbering. 
+\noindent View results online with Chemmine Tools:
 <<eval=FALSE, keep.source=TRUE>>=
-cmp.cluster(db=apset, cutoff = c(0.65, 0.5))[1:4,] # Binning clustering using variable similarity cutoffs.
+similarities <- cmp.search(apset, apset[1], type=3, cutoff = 10)
+sdf.visualize(sdfset[similarities[,1]], extra=similarities[,3])
+@
+
+\section{Clustering}
+\markboth{Clustering}{} % Only required to print section title in header field without numbering. 
+\subsection{Clustering Identical or Very Similar Compounds}
+Often it is of interest to identify very similar or identical compounds in a
+compound set. The \Rfunction{cmp.duplicated} function can be used to quickly
+identify very similar compounds in compound sets, which will be frequently, but
+not necessarily, identical compounds.\\ 
+
+\noindent Identify compounds with identical AP sets:
+<<eval=TRUE, keep.source=TRUE>>=
+cmp.duplicated(apset, type=1)[1:4] # Returns AP duplicates as logical vector
+cmp.duplicated(apset, type=2)[1:4,] # Returns AP duplicates as data frame
+@
+
+\noindent Remove AP duplicates from SDFset and APset objects:
+<<eval=TRUE, keep.source=TRUE>>=
+apdups <- cmp.duplicated(apset, type=1)
+sdfset[which(!apdups)]; apset[which(!apdups)]
+@
+
+\noindent Alternatively, one can identify duplicates via other descriptor types if they
+are provided in the data block of an imported SD file. For instance, one can
+use here fingerprints, InChI, SMILES or other molecular representations. The following 
+examples show how to enumerate by identical InChI strings, SMILES strings and molecular 
+formula, respectively.
+
+<<eval=TRUE, keep.source=TRUE>>=
+count <- table(datablocktag(sdfset, tag="PUBCHEM_NIST_INCHI"))
+count <- table(datablocktag(sdfset, tag="PUBCHEM_OPENEYE_CAN_SMILES"))
+count <- table(datablocktag(sdfset, tag="PUBCHEM_MOLECULAR_FORMULA"))
+count[1:4]
+@
+
+\subsection{Binning Clustering} 
+Compound libraries can be clustered into discrete similarity groups with the
+binning clustering function \Rfunction{cmp.cluster}. The function requires as input a
+descriptor database as well as a similarity threshold. The binning clustering
+result is returned in form of a data frame. Single linkage is used for cluster
+joining. The function calculates the required compound-to-compound distance
+information on the fly, while a memory-intensive distance matrix is only
+created upon user request via the \Rfunarg{save.distances} argument (see below).
+
+Because an optimum similarity threshold is often not known, the \Rfunction{cmp.cluster}
+function can calculate cluster results for multiple cutoffs in one step with
+almost the same speed as for a single cutoff. This can be achieved by providing
+several cutoffs under the cutoff argument. The clustering results for the
+different cutoffs will be stored in one data frame. 
+
+One may force the \Rfunction{cmp.cluster} function to calculate and store the distance
+matrix by supplying a file name to the \Rfunarg{save.distances} argument. The generated
+distance matrix can be loaded and passed on to many other clustering methods
+available in R, such as the hierarchical clustering function \Rfunction{hclust} (see
+below).  
+
+If a distance matrix is available, it may also be supplied to \Rfunction{cmp.cluster} via
+the \Rfunarg{use.distances} argument. This is useful when one has a pre-computed distance
+matrix either from a previous call to \Rfunction{cmp.cluster} or from other distance
+calculation subroutines.  \\ 
+
+\noindent Single-linkage binning clustering with one or multiple cutoffs:
+<<eval=TRUE, keep.source=TRUE>>=
+clusters <- cmp.cluster(db=apset, cutoff = c(0.65, 0.5, 0.4), quiet = TRUE)
+clusters[1:4,]
+@
+
+\noindent Return cluster size distributions for each cutoff:
+<<eval=TRUE, keep.source=TRUE>>=
+cluster.sizestat(clusters, cluster.result=1)
+cluster.sizestat(clusters, cluster.result=2)
+cluster.sizestat(clusters, cluster.result=3)
+@
+
+\noindent Enforce calculation of distance matrix:
+<<eval=FALSE, keep.source=TRUE>>=
+clusters <- cmp.cluster(db=apset, cutoff = c(0.65, 0.5, 0.3), 
+                        save.distances="distmat.rda") 
+   # Saves distance matrix to file "distmat.rda" in current working directory.
+load("distmat.rda") # Loads distance matrix.
+@
+
+\subsection{Multi-Dimensional Scaling (MDS)}
+To visualize and compare clustering results, the \Rfunction{cluster.visualize} function can
+be used. The function performs Multi-Dimensional Scaling (MDS) and visualizes
+the results in form of a scatter plot. It requires as input an \Rclass{APset}, a
+clustering result from \Rfunction{cmp.cluster}, and a cutoff for the minimum cluster size
+to consider in the plot. To help determining a proper cutoff size, the
+\Rfunction{cluster.sizestat} function is provided to generate cluster size statistics.
+
+\noindent MDS clustering and scatter plot:
+<<eval=FALSE, keep.source=TRUE>>=
+cluster.visualize(apset, clusters, size.cutoff=2, quiet = TRUE) 
+   # Color codes clusters with at least two members.
+cluster.visualize(apset, clusters, quiet = TRUE) # Plots all items.
+@
+
+\noindent Create a 3D scatter plot of MDS result:
+<<mds_scatter, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+library(scatterplot3d)
+coord <- cluster.visualize(apset, clusters, size.cutoff=1, dimensions=3, quiet=TRUE)
+scatterplot3d(coord)
+@
+
+\noindent Interactive 3D scatter plot with Open GL (graphics not evaluated here):
+<<eval=FALSE, keep.source=TRUE>>=
+library(rgl)
+rgl.open(); offset <- 50; par3d(windowRect=c(offset, offset, 640+offset, 640+offset))
+rm(offset); rgl.clear(); rgl.viewpoint(theta=45, phi=30, fov=60, zoom=1)
+spheres3d(coord[,1], coord[,2], coord[,3], radius=0.03, color=coord[,4], alpha=1, 
+shininess=20); aspect3d(1, 1, 1)
+axes3d(col='black'); title3d("", "", "", "", "", col='black'); bg3d("white") 
+   # To save a snapshot of the graph, one can use the command rgl.snapshot("test.png").
+@
+
+\subsection{Clustering with Other Algorithms}
+\Rpackage{ChemmineR} allows the user to take advantage of the wide spectrum of
+clustering utilities available in R. An example on how to perform hierarchical
+clustering with the hclust function is given below. \\ 
+
+\noindent Create atom pair distance matrix:
+<<mds_scatter, eval=TRUE, keep.source=TRUE>>=
+dummy <- cmp.cluster(db=apset, cutoff=0, save.distances="distmat.rda", quiet=TRUE)
+load("distmat.rda")
+@
+
+\noindent Hierarchical clustering with \Rfunction{hclust}
+<<hclust, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+hc <- hclust(as.dist(distmat), method="single")
+hc[["labels"]] <- cid(apset) # Assign correct item labels
+plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=T) 
+@
+
+\section{Version Information}
+\markboth{Version Information}{} % Only required to print section title in header field without numbering. 
+<<sessionInfo, eval=TRUE, keep.source=TRUE>>=
+sessionInfo()
 @
 
 
