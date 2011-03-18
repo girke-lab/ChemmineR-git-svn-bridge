@@ -3,7 +3,7 @@
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 \code{SDFset} to \code{character}
-Convert \code{SDFset} toSMILES (\code{character})
+Convert \code{SDFset} to SMILES (\code{character})
 }
 \description{
 Accepts one compound in an \code{SDFset} container and returns the corresponding
