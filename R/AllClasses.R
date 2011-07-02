@@ -209,11 +209,6 @@ setGeneric(name="sdfid", def=function(x, tag=1) standardGeneric("sdfid"))
 setMethod(f="sdfid", signature="SDF", definition=function(x, tag=1) {return(x@header[tag])}) 
 setGeneric(name="atomblock", def=function(x) standardGeneric("atomblock"))
 setMethod(f="atomblock", signature="SDF", definition=function(x) {return(x@atomblock)}) 
-# setGeneric(name="atomcount", def=function(x) standardGeneric("atomcount"))
-# setMethod(f="atomcount", signature="SDF", definition=function(x) {
-# 	atomcount <- table(gsub("_.*", "", rownames(x@atomblock)))
-# 	return(atomcount)
-# }) 
 setGeneric(name="atomcount", def=function(x, addH=FALSE, ...) standardGeneric("atomcount"))
 setMethod(f="atomcount", signature="SDF", definition=function(x, addH=FALSE, ...) {
 	if(addH==TRUE) { 
@@ -751,11 +746,12 @@ apset2descdb <- function(apset) {
 #################################################
 ## (5.1) Detect Invalid SDFs in SDFset Objects ##
 #################################################
-validSDF <- function(x) {
+validSDF <- function(x, Nabcol = 3, Nbbcol = 3, logic="&") {
         if(class(x)!="SDFset") warning("x needs to be of class SDFset")
 	ab <- atomblock(x); abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
         bb <- bondblock(x); bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
-        validsdf <- abcol >= 3 | bbcol >= 3
+        if(logic=="|") { validsdf <- abcol >= Nabcol | bbcol >= Nbbcol }
+	if(logic=="&") { validsdf <- abcol >= Nabcol & bbcol >= Nbbcol }
         return(validsdf)
 }
 
@@ -896,8 +892,13 @@ conMA <- function(x, exclude="none") {
 # conma <- conMA(sdfset[1:2], exclude=c("H"))
 
 ## (5.5.2) Compute bond/charge count for each atom in SDFset or SDF objects
-## This is used to add hydrogens when calculating MW and MF
+## This is used to add hydrogens with methods/functions atomcount, atomcountMA, MW and MF
 bonds <- function(x, type="bonds") {
+	## Input checks
+        if(!any(c("SDF", "SDFset") %in% class(x))) stop("x needs to be of class SDF or SDFset")
+	if(!any(c("bonds", "charge", "addNH") %in% type)) stop("type can only be assigned: bonds, charge or addNH") 
+	
+	## Compute bonds, charges and missing hydrogens
 	.bonds <- function(x, type=type) {
 		atomMA <- atomblock(x)
 		atoms <- gsub("_.*", "", rownames(atomMA))
@@ -934,7 +935,9 @@ bonds <- function(x, type="bonds") {
 		if(type=="addNH") { 
 			Nbonds[Nbonds[,"Nbondcount"] >= Nbonds[,"Nbondrule"], "charge"] <- 0 # Ignore charge where Nbondcount greater or equal than Nbondrule
 			Nbonds[Nbonds[,"Nbondcount"] == 0, c("Nbondrule", "charge")] <- 0 # Ignore atoms with zero bonds
-			return(sum((Nbonds[, "Nbondrule"] + Nbonds[, "charge"]) - Nbonds[, "Nbondcount"])) 
+			NH <- sum((Nbonds[, "Nbondrule"] + Nbonds[, "charge"]) - Nbonds[, "Nbondcount"])
+			if(NH < 0) NH <- 0 # Count should not be negative
+			return(NH) 
 		}
 	}
         ## Run on SDF objects
