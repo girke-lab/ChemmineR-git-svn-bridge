@@ -26,7 +26,7 @@ object of class \code{SDFset} or \code{SDF}
 \code{data.frame} with atomic weights; imported by default with data(atomprop); supports custom data sets
 }
 \item{addH}{
-'addH = TRUE' should be passed on to any of these function to consider missing hydrogens
+'addH = TRUE' should be passed on to any of these function to add hydrogens that are often not specified in SD files
 }
 \item{\dots}{
 Arguments to be passed to/from other methods.

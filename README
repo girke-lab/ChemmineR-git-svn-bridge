@@ -1,4 +1,12 @@
 changelog
+	version 2.5.3
+		- fixes for plotStruc/plot to show charges, disconnected
+                  atoms and missing hydrogens of non-C atoms
+
+	version 2.5.1 - 2.5.2
+		- Utilities for adding missing hydrogens: includes new 'bonds' function
+                  that is used by functions 'atomcount', 'MW', 'MF', 'atomcountMA'
+		
         version 2.2.16 - 2.2.18
                 - Added conMA function to create connection matrices
                 - Documentation updates
