@@ -39,7 +39,7 @@ export(
     ## Source: AllClasses.R
     "validSDF", "makeUnique", "atomcountMA", "MW", "MF", 
     "datablock2ma", "splitNumChar",  "grepSDFset", 
-    "conMA", "bonds", "groups", "rings", 
+    "conMA", "bonds", "groups", "rings", "atomsubset", 
    
     ## Plotting
     ## Source: AllClasses.R

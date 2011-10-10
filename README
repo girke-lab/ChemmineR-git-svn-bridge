@@ -1,4 +1,7 @@
 changelog
+	version 2.5.6
+		- added 'atomsubset' function for returning substructure from SDF/SDFset
+
 	version 2.5.5
 		- Documentation updates
 

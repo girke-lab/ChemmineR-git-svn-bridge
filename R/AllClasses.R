@@ -1325,11 +1325,52 @@ bonds <- function(x, type="bonds") {
 # bondDF <- bonds(sdfset[1], type="df")) 
 # bondcount <- bonds(sdfset[1], type="addNH")) 
 
-#################################
-## (5.6) String Search Method ##
-#################################
+##########################################################################
+## (5.6) Subset SDF/SDFset Objects by Atom Index to Obtain Substructure ##
+##########################################################################
+## Function to obtain substructure from SDF/SDFset object by providing a row
+## index for atom block. Both atom and bond blocks will be substetted accordingly. 
+atomsubset <- function(x, atomrows, datablock=FALSE) {
+        if(!any(c("SDF", "SDFset") %in% class(x))) stop("x needs to be of class SDF or SDFset")
+        if(class(x)=="SDFset" & class(atomrows)!="list") stop("if x is of class SDFset, atomrows argument needs to be a list")
+        if(class(x)=="SDFset") {
+                if(!all(cid(x) == names(atomrows))) stop("x and atomrows need to have same length and identical component (molecule) names")
+        }
+        .atomsubset <- function(x, atomrows) {
+                hb <- header(x)
+                ab <- atomblock(x)[atomrows, ]
+                bb <- bondblock(x)
+                index <- rowSums(cbind(bb[,1] %in% atomrows, bb[,2] %in% atomrows)) == 2
+                bb <- bb[index,]
+                if(is.vector(bb)) { bb <- t(as.matrix(bb)) }
+                if(datablock==FALSE) {
+                        sdf <- new("SDF", header=hb, atomblock=ab, bondblock=bb)
+                        return(sdf)
+                }
+                if(datablock==TRUE) {
+                        sdf <- new("SDF", header=hb, atomblock=ab, bondblock=as.matrix(bb), datablock=datablock(x))
+                        return(sdf)
+                }
+        }
+        if(class(x)=="SDF") {
+                return(.atomsubset(x, atomrows))
+        }
+        if(class(x)=="SDFset") {
+                ids <- cid(x)
+                sdflist <- lapply(cid(x), function(y) atomsubset(sdfset[[y]], atomrows[[y]]))
+                names(sdflist) <- ids
+                sdfset <- as(sdflist, "SDFset")
+                return(sdfset)
+        }
+}
+## Usage: 
+# atomsubset(sdfset[[1]], atomrows=1:18)
+# atomsubset(sdfset[1:2], atomrows=list(CMP1=1:18, CMP2=1:12))
 
-## (5.6.1) String search function for SDFset
+#################################
+## (5.7) String Search Method ##
+#################################
+## String search function for SDFset
 grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case=TRUE, ...) {
 	## Generate search vector and index for desired field in SDFset
 	if(field=="header" | field==1) {
