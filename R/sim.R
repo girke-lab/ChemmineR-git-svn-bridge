@@ -142,11 +142,17 @@
     num_atoms <- 0
     num_bonds <- 0
     # read header line, skip a few lines (given in `skip')
-    if (skip > 1)
-        readLines(con=con, n=skip)
+    if (skip > 1){
+        top <- readLines(con=con, n=skip)
+        if(length(top)!=skip){
+          stop("Document appears to be empty. Nothing to parse.")}
+      }
     line <- readLines(con=con, n=1)
-    num_atoms <- as.integer(substr(line, 1, 3))
-    num_bonds <- as.integer(substr(line, 4, 6))
+    line <- .cleanAndSplitLine(line)
+    ## num_atoms <- as.integer(substr(line, 1, 3))
+    ## num_bonds <- as.integer(substr(line, 4, 6))
+    num_atoms <- line[1]
+    num_bonds <- line[2]
 
     if (.has.pp()) {
         buf <- paste(
@@ -172,14 +178,25 @@
 
     # parse atom block
     temp <- readLines(con=con, n=num_atoms)
-    atoms <- gsub(' ', '', substr(temp, 32, 34))
-
+    tmp <- .cleanAndSplitLine(temp)
+    ## atoms <- gsub(' ', '', substr(temp, 32, 34))
+    atoms <- as.data.frame(matrix(tmp,nrow=length(temp),byrow=TRUE),
+                           stringsAsFactors=FALSE)[[4]]
+    if(length(atoms)!=num_atoms ){stop("Problem parsing the atoms")}
+       
     # parse bond block
     # bonds <- array(0, c(num_bonds, 3))
     temp <- readLines(con=con, n=num_bonds)
-    u <- as.integer(substr(temp, 1, 3))
-    v <- as.integer(substr(temp, 4, 6))
-    t <- as.integer(substr(temp, 7, 9))
+    tmp <- .cleanAndSplitLine(temp)
+    ## u <- as.integer(substr(temp, 1, 3))
+    ## v <- as.integer(substr(temp, 4, 6))
+    ## t <- as.integer(substr(temp, 7, 9))
+    frame <- as.data.frame(matrix(tmp,nrow=length(temp),byrow=TRUE),
+                           stringsAsFactors=FALSE)
+    u <- as.integer(frame[[1]])
+    v <- as.integer(frame[[2]])
+    t <- as.integer(frame[[3]])
+    if(length(u)!=num_bonds ){stop("Problem parsing the bonds")}
     bonds <- list(u=u, v=v, t=t)
 
 # return: a compound object:
@@ -994,157 +1011,4 @@ db.explain <- function(desc)
 {
     !is.null(getOption('.use.chemminer.pp')) &&
         getOption('.use.chemminer.pp') != 0
-}
-
-########### New Functions ###########
-
-##############################################
-## PubChem Fingerprint Similarity Searching ##
-##############################################
-
-## Convert base 64 encoded PubChem fingerprints to binary matrix or string vector
-## Definition of PubChem's substructure dictionary-based fingerprints:
-## ftp://ftp.ncbi.nih.gov/pubchem/specifications/pubchem_fingerprints.txt
-## For debugging use command: as.integer(rev(intToBits("19")[1:6])) 
-
-## Load PubChem's substructure dictionary from data dir of library 
-data(pubchemFPencoding); pubchemFPencoding <- pubchemFPencoding 
-fp2bit <- function(x, type=2, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
-	## Covert base 64 strings to matrix
-	if(class(x)=="SDFset") {
-		blockmatrix <- datablock2ma(datablocklist=datablock(x))
-	}
-	if(class(x)=="matrix") { 
-		blockmatrix <- x
-	}
-	fp <- blockmatrix[, fptag]
-	fpma <- unlist(strsplit(fp, ""))
-	fpma <- matrix(fpma, length(fp), nchar(fp[1]), byrow=TRUE)
-	fpma <- fpma[, 1:154] # remove padding signs '='
-
-	## base 64 decoding (base 64 alphabet from http://www.faqs.org/rfcs/rfc3548.html)
-	base64 <- c(A=0,B=1,C=2,D=3,E=4,F=5,G=6,H=7,I=8,J=9,K=10,L=11,M=12,N=13,O=14,P=15,
-                    Q=16,R=17,S=18,T=19,U=20,V=21,W=22,X=23,Y=24,Z=25,a=26,b=27,c=28,d=29,
-                    e=30,f=31,g=32,h=33,i=34,j=35,k=36,l=37,m=38,n=39,o=40,p=41,q=42,r=43,
-                    s=44,t=45,u=46,v=47,w=48,x=49,y=50,z=51,"0"=52,"1"=53,"2"=54,"3"=55,
-                    "4"=56,"5"=57,"6"=58,"7"=59,"8"=60,"9"=61,"+"=62,"/"=63)
-	fpbitma <- as.integer(intToBits(base64[as.vector(t(fpma))]))
-	fpbitma <- matrix(fpbitma, length(fpma[,1])*154, 32, byrow=TRUE)[,6:1]
-	fpbitma <- matrix(t(fpbitma), length(fpma[,1]), 6*154, byrow=TRUE)[,33:913]
-        pubchemFP <- pubchemFPencoding[,2]
-	names(pubchemFP) <- pubchemFPencoding[,1]
-	colnames(fpbitma) <- pubchemFP
-	rownames(fpbitma) <- names(fp)
-	if(type==1) {
-                return(apply(fpbitma, 1, paste, collapse=""))  
-        }
-	if(type==2) {
-                return(fpbitma)
-        }
-}
-
-## Fingerprint similarity search function 
-fpSim <- function(x, y) {
-	if(!is.vector(x)) stop("x needs to be vector")
-        if(!any(c(is.vector(y),is.matrix(y)))) stop("y needs to be vector or matrix")
-	if(class(y)=="matrix") {
-		c <- colSums((t(y) + x) == 2)
-		b <- rowSums(y) - c
-	} else {
-		c <- sum(x + y == 2)
-		b <- sum(y) - c
-	}
-	a <- sum(x) - c
-	return(rev(sort(c/(c+a+b))))
-}
-
-######################################
-## Query ChemMine Web Tools Service ##
-######################################
-.serverURL <- "http://chemmine.ucr.edu/ChemmineR/"
-
-# get CIDs from PubChem through ChemMine Web Tools
-getIds <- function(cids) {
-    if(! class(cids) == "numeric"){
-        stop('reference compound ids must be of class \"numeric\"')
-    }
-	cids <- paste(cids, collapse=",")
-	# query server
-	response <- postForm(paste(.serverURL, "runapp?app=getIds", sep=""), cids=cids)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-    if(grepl("linux", sessionInfo()$platform)) {
-        # temporary workaround for linux: save to file with curl and re-open
-        # related to R bug 14533 https://bugs.r-project.org/bugzilla3/show_bug.cgi?id=14533
-        temp <- tempfile()
-        command <- paste("curl", response, ">", temp, "2> /dev/null")
-        system(command)
-        z <- gzcon(file(temp, "rb"))
-        sdf <- read.SDFset(read.SDFstr(z))
-        close(z)
-        unlink(temp)
-    } else {
-        z <- gzcon(url(response))
-        sdf <- read.SDFset(read.SDFstr(z))
-        close(z)
-    }
-	return(sdf)
-}
-
-# search PubChem through ChemMine Web Tools with smiles query
-searchString <- function(smiles) {
-    if(! class(smiles) == "character"){
-        stop('reference compound must be a smiles string of class \"character\"')
-    } 
-    response <- postForm(paste(.serverURL, "runapp?app=searchString", sep=""), smiles=smiles)[[1]]
-    if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- as.numeric(strsplit(response, ",")[[1]])
-	return(getIds(response))
-}
-
-# search PubChem through ChemMine Web Tools with sdf query
-searchSim <- function(sdf) {
-    if(! class(sdf) == "SDFset"){
-        stop('reference compound must be a compound of class \"SDFset\"')
-    } 
-    smiles <- sdf2smiles(sdf)
-    return(searchString(smiles))
-}
-
-# perform sdf to smiles conversion through ChemMine Web Tools
-sdf2smiles <- function(sdf) {
-    if(! class(sdf) == "SDFset"){
-        stop('reference compound must be a compound of class \"SDFset\"')
-    } 
-	sdf <- sdf2str(sdf[[1]])
-	sdf <- paste(sdf, collapse="\n")
-	response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- sub("\n$", "", response) # remove trailing newline
-	id <- sub(".*\t(.*)$", "\\1", response) # get id
-	response <- sub("\t.*$", "", response) # get smiles
-	names(response) <- id
-	return(response)
-}
-
-# perform smiles to sdf conversion through ChemMine Web Tools
-smiles2sdf <- function(smiles) {
-    if(! class(smiles) == "character"){
-        stop('reference compound must be a smiles string of class \"character\"')
-    }
-    if(! is.null(names(smiles))){
-        smiles <- paste(smiles, names(smiles)[1], sep="\t")
-    }
-	response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- strsplit(response, "\n")
-	response <- as(as(response, "SDFstr"), "SDFset")
-	return(response)
 }
