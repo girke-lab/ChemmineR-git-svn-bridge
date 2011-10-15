@@ -1342,7 +1342,17 @@ atomsubset <- function(x, atomrows, datablock=FALSE) {
                 bb <- bondblock(x)
                 index <- rowSums(cbind(bb[,1] %in% atomrows, bb[,2] %in% atomrows)) == 2
                 bb <- bb[index,]
-                if(is.vector(bb)) { bb <- t(as.matrix(bb)) }
+
+                ## Update bb to positions in ab
+		pos <- as.numeric(gsub(".*_", "", rownames(ab)))
+		oripos <- 1:length(pos)
+		names(oripos) <- pos
+		tmp <- bb[,1:2]; tmp2 <- tmp 
+		for(i in oripos) tmp2[tmp==as.numeric(names(oripos[i]))] <- i
+		bb[,1:2] <- tmp2
+		
+		## Outputs
+		if(is.vector(bb)) { bb <- t(as.matrix(bb)) }
                 if(datablock==FALSE) {
                         sdf <- new("SDF", header=hb, atomblock=ab, bondblock=bb)
                         return(sdf)
