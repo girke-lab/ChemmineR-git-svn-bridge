@@ -1,4 +1,7 @@
 changelog
+	version 2.5.8
+		- corrected sim.R file 
+        
 	version 2.5.7
 		- updated 'atomsubset' function
 	
