@@ -1336,8 +1336,69 @@ bonds <- function(x, type="bonds") {
 ## (5.6) Subset SDF/SDFset Objects by Atom Index to Obtain Substructure ##
 ##########################################################################
 ## Function to obtain substructure from SDF/SDFset object by providing a row
-## index for atom block. Both atom and bond blocks will be substetted accordingly. 
-atomsubset <- function(x, atomrows, datablock=FALSE) {
+## index for atom block. Both atom and bond blocks will be subsetted accordingly. 
+
+## Yan's version of this function
+atomsubset <- function (x, atomrows, datablock = FALSE) {
+    if (!any(c("SDF", "SDFset") %in% class(x))) 
+        stop("x needs to be of class SDF or SDFset")
+    if (class(x) == "SDFset" & class(atomrows) != "list") 
+        stop("if x is of class SDFset, atomrows argument needs to be a list")
+    if (class(x) == "SDFset") {
+        if (!all(cid(x) == names(atomrows))) 
+            stop("x and atomrows need to have same length and identical component (molecule) names")
+    }
+    .atomsubset <- function(x, atomrows) {
+        hb <- header(x)
+        ab <- atomblock(x)[atomrows, ]
+        bb <- bondblock(x)
+        index <- rowSums(cbind(bb[, 1] %in% atomrows, bb[, 2] %in% 
+            atomrows)) == 2
+        bb <- bb[index, ]
+        pos <- as.numeric(gsub(".*_", "", rownames(ab)))
+        oripos <- 1:length(pos)
+        names(oripos) <- pos
+        tmp <- bb[, 1:2]
+        tmp2 <- tmp
+        for (i in oripos) tmp2[tmp == as.numeric(names(oripos[i]))] <- i
+        bb[, 1:2] <- tmp2
+        if (is.vector(bb)) {
+            bb <- t(as.matrix(bb))
+        }
+        countsLine <- hb[4]
+        atomCount <- sprintf("%3d", length(atomrows))
+        bondCount <- sprintf("%3d", length(rowSums(bb)))
+        # update atom count and bond count
+        hb[4] <- paste(atomCount, bondCount, substr(countsLine, 7, 100000L), sep="")
+        # update bond block row names
+        row.names(bb) <- 1:length(rowSums(bb))
+        # update atom block row names
+        row.names(ab) <- paste(gsub("_.*", "",rownames(ab)), 1:length(atomrows), sep="_")
+        if (datablock == FALSE) {
+            sdf <- new("SDF", header = hb, atomblock = ab, bondblock = bb)
+            return(sdf)
+        }
+        if (datablock == TRUE) {
+            sdf <- new("SDF", header = hb, atomblock = ab, bondblock = as.matrix(bb), 
+                datablock = datablock(x))
+            return(sdf)
+        }
+    }
+    if (class(x) == "SDF") {
+        return(.atomsubset(x, atomrows))
+    }
+    if (class(x) == "SDFset") {
+        ids <- cid(x)
+        sdflist <- lapply(cid(x), function(y) atomsubset(sdfset[[y]], 
+            atomrows[[y]]))
+        names(sdflist) <- ids
+        sdfset <- as(sdflist, "SDFset")
+        return(sdfset)
+    }
+}
+
+## Thomas' old version (delete later)
+.atomsubset_old <- function(x, atomrows, datablock=FALSE) {
         if(!any(c("SDF", "SDFset") %in% class(x))) stop("x needs to be of class SDF or SDFset")
         if(class(x)=="SDFset" & class(atomrows)!="list") stop("if x is of class SDFset, atomrows argument needs to be a list")
         if(class(x)=="SDFset") {
@@ -1492,6 +1553,7 @@ plotStruc <- function(sdf, atomcex=1.2, atomnum=FALSE, no_print_atoms=c("C"), no
         if(is.vector(labelMA)) labelMA <- matrix(labelMA, 1, 2, byrow=TRUE, dimnames=list(rownames(toplot[[1]])[!grepl(exclude, rownames(toplot[[1]]))], c("C1", "C2")))
 	if(is.matrix(labelMA) & length(labelMA[,1])>=1) {
 		atomcol <- gsub("_.*", "", rownames(labelMA)); atomcol[!grepl("N|C|O|H", atomcol)] <- "any"; mycol <- c(C="black", H="black", N="blue", O="red", any="green"); atomcol <- mycol[atomcol]
+
 		## Overplot nodes to display atom labels
 		points(x=labelMA[,1], y=labelMA[,2], col="white", pch=16, cex=2.8)
 		## Plot atom labels

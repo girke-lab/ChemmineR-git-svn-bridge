@@ -1,5 +1,8 @@
 changelog
-	version 2.7.1
+	version 2.7.2
+		- updated 'atomsubset' function
+	
+        version 2.7.1
 		- SDFset() constructor
         
 	version 2.5.8
