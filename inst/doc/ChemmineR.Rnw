@@ -344,6 +344,30 @@ write.SDF(sdfstr[1:4], file="sub.sdf")
 cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 @
 
+\section{Splitting SD Files}
+\markboth{Splitting SD Files}{} % Only required to print section title in header field without numbering. 
+The following allows to split SD Files into any number of smaller SD Files. This can become important when working with very big SD Files. \\
+
+\noindent Create sample SD File with 100 molecules:
+<<eval=FALSE, keep.source=TRUE>>=
+write.SDF(sdfset, "test.sdf")
+@ 
+    
+\noindent Read in sample SD File. Note: reading file into SDFstr is much faster than into SDFset:
+<<eval=FALSE, keep.source=TRUE>>=
+sdfstr <- read.SDFstr("test.sdf")
+@
+    
+\noindent Run export on \Rclass{SDFstr} object:
+<<eval=FALSE, keep.source=TRUE>>=
+write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
+@
+
+\noindent Run export on \Rclass{SDFset} object:
+<<eval=FALSE, keep.source=TRUE>>=
+write.SDFsplit(x=sdfset, filetag="myfile", nmol=10)
+@
+
 \section{Working with SDF/SDFset Classes}
 \markboth{Working with SDF/SDFset Classes}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods are available to return the different data components of \Rclass{SDF/SDFset} containers in batches. The following examples 

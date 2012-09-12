@@ -1460,12 +1460,13 @@ atomsubset <- function (x, atomrows, type="new", datablock = FALSE) {
 ## Splits SD Files into any number of smaller SD Files                                                                   
 write.SDFsplit <- function(x, filetag, nmol) {
         from <- seq(1, length(x), by=nmol)
-        splitDF <- data.frame(from=from, to=c(from[-1], length(x)+1)-1)
+        splitDF <- data.frame(from=from, to=c(from[-1], length(x)+1)-1, filename=NA)
+        splitDF[,"filename"] <- paste(filetag, sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[,1]), "_", 
+                          sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[,2]), ".sdf", sep="")
         for(i in seq(along=splitDF[,1])) {
-                filename <- paste(filetag, sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[i,1]), "_", 
-                                  sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[i,2]), ".sdf", sep="")
-                write.SDF(x[splitDF[i,1]:splitDF[i,2]], filename)
+                write.SDF(x[splitDF[i,"from"]:splitDF[i,"to"]], splitDF[i,"filename"])
         }                                                                                             
+	return(splitDF) # Gives access to file names to simplify import of split SD Files
 }                   
 
 ## Usage 
