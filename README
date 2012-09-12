@@ -1,4 +1,7 @@
 changelog
+	version 2.9.2
+		- fix for sdf2ap for molecules where no atom pairs can be returned by .gen_atom_pair 
+	
 	version 2.9.1
 		- added support for substructure viewing
 

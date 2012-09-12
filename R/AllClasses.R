@@ -86,7 +86,7 @@ setMethod(f="length", signature="SDFstr",
     	return(length(sdfstr2list(x)))
 })
 
-## Write SDFstr Class to SD File 
+## Write SDF/SDFstr/SDFset Objects to SD File 
 write.SDF <- function(sdf, file, cid=FALSE, ...) {
 	if(class(sdf)=="SDF") sdfstr <- as(sdf, "SDFstr")
 	if(class(sdf)=="SDFstr") sdfstr <- sdf
@@ -613,17 +613,22 @@ setClass("APset", representation(AP="list", ID="character"))
 
 ## Create instance of APset form SDFset 
 sdf2ap <- function(sdfset) {
-	if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
-	if(class(sdfset)=="SDF") {
-		return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
-	}
-	if(class(sdfset)=="SDFset") {
-		aplist <- as.list(seq(along=sdfset))
-		for(i in seq(along=aplist)) {
-			aplist[[i]] <- .gen_atom_pair(SDF2apcmp(sdfset[[i]]))
-		}
-		return(new("APset", AP=aplist, ID=cid(sdfset)))
-	}
+        if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
+        if(class(sdfset)=="SDF") {
+                return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
+        }
+        if(class(sdfset)=="SDFset") {
+                aplist <- as.list(seq(along=sdfset))
+                for(i in seq(along=aplist)) {
+                        tmp <- .gen_atom_pair(SDF2apcmp(sdfset[[i]]))
+                        if(length(tmp) > 0) {
+                                aplist[[i]] <- tmp
+                        } else {
+                                aplist[[i]] <- 0 # Value to use if no atom pairs are returned by .gen_atom_pair
+                        }
+                }
+                return(new("APset", AP=aplist, ID=cid(sdfset)))
+        }
 }
 
 ## Accessor methods for APset class
