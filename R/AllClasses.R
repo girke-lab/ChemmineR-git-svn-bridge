@@ -1454,8 +1454,26 @@ atomsubset <- function (x, atomrows, type="new", datablock = FALSE) {
 # atomsubset(sdfset[[1]], atomrows=1:18, type="new")
 # atomsubset(sdfset[1:2], atomrows=list(CMP1=1:18, CMP2=1:12), type="new")
 
+###################################
+## (5.7) Function write.SDFsplit ##
+###################################
+## Splits SD Files into any number of smaller SD Files                                                                   
+write.SDFsplit <- function(x, filetag, nmol) {
+        from <- seq(1, length(x), by=nmol)
+        splitDF <- data.frame(from=from, to=c(from[-1], length(x)+1)-1)
+        for(i in seq(along=splitDF[,1])) {
+                filename <- paste(filetag, sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[i,1]), "_", 
+                                  sprintf(paste("%0", nchar(as.character(length(x))), "d", sep=""), splitDF[i,2]), ".sdf", sep="")
+                write.SDF(x[splitDF[i,1]:splitDF[i,2]], filename)
+        }                                                                                             
+}                   
+
+## Usage 
+# write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
+# write.SDFsplit(x=sdfsample, filetag="myfile", nmol=10)
+
 #################################
-## (5.7) String Search Method ##
+## (5.8) String Search Method ##
 #################################
 ## String search function for SDFset
 grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case=TRUE, ...) {
