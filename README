@@ -1,4 +1,7 @@
 changelog
+	version 2.9.4-2.9.5
+		- vignette changes
+	
 	version 2.9.3
 		- added write.SDFsplit function
 	
