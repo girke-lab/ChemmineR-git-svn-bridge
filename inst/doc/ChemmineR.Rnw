@@ -43,7 +43,7 @@ options(width=80)
 \bibliographystyle{plainnat}
 
 \begin{document}
-\title{ChemmineR-V2: Analysis of Small Molecule and Screening Data}
+\title{ChemmineR-V2: Cheminformatics of Small Molecule Data}
 \author{Yiqun Cao, Tyler Backman, Yan Wang, Thomas Girke \\
  Email contact: thomas.girke@ucr.edu}
 \maketitle
@@ -51,7 +51,7 @@ options(width=80)
 \section{Introduction}
 \markboth{Introduction}{} % Only required to print section title in header field without numbering. 
 
-\Rpackage{ChemmineR} is a cheminformatics package for analyzing drug-like small molecule and screening data in R. Its new version ChemmineR-V2 contains functions for processing SDFs (structure data files), molecule depictions, structural similarity searching, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms and utilities for managing complex data sets from high-throughput compound bio-assays. 
+\Rpackage{ChemmineR} is a cheminformatics package for analyzing drug-like small molecule data in R. Its new version ChemmineR-V2 contains functions for processing SDFs (structure data files), compound depictions, structural similarity searching, property predictions, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms. 
 
 \begin{figure}[bthp]
   \centering
