@@ -1,4 +1,7 @@
 changelog
+	version 2.9.9
+		- added terminal nitriles and acetylenes to group function
+	
 	version 2.9.4-2.9.8
 		- vignette changes
 	

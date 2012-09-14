@@ -1176,7 +1176,7 @@ groups <- function(x, groups="fctgroup", type) {
 		groups <- c(RNH2="^C:.*N_1_1$", R2NH="^N:C_._1_C_._1$", R3N="^N:C_._1_C_._1_C_._1$", 
                             ROPO3="^P:O_._._O_._._O_._._O_._.$", ROH="(?=^C:.*O_1_1)(?=^(?:(?!(N|O|P|S)_._(2|3)).)*$)", 
 		            RCHO="^O:C_2_2", RCOR="^C:C_._1_C_._1.*O_1_2", RCOOH="^C:.*O_1_1_O_1_2", 
-			    RCOOR="^C:.*O_1_2_O_2_1", ROR="^O:.*C_._1_C_._1") 
+			    RCOOR="^C:.*O_1_2_O_2_1", ROR="^O:.*C_._1_C_._1", RCCH="^C:C_2_3", RCN="^N:C_2_3") 
 	}
         groupMA <- sapply(names(groups), function(x) rowSums(neighbors[, rep(grep(groups[x], colnames(neighbors), perl=TRUE),2)]/2))
 	## Fix counts for ambiguous functional groups

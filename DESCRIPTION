@@ -1,8 +1,8 @@
 Package: ChemmineR
 Type: Package
 Title: Cheminformatics of Drug-like Small Molecule Data
-Version: 2.9.8
-Date: 2012-09-13
+Version: 2.9.9
+Date: 2012-09-14
 Author: Y. Eddie Cao, Tyler Backman, Yan Wang, Thomas Girke
 Maintainer: ChemmineR Team <see@url>
 Description: ChemmineR is an R package for analyzing small molecule data. The new version of the package 'ChemmineR-V2' contains efficient functions and data containers for processing SDFs (structure data files), compound depictions, structural similarity searching, property predictions, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms. 
