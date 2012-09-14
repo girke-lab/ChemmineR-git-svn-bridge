@@ -346,7 +346,7 @@ cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 
 \section{Splitting SD Files}
 \markboth{Splitting SD Files}{} % Only required to print section title in header field without numbering. 
-The following allows to split SD Files into any number of smaller SD Files. This can become important when working with very big SD Files. \\
+The following \Rfunction{write.SDFsplit} function allows to split SD Files into any number of smaller SD Files. This can become important when working with very big SD Files. Users should note that this function can output many files, thus one should run it in a dedicated directory!  \\
 
 \noindent Create sample SD File with 100 molecules:
 <<eval=FALSE, keep.source=TRUE>>=
@@ -361,6 +361,7 @@ sdfstr <- read.SDFstr("test.sdf")
 \noindent Run export on \Rclass{SDFstr} object:
 <<eval=FALSE, keep.source=TRUE>>=
 write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
+   # 'nmol' defines the number of molecules to write to each file
 @
 
 \noindent Run export on \Rclass{SDFset} object:
