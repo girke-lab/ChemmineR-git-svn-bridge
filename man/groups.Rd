@@ -7,7 +7,7 @@ Enumeration of Functional Groups and Atom Neighbors
 Returns frequency information of functional groups in molecules provided as \code{SDF} or \code{SDFset} objects. Alternatively, the function can return for each atom its atom/bond neighbor information.
 }
 \usage{
-groups(x, groups = "fctgroup", type)
+groups(x, groups = "fctgroup", type = "countMA")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

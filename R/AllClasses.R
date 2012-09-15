@@ -1152,7 +1152,7 @@ rings <- function(x, upper=Inf, type="all", arom=FALSE, inner=FALSE) {
 # .neighbors(sdfset[1:4], type="countMA")
 
 ## (b) Count functional groups
-groups <- function(x, groups="fctgroup", type) {
+groups <- function(x, groups="fctgroup", type="countMA") {
         ## Input checks        
         if(!any(c("SDF", "SDFset") %in% class(x))) stop("x needs to be of class SDF or SDFset")
         if(groups=="fctgroup" & (type=="count" | type=="all")) stop("when groups=\"fctgroup\", only type=\"countMA\" can be used")
