@@ -17,16 +17,20 @@
 # .sdfDownload(mypath="ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/", myfile="Compound_00650001_00675000.sdf.gz") 
 
 ## Import SD File and Return SDFstr Class (list-like) 
-read.SDFstr <- function(sdfstr) { 
-	mysdf <- readLines(sdfstr) # reads file line-wi se into vector
+read.SDFstr <- function(sdfstr) {
+        if(length(sdfstr) > 1) { # Support for passing on SD File content as character vector
+                mysdf <- sdfstr
+        } else {
+                mysdf <- readLines(sdfstr) # Reads file line-wise into vector
+        }
         y <- regexpr("^\\${4,4}", mysdf, perl=TRUE) # identifies all fields that start with a '$$$$' sign
         index <- which(y!=-1)
         indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
-        mysdf_list <- apply(indexDF, 1, function(x) mysdf[seq(x[1], x[2])])
-        if(class(mysdf_list) != "list") { mysdf_list <- list(as.vector(mysdf_list))}
-	names(mysdf_list) <- 1:length(mysdf_list)
+        mysdf_list <- lapply(seq(along=indexDF[,1]), function(x) mysdf[seq(indexDF[x,1], indexDF[x,2])])
+        if(class(mysdf_list) != "list") { mysdf_list <- list(as.vector(mysdf_list)) }
+        names(mysdf_list) <- 1:length(mysdf_list)
         mysdf_list <- new("SDFstr", a=mysdf_list)
-	return(mysdf_list)
+        return(mysdf_list)
 }
 
 ## Define SDFstr class

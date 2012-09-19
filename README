@@ -1,4 +1,7 @@
 changelog
+	version 2.9.12
+		- read.SDFstr accepts now character vector 
+	
 	version 2.9.11
 		- added terminal nitriles and acetylenes to group function
 	

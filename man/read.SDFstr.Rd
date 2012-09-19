@@ -11,7 +11,7 @@ read.SDFstr(sdfstr)
 }
 \arguments{
   \item{sdfstr}{
-path/name to an SD file
+path/name to an SD file; alternatively one can pass on a \code{character} vector containing lines of an SD file
 }
 }
 \details{
