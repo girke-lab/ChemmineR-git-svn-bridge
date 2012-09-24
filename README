@@ -1,4 +1,7 @@
 changelog
+	version 2.9.14
+		- vignette updates
+
 	version 2.9.13
 		- added streaming functionality for SD files by adding sdfStream and read.SDFindex
 		- updates to sdf2ap and validSDF

@@ -61,7 +61,7 @@ fpSim(x=fpset[1,], y=fpset)
 simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset, sorted=FALSE)) 
 
 ## Hierarchical clustering with simMA as input
-hc <- hclust(as.dist(simMA), method="single")
+hc <- hclust(as.dist(1-simMA), method="single")
 
 ## Plot hierarchical clustering tree
 plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE) 

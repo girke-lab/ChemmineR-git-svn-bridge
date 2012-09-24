@@ -371,7 +371,7 @@ write.SDFsplit(x=sdfset, filetag="myfile", nmol=10)
 
 \section{Streaming Through Large SD Files}
 \markboth{Streaming Through Large SD Files}{} % Only required to print section title in header field without numbering. 
-The \Rfunction{sdfStream} function allows to stream through SD Files with millions of molecules without consuming much memory. During this process any set of descriptors can be computed (\textit{e.g.} atom pairs, molecular properties, etc.), as long as they can be returned in tabular format. In addition to descriptor values, the function returns a line index that defines the start and end positions of each molecule in the source SD File. This line index can be used by the downstream \Rfunction{read.SDFindex} function to retrieve specific molecules of interest from the source SD File, again without reading the entire file into memory. The following outlines the typical workflow of this streaming functionality in \Rpackage{ChemmineR}.\\
+The \Rfunction{sdfStream} function allows to stream through SD Files with millions of molecules without consuming much memory. During this process any set of descriptors, supported by \Rpackage{ChemmineR}, can be computed (\textit{e.g.} atom pairs, molecular properties, etc.), as long as they can be returned in tabular format. In addition to descriptor values, the function returns a line index that gives the start and end positions of each molecule in the source SD File. This line index can be used by the downstream \Rfunction{read.SDFindex} function to retrieve specific molecules of interest from the source SD File without reading the entire file into R. The following outlines the typical workflow of this streaming functionality in \Rpackage{ChemmineR}.\\
 
 \noindent Create sample SD File with 100 molecules:
 <<eval=FALSE, keep.source=TRUE>>=
@@ -912,7 +912,7 @@ plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=T)
 \noindent Instead of atom pairs one can use PubChem's fingerprints for clustering: 
 <<fp_hclust, eval=FALSE, keep.source=TRUE>>=
 simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset, sorted=FALSE)) 
-hc <- hclust(as.dist(simMA), method="single")  
+hc <- hclust(as.dist(1-simMA), method="single")  
 plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE)
 @
 
