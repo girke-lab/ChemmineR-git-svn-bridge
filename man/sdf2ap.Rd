@@ -7,11 +7,14 @@ Atom pair library
 Creates from a \code{SDFset} a searchable atom pair library that is stored in a container of class \code{APset}.
 }
 \usage{
-sdf2ap(sdfset)
+sdf2ap(sdfset, type = "AP")
 }
 \arguments{
   \item{sdfset}{
 Objects of classes \code{SDFset} or \code{SDF}
+}
+  \item{type}{
+if \code{type="AP"}, the function returns \code{APset}/\code{AP} objects; if \code{type="character"}, it returns the result as a \code{character} vector of length one. The latter is useful for storing AP data in tabular files.
 }
 }
 \details{

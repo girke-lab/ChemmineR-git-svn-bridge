@@ -166,7 +166,8 @@ setClass("SDF", representation(header="character", atomblock="matrix", bondblock
                         ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
                 } else {
                     ct <- gsub("^(...)(...)(...)(...)(...)(...)(...)", "\\1 \\2 \\3 \\4 \\5 \\6 \\7", ct)
-                    ct <- gsub("^ {1,}", "", ct)
+                    ct <- gsub("(^..\\d)(\\d)", "\\1 \\2", ct) # Splits bond strings where one or both of the atoms have 3 digit numbers
+		    ct <- gsub("^ {1,}", "", ct)
                     ctlist <- strsplit(ct, " {1,}")
                     ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
                     Ncol <- length(ctlist[[1]])
@@ -616,11 +617,16 @@ setClass("AP", representation(AP="numeric"))
 setClass("APset", representation(AP="list", ID="character"))
 
 ## Create instance of APset form SDFset 
-sdf2ap <- function(sdfset) {
+sdf2ap <- function(sdfset, type="AP") {
         if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
         if(class(sdfset)=="SDF") {
-                return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
-        }
+		if(type=="AP") {
+                	return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
+        	}
+		if(type=="character") {
+                	return(paste(.gen_atom_pair(SDF2apcmp(sdfset)), collapse=", "))
+        	}
+	}
         if(class(sdfset)=="SDFset") {
                 aplist <- as.list(seq(along=sdfset))
                 for(i in seq(along=aplist)) {
@@ -631,7 +637,13 @@ sdf2ap <- function(sdfset) {
                                 aplist[[i]] <- 0 # Value to use if no atom pairs are returned by .gen_atom_pair
                         }
                 }
-                return(new("APset", AP=aplist, ID=cid(sdfset)))
+		if(type=="AP") {
+                	return(new("APset", AP=aplist, ID=cid(sdfset)))
+        	}
+		if(type=="character") {
+			names(aplist) <- cid(sdfset)
+                	return(sapply(aplist, paste, collapse=", "))
+        	}
         }
 }
 
@@ -762,13 +774,18 @@ apset2descdb <- function(apset) {
 #################################################
 ## (5.1) Detect Invalid SDFs in SDFset Objects ##
 #################################################
-validSDF <- function(x, Nabcol = 3, Nbbcol = 3, logic="&") {
+validSDF <- function(x, Nabcol = 3, Nbbcol = 3, logic="&", checkNA=TRUE) {
         if(class(x)!="SDFset") warning("x needs to be of class SDFset")
 	ab <- atomblock(x); abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
         bb <- bondblock(x); bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
         if(logic=="|") { validsdf <- abcol >= Nabcol | bbcol >= Nbbcol }
 	if(logic=="&") { validsdf <- abcol >= Nabcol & bbcol >= Nbbcol }
-        return(validsdf)
+	if(checkNA==TRUE) {
+        	abNA <- sapply(names(ab), function(x) !any(is.na(ab[[x]])))
+        	bbNA <- sapply(names(bb), function(x) !any(is.na(bb[[x]])))
+		validsdf <- validsdf & abNA & bbNA
+	}
+	return(validsdf)
 }
 
 ######################################################################
@@ -1477,8 +1494,144 @@ write.SDFsplit <- function(x, filetag, nmol) {
 # write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
 # write.SDFsplit(x=sdfsample, filetag="myfile", nmol=10)
 
+######################################
+## (5.8) Streaming Through SD Files ##
+######################################
+## Streaming function to compute descriptors for large SD Files without consuming much memory.
+## In addition to descriptor values, it returns a line index that defines the positions of each 
+## molecule in the source SD File. This line index can be used by the read.SDFindex function to 
+## retrieve specific compounds of interest from large SD Files without reading the entire file 
+## into memory. 
+sdfStream <- function(input, output, fct, Nlines=10000, silent=FALSE, ...) {
+	## Define loop parameters 
+	stop <- FALSE 
+	f <- file(input, "r")
+	n <- Nlines
+	counter <- 0
+	cmpid <- 1
+	partial <- NULL
+	offset <- 0
+	while(!stop) {
+		counter <- counter + 1
+		chunk <- readLines(f, n = n) # chunk n can be any number of lines
+		# chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+		if(length(chunk) > 0) {
+			if(length(partial) > 0) {
+				chunk <- c(partial, chunk)
+			}
+			## Assure that lines of least 2 complete molecules are stored in chunk if available
+			inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+			while(inner) {
+				chunklength <- length(chunk)
+				chunk <- c(chunk, readLines(f, n = n))
+				if(chunklength == length(chunk)) { 
+					inner <- FALSE 
+				} else {
+					inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+				}
+			}
+			y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+			index <- which(y!=-1)
+			indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+			complete <- chunk[1:index[length(index)]]
+			if((index[length(index)]+1) <= length(chunk)) {
+				partial <- chunk[(index[length(index)]+1):length(chunk)]
+			} else {
+				partial <- NULL
+			}
+			index <- index + offset 
+			indexDF <- data.frame(SDFlineStart=c(offset + 1, index[-length(index)]+1), SDFlineEnd=index)
+			offset <- indexDF[length(indexDF[,2]),2]
+
+			## Coerce file lines stored in character vector to SDFset
+			sdfset <- read.SDFset(read.SDFstr(complete))
+                        valid <- validSDF(sdfset)
+                        sdfset <- sdfset[valid]
+                        indexDForig <- indexDF
+                        indexDF <- indexDF[valid,]
+			## Perform desired computation on SDFset
+			if(length(indexDF[,1])==1) {
+				suppressWarnings(sdfset <- c(sdfset, sdfset)) # Trick to keep data in matrix format
+                                resultMA <- fct(sdfset, ...)
+				resultMA <- cbind(as.data.frame(indexDF), as.data.frame(resultMA[1, , drop=FALSE]), row.names=row.names(resultMA)[1])
+			} else {
+				resultMA <- fct(sdfset, ...)
+				resultMA <- cbind(as.data.frame(indexDF), as.data.frame(resultMA), row.names=row.names(resultMA))
+			}
+			resultMA <- resultMA[names(valid),]
+                        if(any(is.na(resultMA))) { # Maintains index for invalid compounds having NAs in descriptor fields
+                                resultMA[,1:2] <- indexDForig[,1:2]
+                        }
+                        rownames(resultMA) <- paste("CMP", cmpid : (cmpid + length(resultMA[,1])-1), sep="")
+			cmpid <- cmpid + length(resultMA[,1])
+			## Print processing status to screen
+                        if(silent==FALSE) {
+                                print(rownames(resultMA))
+                        }
+			## Append results to tabular file
+			if(counter==1) {
+				unlink(output)
+				write.table(resultMA, output, quote=FALSE, col.names=NA, sep="\t")
+			} else {	
+				write.table(resultMA, output, quote=FALSE, append=TRUE, col.names=FALSE, sep="\t")
+			}
+		}
+		if(length(chunk) == 0) {
+			stop <- TRUE
+			close(f)
+		}
+	}
+}
+
+## Usage:
+# library(ChemmineR)
+# data(sdfsample); sdfset <- sdfsample
+# write.SDF(sdfset, "test.sdf")
+## Choose descriptor set in a simple function:
+# desc <- function(sdfset) {
+#         cbind(SDFID=sdfid(sdfset),
+#               # datablock2ma(datablocklist=datablock(sdfset)),
+#               MW=MW(sdfset),
+#               groups(sdfset),
+#               # AP=sdf2ap(sdfset, type="character"),
+#               rings(sdfset, type="count", upper=6, arom=TRUE)
+#         )     
+# }
+# sdfStream(input="test.sdf", output="matrix.xls", fct=desc, Nlines=1000)
+# indexDF <- read.delim("matrix.xls", row.names=1)[,1:2]
+# sdfset <- read.SDFindex(file="test.sdf", index=indexDF, type="SDFset", outfile="sub.sdf") 
+
+########################################################
+## (5.9) Extract Molecules from SD File by Line Index ##
+########################################################
+## Extracts specific molecules from SD File based on a line position index computed by the sdfStream function
+read.SDFindex <- function(file, index, type="SDFset", outfile) {
+	if(type=="SDFset") {
+		sdfset <- SDFset()
+	}
+	for(i in seq(along=index[,1])) {
+		lines <- scan(file, skip=index[i,1]-1, nlines=index[i,2]-index[i,1] + 1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		if(type=="file") {
+			if(i == 1) {
+				unlink(outfile)
+				cat(lines, file=outfile, sep="\n")
+			} else {	
+				cat(lines, file=outfile, sep="\n", append=TRUE)
+			}
+		}
+		if(type=="SDFset") {
+			suppressWarnings(sdfset <- c(sdfset, read.SDFset(read.SDFstr(lines))))	
+		}
+	}
+	if(type=="SDFset") {
+		cid(sdfset) <- paste("CMP", 1:length(sdfset), sep="")
+                return(sdfset)
+	}
+}
+## Usage: see sdfStream()
+
 #################################
-## (5.8) String Search Method ##
+## (5.10) String Search Method ##
 #################################
 ## String search function for SDFset
 grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case=TRUE, ...) {
@@ -1528,7 +1681,6 @@ grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case
 		return(as(x[xpos], "SDF"))
 	}
 }
-
 
 ##########################
 ## (6) Plotting Methods ##

@@ -51,7 +51,7 @@ fpSim(x=fpset[1,], y=fpset[2,])
 fpSim(x=fpset[1,], y=fpset) 
 
 ## Compute fingerprint based Tanimoto similarity matrix 
-simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset)) 
+simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset, sorted=FALSE)) 
 
 ## Hierarchical clustering with simMA as input
 hc <- hclust(as.dist(simMA), method="single")

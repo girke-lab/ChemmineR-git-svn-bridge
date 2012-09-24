@@ -33,7 +33,7 @@ export(
     
     ## Import/exports
     ## Source: AllClasses.R
-    "read.SDFstr", "read.SDFset", "write.SDF", "write.SDFsplit",
+    "read.SDFstr", "read.SDFset", "sdfStream", "read.SDFindex", "write.SDF", "write.SDFsplit",
 
     ## Utilities
     ## Source: AllClasses.R

@@ -7,15 +7,17 @@ PubChem Fingerprint Search
 Function to use PubChem fingerprints for structure similarity comparisons, searching and clustering.
 }
 \usage{
-fpSim(x, y)
+fpSim(x, y, sorted=TRUE)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
 \code{vector} containing binary fingerprint data. Needs to have the same length as \code{y} (\code{vector} or \code{matrix} row).
 }
   \item{y}{
 \code{vector} or \code{matrix} containing binary fingerprint data.
+}
+  \item{sorted}{
+return results sorted or unsorted
 }
 }
 \details{
@@ -56,7 +58,7 @@ fpSim(x=fpset[1,], y=fpset[2,])
 fpSim(x=fpset[1,], y=fpset) 
 
 ## Compute fingerprint-based Tanimoto similarity matrix 
-simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset)) 
+simMA <- sapply(rownames(fpset), function(x) fpSim(x=fpset[x,], fpset, sorted=FALSE)) 
 
 ## Hierarchical clustering with simMA as input
 hc <- hclust(as.dist(simMA), method="single")

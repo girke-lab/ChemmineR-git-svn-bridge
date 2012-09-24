@@ -4,10 +4,10 @@
 Validity check of SDFset
 }
 \description{
-Performs validity check of SDFs stored in \code{SDFset} objects. Currently, the function tests whether the atom block and the bond block in each \code{SDF} component of an \code{SDFset} have at least \code{Nabcol} and \code{Nbbcol} columns (default is 3 for both). The function returns a logical vector with \code{TRUE} values for valid compounds and \code{FALSE} values for invalid ones.
+Performs validity check of SDFs stored in \code{SDFset} objects. Currently, the function tests whether the atom block and the bond block in each \code{SDF} component of an \code{SDFset} have at least \code{Nabcol} and \code{Nbbcol} columns (default is 3 for both). In additions, it tests for the presence of NA values in the atom and bond blocks. The function returns a logical vector with \code{TRUE} values for valid compounds and \code{FALSE} values for invalid ones.
 }
 \usage{
-validSDF(x, Nabcol = 3, Nbbcol = 3, logic = "&")
+validSDF(x, Nabcol = 3, Nbbcol = 3, logic = "&", checkNA=TRUE)
 }
 \arguments{
   \item{x}{
@@ -21,6 +21,9 @@ minimum number of columns in bond block
 }
   \item{logic}{
 logical connection (& or |) among Nabcol and Nbbcol cutoffs 
+}
+  \item{checkNA}{
+checks for NA values in atom and bond blocks
 }
 }
 \details{

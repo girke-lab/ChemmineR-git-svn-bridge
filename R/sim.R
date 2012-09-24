@@ -1044,9 +1044,9 @@ fp2bit <- function(x, type=2, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
 }
 
 ## Fingerprint similarity search function 
-fpSim <- function(x, y) {
+fpSim <- function(x, y, sorted=TRUE) {
 	if(!is.vector(x)) stop("x needs to be vector")
-        if(!any(c(is.vector(y),is.matrix(y)))) stop("y needs to be vector or matrix")
+        if(!any(c(is.vector(y), is.matrix(y)))) stop("y needs to be vector or matrix")
 	if(class(y)=="matrix") {
 		c <- colSums((t(y) + x) == 2)
 		b <- rowSums(y) - c
@@ -1055,7 +1055,12 @@ fpSim <- function(x, y) {
 		b <- sum(y) - c
 	}
 	a <- sum(x) - c
-	return(rev(sort(c/(c+a+b))))
+	if(sorted==TRUE) {
+		return(rev(sort(c/(c+a+b))))
+	}
+	if(sorted==FALSE) {
+		return(c/(c+a+b))
+	}
 }
 
 ######################################
