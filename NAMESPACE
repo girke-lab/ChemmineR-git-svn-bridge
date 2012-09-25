@@ -29,11 +29,11 @@ exportMethods(
 export(
     ## Data sets
     ## Source: ./data/
-    "atomprop", "pubchemFPencoding", 
+    "atomprop", "pubchemFPencoding", "aps", 
     
     ## Import/exports
     ## Source: AllClasses.R
-    "read.SDFstr", "read.SDFset", "sdfStream", "read.SDFindex", "write.SDF", "write.SDFsplit",
+    "read.SDFstr", "read.SDFset", "sdfStream", "read.AP", "read.SDFindex", "write.SDF", "write.SDFsplit",
 
     ## Utilities
     ## Source: AllClasses.R
@@ -47,7 +47,7 @@ export(
 
     ## Atom pair functions
     ## Source: sim.R
-    "SDF2apcmp", "sdf2ap", "apset2descdb", 
+    "SDF2apcmp", "sdf2ap", "apset2descdb", "desc2fp", 
     "cmp.search", "cmp.similarity", "cmp.parse", "cmp.parse1", 
     "sdf.subset", "db.explain", "cluster.sizestat", 
     "cmp.duplicated", "sdf.visualize", "db.subset",

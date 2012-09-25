@@ -385,7 +385,7 @@ desc <- function(sdfset) {
               # datablock2ma(datablocklist=datablock(sdfset)),
               MW=MW(sdfset),
               groups(sdfset),
-              # AP=sdf2ap(sdfset, type="character"),
+              AP=sdf2ap(sdfset, type="character"),
               rings(sdfset, type="count", upper=6, arom=TRUE)
         )
 }
@@ -409,6 +409,12 @@ sdfset <- read.SDFindex(file="test.sdf", index=indexDFsub, type="SDFset")
 \noindent Write results directly to SD file without storing larger numbers of molecules in memory: 
 <<eval=FALSE, keep.source=TRUE>>=
 read.SDFindex(file="test.sdf", index=indexDFsub, type="file", outfile="sub.sdf")
+@
+
+\noindent Read atom pair string representation from file into \Robject{APset}: 
+<<eval=FALSE, keep.source=TRUE>>=
+apset <- read.AP(x="matrix.xls", colid="AP")
+cid(apsdf) <- as.character(indexDF$SDFID) 
 @
 
 \section{Working with SDF/SDFset Classes}

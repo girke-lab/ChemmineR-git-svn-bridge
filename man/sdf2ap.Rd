@@ -34,7 +34,7 @@ Thomas Girke
 }
 
 \seealso{
-Functions: \code{SDF2apcmp}, \code{apset2descdb}, \code{cmp.search}, \code{cmp.similarity}
+Functions: \code{desc2fp}, \code{SDF2apcmp}, \code{apset2descdb}, \code{cmp.search}, \code{cmp.similarity}
 
 Related classes: SDF, SDFset, SDFstr, APset. 
 }

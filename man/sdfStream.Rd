@@ -43,7 +43,7 @@ SDF format definition: http://www.symyx.com/downloads/public/ctfile/ctfile.jsp
 Thomas Girke
 }
 \seealso{
-Import/export functions: \code{read.SDFset}, \code{read.SDFstr}, \code{read.SDFstr}, \code{read.SDFset}, \code{write.SDFsplit}
+Import/export functions: \code{read.AP}, \code{read.SDFset}, \code{read.SDFstr}, \code{read.SDFstr}, \code{read.SDFset}, \code{write.SDFsplit}
 }
 \examples{
 ## Load sample data
@@ -72,6 +72,10 @@ sdfset <- read.SDFindex(file="test.sdf", index=indexDFsub, type="SDFset")
 
 ## Write result directly to SD file without storing larger numbers of molecules in memory
 read.SDFindex(file="test.sdf", index=indexDFsub, type="file", outfile="sub.sdf")
+
+## Read atom pair string representation from file into APset
+apset <- read.AP(file="matrix.xls", colid="AP")
+cid(apsdf) <- as.character(indexDF$SDFID)  
 }
 }
 \keyword{ utilities }

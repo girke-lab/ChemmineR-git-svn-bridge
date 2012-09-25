@@ -1,5 +1,9 @@
 changelog
-	version 2.9.14
+	version 2.9.15
+		- improved exception/error handling of sdf2ap
+                - added read.AP
+	
+        version 2.9.14
 		- vignette updates
 
 	version 2.9.13
