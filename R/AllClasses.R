@@ -661,12 +661,13 @@ desc2fp <- function(x, descnames, type="matrix") {
 		data(apfp)
 		descnames <- as.character(apfp$AP)[1:descnames]
 	}	
-	if(class(x)=="APset") {
+	if(class(x)=="APset") { 
         	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
-		for(i in cid(x)) apfp[i, descnames %in% as.character(unlist(as(x[i], "list")))] <- 1
+		apsetlist <- ap(apset)
+                for(i in cid(x)) apfp[i, descnames %in% as.character(apsetlist[[i]])] <- 1
         } else if(class(x)=="list") {
         	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(names(x), descnames))
-		for(i in names(x)) apfp[i, descnames %in% as.character(unlist(x[i]))] <- 1
+		for(i in names(x)) apfp[i, descnames %in% as.character(x[[i]])] <- 1
 	} else {
 		stop("x needs to be of class APset or list")
 	}
