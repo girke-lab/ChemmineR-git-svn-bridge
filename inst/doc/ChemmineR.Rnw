@@ -752,12 +752,12 @@ sdfset <- sdfsample[1:10]
 apset <- sdf2ap(sdfset)
 @
 
-\noindent Compute atom pair fingerprint matrix using internal atom pair selection containing 4096 most common atom pairs in DrugBank. For details see \Rclass{?apfp}. The following example uses from this set the 1024 most frequent atom pairs:
+\noindent Compute atom pair fingerprint matrix using internal atom pair selection containing the 4096 most common atom pairs identified in DrugBank's compound collection. For details see \Rclass{?apfp}. The following example uses from this set the 1024 most frequent atom pairs:
 <<eval=FALSE, keep.source=TRUE>>=
 apfpset <- desc2fp(x=apset, descnames=1024, type="matrix")
 @
 
-\noindent Alternatively, one can provide any custom atom pair selection. Here 1024 most common ones in apset object: 
+\noindent Alternatively, one can provide any custom atom pair selection. Here, the 1024 most common ones in apset object: 
 <<eval=FALSE, keep.source=TRUE>>=
 fpset1024 <- names(rev(sort(table(unlist(as(apset, "list")))))[1:1024])
 apfpset <- desc2fp(x=apset, descnames=fpset1024, type="matrix")
@@ -768,14 +768,14 @@ apfpset <- desc2fp(x=apset, descnames=fpset1024, type="matrix")
 apfpchar <- desc2fp(x=apset, descnames=1024, type="character")
 @
 
-\noindent Converting character fingerprints back to matrix:
+\noindent Converting character fingerprints back to a matrix:
 <<eval=FALSE, keep.source=TRUE>>=
 apfpma <- matrix(as.numeric(unlist(strsplit(apfpchar, ""))), length(apfpchar),
                  nchar(apfpchar[1]), byrow=TRUE, dimnames=list(names(apfpchar),
                  1:nchar(apfpchar[1])))
 @
 
-\noindent Similarity searching returning Tanimoto similarity coefficients:
+\noindent Similarity searching and returning Tanimoto similarity coefficients:
 <<eval=FALSE, keep.source=TRUE>>=
 fpSim(x=apfpset[1,], y=apfpset)
 @
