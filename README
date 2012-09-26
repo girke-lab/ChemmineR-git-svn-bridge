@@ -1,5 +1,8 @@
 changelog
-	version 2.9.16
+	version 2.9.17
+		- vignette updates
+	
+        version 2.9.16
 		- atom pair fingerprint support
 	
 	version 2.9.15

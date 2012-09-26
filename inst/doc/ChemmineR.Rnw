@@ -385,7 +385,8 @@ desc <- function(sdfset) {
               # datablock2ma(datablocklist=datablock(sdfset)),
               MW=MW(sdfset),
               groups(sdfset),
-              AP=sdf2ap(sdfset, type="character"),
+              APFP=desc2fp(x=sdf2ap(sdfset), descnames=1024, type="character"),
+              # AP=sdf2ap(sdfset, type="character"),
               rings(sdfset, type="count", upper=6, arom=TRUE)
         )
 }
