@@ -51,7 +51,7 @@ options(width=80)
 \section{Introduction}
 \markboth{Introduction}{} % Only required to print section title in header field without numbering. 
 
-\Rpackage{ChemmineR} is a cheminformatics package for analyzing drug-like small molecule data in R. Its new version ChemmineR-V2 contains functions for processing SDFs (structure data files), compound depictions, structural similarity searching, property predictions, clustering/diversity analyses of compound libraries with a wide spectrum of algorithms. 
+\Rpackage{ChemmineR} is a cheminformatics package for analyzing drug-like small molecule data in R. Its latest version contains functions for efficient processing of large numbers of small molecules, physicochemical/structural property predictions, structural similarity searching, classification and clustering of compound libraries with a wide spectrum of algorithms. 
 
 \begin{figure}[bthp]
   \centering
@@ -62,6 +62,15 @@ options(width=80)
 \end{figure}
 
 \noindent In addition, \Rpackage{ChemmineR} offers visualization functions for compound clustering results and chemical structures. The integration of chemoinformatic tools with the R programming environment has many advantages, such as easy access to a wide spectrum of statistical methods, machine learning algorithms and graphic utilities. The first version of this package was published in \cite{Cao2008c}. Since then many additional utilities have been added to the package and many more are under development for future releases \citep{Backman2011a}. 
+
+\section{\textcolor{red}{Recently Added Features}}
+\markboth{Recently Added Features}{} % Only required to print section title in header field without numbering. 
+
+\begin{itemize}
+        \item Streaming functionality for processing millions of molecules on a laptop
+        \item Maximum common substructure (MCS) search algorithm
+        \item Fast and memory efficient fingerprint search support using atom pair or PubChem fingerprints
+\end{itemize}
 
 \section{Getting Started}
 \markboth{Getting Started}{} % Only required to print section title in header field without numbering. 
