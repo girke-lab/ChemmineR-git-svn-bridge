@@ -1,4 +1,7 @@
 changelog
+	version 2.9.16
+		- atom pair fingerprint support
+	
 	version 2.9.15
 		- improved exception/error handling of sdf2ap
                 - added read.AP

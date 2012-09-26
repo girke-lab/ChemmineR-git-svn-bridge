@@ -29,7 +29,7 @@ exportMethods(
 export(
     ## Data sets
     ## Source: ./data/
-    "atomprop", "pubchemFPencoding", "aps", 
+    "atomprop", "pubchemFPencoding", 
     
     ## Import/exports
     ## Source: AllClasses.R

@@ -731,6 +731,62 @@ cmp.similarity(apset[1], apset[2])
 cmp.similarity(apset[1], apset[1])
 @
 
+\subsection{Similarity Searching with Atom Pairs}
+The \Rfunction{cmp.search} function searches an atom pair database for compounds that are similar to a query compound. The following example returns a data frame where the rows are sorted by the Tanimoto similarity score (best to worst). The first column contains the indices of the matching compounds in the database. The argument cutoff can be a similarity cutoff, meaning only compounds with a similarity value larger than this cutoff will be returned; or it can be an integer value restricting how many compounds will be returned. When supplying a cutoff of 0, the function will return the similarity values for every compound in the database.
+<<eval=TRUE, keep.source=TRUE>>=
+cmp.search(apset, apset["650065"], type=3, cutoff = 0.3, quiet=TRUE) 
+@
+Alternatively, the function can return the matches in form of an index or a named vector if the \Rfunarg{type} argument is set to \Rfunarg{1} or \Rfunarg{2}, respectively. 
+<<eval=TRUE, keep.source=TRUE>>=
+cmp.search(apset, apset["650065"], type=1, cutoff = 0.3, quiet=TRUE) 
+cmp.search(apset, apset["650065"], type=2, cutoff = 0.3, quiet=TRUE) 
+@
+
+\subsection{Atom Pair Fingerprints}
+Atom pairs can be converted into binary atom pair fingerprints of fixed length. Computations on this more compact data structure are more time and memory efficient than on their more complex atom pair counterparts. The function \Rfunction{desc2fp} generates fingerprints from descriptor vectors of variable length such as atom pairs stored in \Rclass{APset} or \Rclass{list} containers. The obtained fingerprints can be used for structure similarity comparisons, searching and clustering. \\ 
+
+\noindent Create atom pair sample data set:
+<<eval=FALSE, keep.source=TRUE>>=
+data(sdfsample)
+sdfset <- sdfsample[1:10]
+apset <- sdf2ap(sdfset)
+@
+
+\noindent Compute atom pair fingerprint matrix using internal atom pair selection containing 4096 most common atom pairs in DrugBank. For details see \Rclass{?apfp}. The following example uses from this set the 1024 most frequent atom pairs:
+<<eval=FALSE, keep.source=TRUE>>=
+apfpset <- desc2fp(x=apset, descnames=1024, type="matrix")
+@
+
+\noindent Alternatively, one can provide any custom atom pair selection. Here 1024 most common ones in apset object: 
+<<eval=FALSE, keep.source=TRUE>>=
+fpset1024 <- names(rev(sort(table(unlist(as(apset, "list")))))[1:1024])
+apfpset <- desc2fp(x=apset, descnames=fpset1024, type="matrix")
+@
+
+\noindent A more compact way of storing fingerprints is as character values:
+<<eval=FALSE, keep.source=TRUE>>=
+apfpchar <- desc2fp(x=apset, descnames=1024, type="character")
+@
+
+\noindent Converting character fingerprints back to matrix:
+<<eval=FALSE, keep.source=TRUE>>=
+apfpma <- matrix(as.numeric(unlist(strsplit(apfpchar, ""))), length(apfpchar),
+                 nchar(apfpchar[1]), byrow=TRUE, dimnames=list(names(apfpchar),
+                 1:nchar(apfpchar[1])))
+@
+
+\noindent Similarity searching returning Tanimoto similarity coefficients:
+<<eval=FALSE, keep.source=TRUE>>=
+fpSim(x=apfpset[1,], y=apfpset)
+@
+
+\noindent Clustering example:
+<<eval=FALSE, keep.source=TRUE>>=
+simMAap <- sapply(rownames(apfpset), function(x) fpSim(x=apfpset[x,], apfpset, sorted=FALSE))
+hc <- hclust(as.dist(1-simMAap), method="single")
+plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE)
+@
+
 \subsection{Pairwise Compound Comparisons with PubChem Fingerprints}
 \noindent The \Rfunction{fpSim} function computes the Tanimoto coefficients for pairwise comparisons of binary fingerprints. For this data type, $c$ is the number of "on-bits" common in both compounds, and $a$ and $b$ are the numbers of their unique "on-bits". Currently, the PubChem fingerprints need to be provided (here PubChem's SD files) and cannot be computed from scratch in \Rpackage{ChemmineR}. The PubChem fingerprint specifications can be loaded with \Rfunction{data(pubchemFPencoding)}.\\
 
@@ -744,17 +800,6 @@ fpset <- fp2bit(x=sdfset, type=2)
 \noindent Pairwise compound structure comparisons:
 <<eval=TRUE, keep.source=TRUE>>=
 fpSim(x=fpset[1,], y=fpset[2,])
-@
-
-\subsection{Similarity Searching with Atom Pairs}
-The \Rfunction{cmp.search} function searches an atom pair database for compounds that are similar to a query compound. The following example returns a data frame where the rows are sorted by the Tanimoto similarity score (best to worst). The first column contains the indices of the matching compounds in the database. The argument cutoff can be a similarity cutoff, meaning only compounds with a similarity value larger than this cutoff will be returned; or it can be an integer value restricting how many compounds will be returned. When supplying a cutoff of 0, the function will return the similarity values for every compound in the database.
-<<eval=TRUE, keep.source=TRUE>>=
-cmp.search(apset, apset["650065"], type=3, cutoff = 0.3, quiet=TRUE) 
-@
-Alternatively, the function can return the matches in form of an index or a named vector if the \Rfunarg{type} argument is set to \Rfunarg{1} or \Rfunarg{2}, respectively. 
-<<eval=TRUE, keep.source=TRUE>>=
-cmp.search(apset, apset["650065"], type=1, cutoff = 0.3, quiet=TRUE) 
-cmp.search(apset, apset["650065"], type=2, cutoff = 0.3, quiet=TRUE) 
 @
 
 \subsection{Similarity Searching with PubChem Fingerprints}

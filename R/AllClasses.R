@@ -657,8 +657,19 @@ sdf2ap <- function(sdfset, type="AP") {
 
 ## Create AP Fingerprints
 desc2fp <- function(x, descnames, type="matrix") {
-        apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
-        for(i in cid(x)) apfp[i, descnames %in% as.character(unlist(as(x[i], "list")))] <- 1
+	if(length(descnames) == 1) {
+		data(apfp)
+		descnames <- as.character(apfp$AP)[1:descnames]
+	}	
+	if(class(x)=="APset") {
+        	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
+		for(i in cid(x)) apfp[i, descnames %in% as.character(unlist(as(x[i], "list")))] <- 1
+        } else if(class(x)=="list") {
+        	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(names(x), descnames))
+		for(i in names(x)) apfp[i, descnames %in% as.character(unlist(x[i]))] <- 1
+	} else {
+		stop("x needs to be of class APset or list")
+	}
         if(type=="matrix") {
                 return(apfp)
         }
@@ -667,8 +678,7 @@ desc2fp <- function(x, descnames, type="matrix") {
         }
 }
 ## Usage: 
-# fpset1024 <- names(rev(sort(table(unlist(as(apset, "list")))))[1:1024]) # uses 1024 most frequent APs
-# apfpset <- desc2fp(x=apset, descnames=fpset1024, type="matrix")
+# apfpset <- desc2fp(x=apset, descnames=1024, type="matrix")
 
 ## Accessor methods for APset class
 setGeneric(name="ap", def=function(x) standardGeneric("ap"))
