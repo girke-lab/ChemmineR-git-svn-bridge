@@ -663,7 +663,7 @@ desc2fp <- function(x, descnames, type="matrix") {
 	}	
 	if(class(x)=="APset") { 
         	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
-		apsetlist <- ap(apset)
+		apsetlist <- ap(x)
                 for(i in cid(x)) apfp[i, descnames %in% as.character(apsetlist[[i]])] <- 1
         } else if(class(x)=="list") {
         	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(names(x), descnames))

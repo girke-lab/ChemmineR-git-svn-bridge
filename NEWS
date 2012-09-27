@@ -1,0 +1,13 @@
+CHANGES IN VERSION 2.10.0
+-------------------------
+
+NEW FEATURES
+
+    o Streaming functionality for SDFs enables processing of millions 
+      of molecules on a laptop
+    o Fast and memory efficient fingerprint searches with atom pair 
+      fingerprints or PubChem fingerprints
+    o Flexible maximum common substructure (MCS) search support provided by 
+      new fmcs.R add-on package
+
+
