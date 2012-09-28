@@ -1661,8 +1661,11 @@ read.SDFindex <- function(file, index, type="SDFset", outfile) {
 	if(type=="SDFset") {
 		sdfset <- SDFset()
 	}
+	f <- file(file, "r") 
+	index <- data.frame(skip=index[,1] - c(0, index[-length(index[,1]),2]) - 1 , nlines=index[,2] - index[,1] + 1) 
 	for(i in seq(along=index[,1])) {
-		lines <- scan(file, skip=index[i,1]-1, nlines=index[i,2]-index[i,1] + 1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		lines <- scan(f, skip=index[i,1], nlines=index[i,2], what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		#delteme# lines <- scan(file, skip=index[i,1]-1, nlines=index[i,2]-index[i,1] + 1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") 
 		if(type=="file") {
 			if(i == 1) {
 				unlink(outfile)
@@ -1675,6 +1678,7 @@ read.SDFindex <- function(file, index, type="SDFset", outfile) {
 			suppressWarnings(sdfset <- c(sdfset, read.SDFset(read.SDFstr(lines))))	
 		}
 	}
+	close(f)
 	if(type=="SDFset") {
 		cid(sdfset) <- paste("CMP", 1:length(sdfset), sep="")
                 return(sdfset)
