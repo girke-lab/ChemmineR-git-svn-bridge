@@ -1537,15 +1537,28 @@ write.SDFsplit <- function(x, filetag, nmol) {
 ## molecule in the source SD File. This line index can be used by the read.SDFindex function to 
 ## retrieve specific compounds of interest from large SD Files without reading the entire file 
 ## into memory. 
-sdfStream <- function(input, output, fct, Nlines=10000, silent=FALSE, ...) {
+sdfStream <- function(input, output, append=FALSE, fct, Nlines=10000, startline=1, restartNlines=10000, silent=FALSE, ...) {
 	## Define loop parameters 
 	stop <- FALSE 
 	f <- file(input, "r")
 	n <- Nlines
+	offset <- 0
+	## For restarting sdfStream at specific line assigned to startline argument. If assigned
+        ## startline value does not match the first line of a molecule in the SD file then it 
+        ## will be reset to the start position of the next molecule in the SD file.
+	if(startline!=1) { 
+		fmap <- file(input, "r")
+		shiftback <- 2
+		chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
+		if(is.na(startline)) stop("Invalid value assigned to startline.")
+		dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		close(fmap)
+		offset <- startline - 1 # Maintains abolut line positions in index
+	}
 	counter <- 0
 	cmpid <- 1
 	partial <- NULL
-	offset <- 0
 	while(!stop) {
 		counter <- counter + 1
 		chunk <- readLines(f, n = n) # chunk n can be any number of lines
@@ -1604,7 +1617,7 @@ sdfStream <- function(input, output, fct, Nlines=10000, silent=FALSE, ...) {
                                 print(rownames(resultMA))
                         }
 			## Append results to tabular file
-			if(counter==1) {
+			if(counter==1 & append!=TRUE) {
 				unlink(output)
 				write.table(resultMA, output, quote=FALSE, col.names=NA, sep="\t")
 			} else {	
@@ -1658,11 +1671,14 @@ read.AP <- function(file="matrix.xls", colid="AP") {
 #########################################################
 ## Extracts specific molecules from SD File based on a line position index computed by the sdfStream function
 read.SDFindex <- function(file, index, type="SDFset", outfile) {
+	f <- file(file, "r") 
 	if(type=="SDFset") {
 		sdfset <- SDFset()
 	}
-	f <- file(file, "r") 
+	## Index transfromations
+	index <- index[order(index[,1]),] # Assures positional sorting, which is expected by the following step!!
 	index <- data.frame(skip=index[,1] - c(0, index[-length(index[,1]),2]) - 1 , nlines=index[,2] - index[,1] + 1) 
+	## Scan through file using index to retrieve molecules one-by-one
 	for(i in seq(along=index[,1])) {
 		lines <- scan(f, skip=index[i,1], nlines=index[i,2], what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
 		#delteme# lines <- scan(file, skip=index[i,1]-1, nlines=index[i,2]-index[i,1] + 1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") 

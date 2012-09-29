@@ -1,4 +1,7 @@
 changelog
+	version 2.9.21
+		- support for restarting sdfStream at specific line position
+ 
 	version 2.9.20
 		- faster read.SDFindex by establishing a single file connection 
 
