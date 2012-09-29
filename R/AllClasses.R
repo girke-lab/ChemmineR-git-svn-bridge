@@ -1623,6 +1623,7 @@ sdfStream <- function(input, output, append=FALSE, fct, Nlines=10000, startline=
 			} else {	
 				write.table(resultMA, output, quote=FALSE, append=TRUE, col.names=FALSE, sep="\t")
 			}
+			gc()
 		}
 		if(length(chunk) == 0) {
 			stop <- TRUE
