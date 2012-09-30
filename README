@@ -1,4 +1,10 @@
 changelog
+	version 2.9.23
+		- solved import problem with SciTegic SDFs
+	
+	version 2.9.22
+		- groups function will now always return matrix
+	
 	version 2.9.21
 		- support for restarting sdfStream at specific line position
  

@@ -150,10 +150,17 @@ setClass("SDF", representation(header="character", atomblock="matrix", bondblock
                 } else {
                         ct <- gsub("^ {1,}", "", ct)
 		        ctlist <- strsplit(ct, " {1,}")
-		        ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
-		        myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
-		        Ncol <- length(ctlist[[1]])
-		        ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
+			# ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
+		        ctma <- tryCatch(matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE), warning=function(w) NULL)
+		        if(length(ctma)==0) { # If rows in atom block are of variable length, use alternative/slower approach
+				maxcol <- max(sapply(ctlist, length))
+				ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
+				for(i in seq(along=ctma[,1])) ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
+			}
+			myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
+		        # Ncol <- length(ctlist[[1]])
+		        Ncol <- length(ctma[1, , drop = FALSE])
+			ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
 		}
                 return(ctma)
 	}
@@ -1302,7 +1309,7 @@ conMA <- function(x, exclude="none") {
             for(i in seq(along=bondblock[,1])) conma[bondblock[i,1], bondblock[i,2]] <- bondblock[i,3]
             for(i in seq(along=bondblock[,1])) conma[bondblock[i,2], bondblock[i,1]] <- bondblock[i,3]
             index <- !gsub("_.*", "", rownames(conma)) %in% exclude
-            conma <- conma[index,index]
+	    conma <- conma[index, index, drop = FALSE]
             return(conma)
         }   
         ## Run on SDF objects
@@ -1623,7 +1630,6 @@ sdfStream <- function(input, output, append=FALSE, fct, Nlines=10000, startline=
 			} else {	
 				write.table(resultMA, output, quote=FALSE, append=TRUE, col.names=FALSE, sep="\t")
 			}
-			gc()
 		}
 		if(length(chunk) == 0) {
 			stop <- TRUE
