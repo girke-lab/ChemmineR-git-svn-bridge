@@ -1,4 +1,7 @@
 changelog
+	version 2.11.1
+		- fixed read.AP 
+	
 	version 2.9.23
 		- solved import problem with SciTegic SDFs
 	
