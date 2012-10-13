@@ -816,7 +816,7 @@ apset2descdb <- function(apset) {
 #######################################################
 ## (5) Class and Method Definitions for FP and FPset ##
 #######################################################
-## Define FP/FPset classes
+## Define FP and FPset classes
 setClass("FP", representation(fp="numeric"))
 setClass("FPset", representation(fpma="matrix"))
 

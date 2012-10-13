@@ -1050,7 +1050,7 @@ fp2bit <- function(x, type=3, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
         }
 }
 
-## Fingerprint similarity search function 
+## Fingerprint comparison and similarity search function 
 fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", cutoff=0, top="all", alpha=1, beta=1, ...) {
 	## Predefined similarity methods
 	if(class(method)=="character") {
