@@ -1,4 +1,7 @@
 changelog
+	version 2.11.2
+		- added FP/FPset classes 
+
 	version 2.11.1
 		- fixed read.AP 
 	
