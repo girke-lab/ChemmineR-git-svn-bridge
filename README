@@ -1,5 +1,8 @@
 changelog
-	version 2.11.2-2.11.3
+	version 2.11.4
+		- vignette updates 
+	
+        version 2.11.2-2.11.3
 		- added FP/FPset classes 
 		- vignette updates 
 
