@@ -1,5 +1,5 @@
 ## IMPORTS
-import(methods, graphics, stats, RCurl)
+import(methods, graphics, stats, RCurl,DBI,RSQLite)
 
 ## EXPORTS
 ## S4 Classes
@@ -62,6 +62,10 @@ export(
 
     ## Clustering functions
     ## Source: cluster.R
-    "cmp.cluster", "jarvisPatrick", "cluster.visualize" 
+    "cmp.cluster", "jarvisPatrick", "cluster.visualize" ,
+
+	## Database backend functions
+	## Source: compound_db.R
+	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds"
 )
 
