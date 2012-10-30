@@ -3,16 +3,11 @@
 #library(RSQLite)
 #library(ChemmineR)
 
-ddl <- function(conn,ddlSql){
-#	tryCatch({
-		dbGetQuery(conn,ddlSql)
-		#rs=dbSendQuery(conn,ddlSql)
-		#dbClearResult(rs)
 
-#		},error=function(e){
-#			if(length(grep("column definition is not unique",e$message))==0)
-#				stop(paste("error sending query:",e$message))
-#		})
+dbOp<-function(dbExpr){
+	#print(as.character(substitute(dbExpr)))
+	#print(system.time(dbExpr))
+	dbExpr
 }
 
 initDb <- function(handle){
@@ -20,7 +15,7 @@ initDb <- function(handle){
 	if(is.character(handle)){ #assume sqlite filename
 		require(RSQLite)
 		driver = dbDriver("SQLite")
-		conn = dbConnect(driver,dbname=handle)
+		conn = dbConnect(driver,dbname=handle,cache_size=100000)
 	}else if(inherits(handle,"DBIConnection")){ #the user passed in a connection object
 		conn=handle
 	}else{
@@ -36,42 +31,45 @@ initDb <- function(handle){
 		statements = unlist(strsplit(paste(readLines("inst/schema/compounds.SQLite"),collapse=""),";",fixed=TRUE))
 		#print(statements)
 
-		Map(function(sql) ddl(conn,sql),statements)
+		Map(function(sql) dbOp(dbGetQuery(conn,sql)),statements)
 	}
 	conn
 }
 
-loadDb <- function(conn,definitions,format,names=NA){
+#loadDb <- function(conn,definitions,format,names=NA){
+loadDb <- function(conn,data){
 
 	if(inherits(conn,"SQLiteConnection")){
-		insertDef <- function(defs)  dbGetPreparedQuery(conn,"INSERT INTO compounds(definition,format) VALUES(?,?)",
-																		bind.data=data.frame(definition=defs,format="sdf"))
-		insertNamedDef <- function(names,defs)  dbGetPreparedQuery(conn,"INSERT INTO compounds(name,definition,format) VALUES(?,?,?)",
-																		bind.data=data.frame(name=names,definition=defs,format="sdf"))
+		insertDef <- function(defs)  dbOp(dbGetPreparedQuery(conn,"INSERT INTO compounds(definition,format) VALUES(?,?)",
+																		bind.data=data))
+		insertNamedDef <- function(names,defs)  dbOp(dbGetPreparedQuery(conn,"INSERT INTO compounds(name,definition,format) VALUES(?,?,?)",
+																		bind.data=data))
 	}else{
 		insertDef <- function(defs)
-			Map(function(def) dbGetQuery(conn, paste("INSERT INTO compounds(definition,format) VALUES('",def,"','",format,"')",
-																  sep="")),defs)
+			apply(data,1,function(row) dbOp(dbGetQuery(conn, paste("INSERT INTO compounds(definition,format)
+																			  VALUES('",row[1],"','",row[2],"')", sep=""))))
 		insertNamedDef <- function(names,defs)
-			Map(function(def) dbGetQuery(conn, paste("INSERT INTO compounds(name,definition,format) VALUES('",
-																	  name,"','",def,"','",format,"')",
-																  sep="")),names,defs)
+			apply(data,1,function(row) dbOp(dbGetQuery(conn, paste("INSERT INTO compounds(name,definition,format) VALUES('",
+																	  row[1],"','",row[2],"','",row[3],"')", sep=""))))
 	}
 
+	#print("loading")
+	#print(data)
+	print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
 
 	tryCatch({
-		if(length(names)==1 &&  is.na(names) ){
-			#if(length(definitions)==1)
-				insertDef(definitions)
-			#else
-				#Map(insertDef, definitions)
+		if(dim(data)[2]==2){
+				insertDef(data)
+		}else if(dim(data)[2]==3){
+				insertNamedDef(data)
 		}else {
-			if(length(names) != length(definitions))
-				stop("names do not line up with definitions. 
-					  Names can be blank, but there must be a string for each definition")
+			stop("given data must have columns either (definition,format), or (name,definiton,format)")
+			#if(length(names) != length(definitions))
+				#stop("names do not line up with definitions. 
+					  #Names can be blank, but there must be a string for each definition")
 
 			#if(length(definitions)==1) #avoid some overhead of Map
-				insertNamedDef(names,definitions)
+				#insertNamedDef(names,definitions)
 			#else
 				#Map(insertNamedDef, names,definitions)
 		}
@@ -105,14 +103,105 @@ definition2SDFset <- function(def){
 	read.SDFset(x)
 }
 
+loadSdf2 <- function(conn,sdfFile, Nlines=10000, startline=1, restartNlines=100000){
+	## Define loop parameters 
+	stop <- FALSE 
+	f <- file(sdfFile, "r")
+	n <- Nlines
+	offset <- 0
+	## For restarting sdfStream at specific line assigned to startline argument. If assigned
+        ## startline value does not match the first line of a molecule in the SD file then it 
+        ## will be reset to the start position of the next molecule in the SD file.
+	if(startline!=1) { 
+		fmap <- file(sdfFile, "r")
+		shiftback <- 2
+		chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
+		if(is.na(startline)) stop("Invalid value assigned to startline.")
+		dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+		close(fmap)
+		offset <- startline - 1 # Maintains abolut line positions in index
+	}
+	counter <- 0
+	cmpid <- 1
+	partial <- NULL
+	dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
+	while(!stop) {
+		counter <- counter + 1
+		chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+		if(length(chunk) > 0) {
+			if(length(partial) > 0) {
+				chunk <- c(partial, chunk)
+			}
+			## Assure that lines of least 2 complete molecules are stored in chunk if available
+			inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+			while(inner) {
+				chunklength <- length(chunk)
+				chunk <- c(chunk, readLines(f, n = n))
+				if(chunklength == length(chunk)) { 
+					inner <- FALSE 
+				} else {
+					#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+					inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
+				}
+			}
+			y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+			index <- which(y!=-1)
+			indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+			complete <- chunk[1:index[length(index)]]
+			if((index[length(index)]+1) <= length(chunk)) {
+				partial <- chunk[(index[length(index)]+1):length(chunk)]
+			} else {
+				partial <- NULL
+			}
 
-loadSdf <- function(conn,sdfFile,batchSize=10000){
+			sdfset <- read.SDFset(read.SDFstr(complete))
+			valid <- validSDF(sdfset)
+			#sdfset=sdfset[valid]
+
+	#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
+	#		names = unlist(Map(function(x) x[1],sdfstrList))
+	#		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+
+			defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
+			names = complete[indexDF[,1]]
+			loadDb(conn,data.frame(name=names[valid],definition=defs[valid],format="sdf"))
+
+			
+		}
+		if(length(chunk) == 0) {
+			stop <- TRUE
+			close(f)
+		}
+	}
+
+	dbOp(dbCommit(conn))
+
+}
+loadSdf3 <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
+
+	dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
+	sdfStream(input=sdfFile,output="/dev/null",silent=TRUE,fct=function(sdfset){
+		sdfstrList=as(as(sdfset,"SDFstr"),"list")
+		names = unlist(Map(function(x) x[1],sdfstrList))
+		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+		data=data.frame(name=names,definition=defs,format="sdf")
+		loadDb(conn,data)
+		cbind(MW=1:length(sdfset))
+	})
+	dbOp(dbCommit(conn))
+}
+
+loadSdf <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 	f = file(sdfFile,"r")
 
 	tryCatch({
-		dbGetQuery(conn,"BEGIN TRANSACTION")
+		dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
 		compoundLines=rep("",batchSize)
+		compoundQueue=data.frame(name=rep(NA,1000),definition=NA,format=NA)
+		compoundCount=1
 		lineNum=1
+
 		bufferLines(f,batchSize,function(lines){
 					for(line in lines){
 						#print(paste(lineNum,":",line))
@@ -121,28 +210,40 @@ loadSdf <- function(conn,sdfFile,batchSize=10000){
 							compoundLines[lineNum*2]<<-NA #expand array
 
 						if(line == "$$$$"){ #end of a compound
-							name=compoundLines[1]
+							tryCatch({
+								if(validate)
+									definition2SDFset(compoundLines[1:lineNum])
 
-							def=paste(compoundLines[1:lineNum],collapse="\n")
-							#tryCatch(definition2SDFset(compoundLines[1:lineNum]),
-							tryCatch(definition2SDFset(def),
-										error=function(e) {
-											print(paste("bad def found:",e$message))
-											print(def)
-											print("context:")
-											print(compoundLines)
-										})
+								def=paste(compoundLines[1:lineNum],collapse="\n")
 
-							loadDb(conn,def,"sdf",name)
+								compoundQueue[compoundCount,]<<-c(compoundLines[1],def,"sdf")
+								compoundCount<<- compoundCount+1
+								if(compoundCount > dim(compoundQueue)[1]){
+									print("loading batch")
+									print(compoundCount)
+									loadDb(conn,compoundQueue)
+									compoundCount<<-1
+								}
+							},
+							error=function(e) {
+								print(paste("bad def found:",e$message))
+								#print("context:")
+								#print(compoundLines)
+							})
+							
 							lineNum<<-0
 						}
 						lineNum <<- lineNum + 1
 					}
 				 })
-		dbCommit(conn)
+		print(paste("loading last batch",compoundCount))
+		#print(compoundQueue[,c(1,3)])
+		loadDb(conn,compoundQueue[1:compoundCount-1,])
+		dbOp(dbCommit(conn))
 	},error=function(e){
 		print(paste("import failed:",e$message))
-		dbRollback(conn)
+		traceback()
+		dbOp(dbRollback(conn))
 	})
 	close(f)
 }
@@ -150,11 +251,11 @@ loadSdf <- function(conn,sdfFile,batchSize=10000){
 loadSmiles <- function(conn, smileFile,batchSize=10000){
 
 	f = file(smileFile,"r")
-	bufferLines(f,batchSize=batchSize,function(lines) loadDb(conn,lines,"smile"))
+	bufferLines(f,batchSize=batchSize,function(lines) loadDb(conn,data.frame(definition=lines,format="smile")))
 	close(f)
 }
 findCompounds <- function(conn,test){
-	rs = dbSendQuery(conn,"SELECT compound_id,definition FROM compounds ")
+	rs = dbOp(dbSendQuery(conn,"SELECT compound_id,definition FROM compounds "))
 	matches = c()
 	bufferResultSet(rs,function(row){
 				tryCatch({
@@ -163,7 +264,7 @@ findCompounds <- function(conn,test){
 					},error=function(e) print(paste("error:",e$message,"on",row[1]))
 				)
 			 })
-	dbClearResult(rs)
+	dbOp(dbClearResult(rs))
 	as.numeric(matches)
 }
 getCompounds <- function(conn,compoundIds,filename=NA){
@@ -183,9 +284,9 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		compoundIdSet = compoundIds[start:end]
 		start=end+1
 
-		rs = dbSendQuery(conn,
+		rs = dbOp(dbSendQuery(conn,
 							  paste("SELECT compound_id,definition FROM compounds where compound_id in (",
-									  paste(compoundIdSet,collapse=","),")"))
+									  paste(compoundIdSet,collapse=","),")")))
 		bufferResultSet(rs,function(row){
 					sdf = definition2SDFset(row[2])
 					cid(sdf) = row[1]
@@ -197,7 +298,7 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 								else
 									c(sdfset,sdf)
 				 })
-		dbClearResult(rs)
+		dbOp(dbClearResult(rs))
 	}
 
 

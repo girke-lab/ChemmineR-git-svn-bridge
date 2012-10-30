@@ -20,3 +20,13 @@ CREATE TABLE descriptors (
 	descriptor TEXT NOT NULL UNIQUE
 );
 
+/*
+
+-- executed to create a new feature
+CREATE TABLE featurex (
+	compound_id INTEGER REFERENCES compound(compound_id) ON DELETE CASCADE,
+	featurex TEXT
+);
+CREATE INDEX featurex_index ON featurex(featurex);
+
+*/
