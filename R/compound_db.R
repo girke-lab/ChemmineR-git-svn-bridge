@@ -37,46 +37,88 @@ initDb <- function(handle){
 }
 
 #loadDb <- function(conn,definitions,format,names=NA){
-loadDb <- function(conn,data){
+loadDb <- function(conn,data,featureGenerator){
 
-	if(inherits(conn,"SQLiteConnection")){
-		insertDef <- function(defs)  dbOp(dbGetPreparedQuery(conn,"INSERT INTO compounds(definition,format) VALUES(?,?)",
-																		bind.data=data))
-		insertNamedDef <- function(names,defs)  dbOp(dbGetPreparedQuery(conn,"INSERT INTO compounds(name,definition,format) VALUES(?,?,?)",
-																		bind.data=data))
-	}else{
-		insertDef <- function(defs)
-			apply(data,1,function(row) dbOp(dbGetQuery(conn, paste("INSERT INTO compounds(definition,format)
-																			  VALUES('",row[1],"','",row[2],"')", sep=""))))
-		insertNamedDef <- function(names,defs)
-			apply(data,1,function(row) dbOp(dbGetQuery(conn, paste("INSERT INTO compounds(name,definition,format) VALUES('",
-																	  row[1],"','",row[2],"','",row[3],"')", sep=""))))
-	}
-
-	#print("loading")
-	#print(data)
 	print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
 
+	cbind(data,definition_checksum=sapply(as.vector(data[,"definition"]),
+													  function(def) digest(def,serialize=FALSE) ))
+
 	tryCatch({
-		if(dim(data)[2]==2){
-				insertDef(data)
-		}else if(dim(data)[2]==3){
-				insertNamedDef(data)
+		addNewFeatures(conn,data,featureGenerator)
+
+		if(all(c("name,definition","format") %in% colnames(data))){
+				insertNamedDef(conn,data)
+		}else if(all(c("definition","format") %in% colnames(data))){
+				insertDef(conn,data)
 		}else {
 			stop("given data must have columns either (definition,format), or (name,definiton,format)")
-			#if(length(names) != length(definitions))
-				#stop("names do not line up with definitions. 
-					  #Names can be blank, but there must be a string for each definition")
-
-			#if(length(definitions)==1) #avoid some overhead of Map
-				#insertNamedDef(names,definitions)
-			#else
-				#Map(insertNamedDef, names,definitions)
 		}
+
+		##updateFeatures(conn,data,featureGenerator)
+		insertUserFeatures(conn,data)
 	},error=function(e){
 			if(length(grep("column definition is not unique",e$message))==0)
 				stop(paste("error sending query:",e$message))
 	})
+}
+addNewFeatures <- function(conn,data, featureGenerator){
+	if(dim(data)[1] == 0){ # no data given
+		warning("no data given to addNewFeatures, doing nothing")
+		return()
+	}
+
+	compoundFields = dbListFields(conn,"compounds")
+	userFieldNames = setdiff(colnames(data),compoundFields)
+
+	tableList=dbListTables(conn)
+	existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+
+	missingFeatures = setdiff(existingFeatures,userFieldNames)
+	if(length(missingFeatures) != 0)
+		stop(paste("missing features:",paste(missingFeatures,collapse=",")))
+
+	newFeatures = setdiff(userFieldNames,existingFeatures)
+
+	#will need to query all existing compounds and add these features
+	if(length(newFeatures) != 0){
+		warning("adding new features to existing compounds. This could take a while")
+		lapply(newFeatures,function(name) createFeature(conn,name,class(data[,name])))
+		indexExistingCompounds(conn,newFeatures,featureGenerator)
+		
+	}
+
+
+}
+insertUserFeatures<- function(conn,data){
+
+	if(dim(data)[1] == 0){ # no data given
+		warning("no data given to insertUserFeatures, doing nothing")
+		return()
+	}
+
+
+	compoundFields = dbListFields(conn,"compounds")
+	userFieldNames = setdiff(colnames(data),compoundFields)
+
+	tableList=dbListTables(conn)
+	existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+
+		
+	#index all new compounds for all features
+
+	#fetch newly inserted compounds
+	
+	df = dbGetQuery(conn,paste("SELECT compound_id,definition_checksum FROM compounds LEFT JOIN feature_",
+								 userFieldNames[1]," as f USING(compound_id)  WHERE f.compound_id IS
+								 NULL",sep=""))
+	data= merge(data,df)
+	sapply(userFieldNames,function(name) insertFeature(conn,name,data))
+
+
+
+
+
 }
 bufferLines <- function(fh,batchSize,lineProcessor){
 	while(TRUE){
@@ -89,21 +131,23 @@ bufferLines <- function(fh,batchSize,lineProcessor){
 }
 bufferResultSet <- function(rs,rsProcessor,batchSize=1000){
 	while(TRUE){
-		chunk = fetch(rs,n=1000)
+		chunk = fetch(rs,n=batchSize)
 		if(length(chunk)==0)
 			break;
-		apply(chunk,1,rsProcessor)
+		#apply(chunk,1,rsProcessor)
+		rsProcessor(chunk)
 	}
 }
-definition2SDFset <- function(def){
-	#print(paste("def: ",def))
-	#print(unlist(strsplit(def,"\n"),use.names=FALSE))
-	#print("----------------------------------------------------------------")
-	x = if(length(def) != 1) def else unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE)
-	read.SDFset(x)
+definition2SDFset <- function(defs){
+	sdfset=c()
+	lapply(defs,function(def) sdfset<<-c(sdfset,unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE)) )
+	sdfset
+
+	#x = if(length(def) != 1) def else unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE)
+	#read.SDFset(x)
 }
 
-loadSdf2 <- function(conn,sdfFile, Nlines=10000, startline=1, restartNlines=100000){
+loadSdf2 <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startline=1, restartNlines=100000){
 	## Define loop parameters 
 	stop <- FALSE 
 	f <- file(sdfFile, "r")
@@ -156,8 +200,11 @@ loadSdf2 <- function(conn,sdfFile, Nlines=10000, startline=1, restartNlines=1000
 			}
 
 			sdfset <- read.SDFset(read.SDFstr(complete))
-			valid <- validSDF(sdfset)
-			#sdfset=sdfset[valid]
+			valid = validSDF(sdfset)
+			sdfset=sdfset[valid]
+
+
+			userFeatures <- fct(sdfset)
 
 	#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
 	#		names = unlist(Map(function(x) x[1],sdfstrList))
@@ -165,7 +212,10 @@ loadSdf2 <- function(conn,sdfFile, Nlines=10000, startline=1, restartNlines=1000
 
 			defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
 			names = complete[indexDF[,1]]
-			loadDb(conn,data.frame(name=names[valid],definition=defs[valid],format="sdf"))
+			systemFields=data.frame(name=names[valid],definition=defs[valid],format="sdf")
+
+			allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+			loadDb(conn,allFields,fct)
 
 			
 		}
@@ -212,7 +262,7 @@ loadSdf <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 						if(line == "$$$$"){ #end of a compound
 							tryCatch({
 								if(validate)
-									definition2SDFset(compoundLines[1:lineNum])
+									read.SDFset(compoundLines[1:lineNum])
 
 								def=paste(compoundLines[1:lineNum],collapse="\n")
 
@@ -254,7 +304,20 @@ loadSmiles <- function(conn, smileFile,batchSize=10000){
 	bufferLines(f,batchSize=batchSize,function(lines) loadDb(conn,data.frame(definition=lines,format="smile")))
 	close(f)
 }
-findCompounds <- function(conn,test){
+
+findCompounds <- function(conn,featureNames,tests){
+
+	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
+	# ... where test1 AND test2 AND ...
+	featureTables = paste("feature_",featureNames,sep="")
+	sql = paste("SELECT compound_id FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
+					" USING(compound_id) WHERE ",paste("(",paste(tests,collapse=") AND ("),")") ) 
+	
+	result = dbGetQuery(conn,sql)
+	result[1][[1]]
+
+}
+findCompounds_slow <- function(conn,test){
 	rs = dbOp(dbSendQuery(conn,"SELECT compound_id,definition FROM compounds "))
 	matches = c()
 	bufferResultSet(rs,function(row){
@@ -263,7 +326,7 @@ findCompounds <- function(conn,test){
 							matches <<- c(matches,row[1]) #record id number
 					},error=function(e) print(paste("error:",e$message,"on",row[1]))
 				)
-			 })
+			 },1)
 	dbOp(dbClearResult(rs))
 	as.numeric(matches)
 }
@@ -297,7 +360,7 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 									sdf
 								else
 									c(sdfset,sdf)
-				 })
+				 },1)
 		dbOp(dbClearResult(rs))
 	}
 
@@ -307,4 +370,62 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 	sdfset
 }
 
+indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
+	rs = dbOp(dbSendQuery(conn,"SELECT compound_id,definition FROM compounds "))
+	bufferResultSet(rs,function(rows){
+				tryCatch({
+						sdfset = definition2SDFset(rows)
+						userFeatures  = featureGenerator(sdfset)
+						lapply(newFeatures, function(name){
+								 insertFeature(conn,name,cbind(compound_id=rows[1,],userFeatures[name]))
+					   })
+					},error=function(e) print(paste("error:",e$message))
+				)
+			 })
+	dbClearResult(rs)
+}
+
+createFeature <- function(conn,name, type){
+
+
+	sqlType = if(type == "numeric") "NUMERIC" else "TEXT"
+	dbGetQuery(conn,
+		paste("CREATE TABLE feature_",name," (
+			compound_id INTEGER REFERENCES compound(compound_id) ON DELETE CASCADE, ",
+			name," ",sqlType," )",sep=""))
+	dbGetQuery(conn,paste("CREATE INDEX feature_",name,"_index ON
+								 feature_",name,"(feature_",name,")",sep=""))
+
+}
+
+insertDef <- function(conn,defs)  
+	if(inherits(conn,"SQLiteConnection")){
+		dbGetPreparedQuery(conn,"INSERT INTO compounds(definition,definition_checksum,format) ",
+								 "VALUES(:definition,:definition_checksum,:format)", bind.data=data)
+	}else{
+		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
+						 paste("INSERT INTO compounds(definition,definition_checksum,format)
+																			  VALUES('",row[1],"','",row[2],"','",row[3],"')", sep=""))))
+	}
+
+insertNamedDef <- function(conn,names,defs) 
+	if(inherits(conn,"SQLiteConnection")){
+		dbGetPreparedQuery(conn,"INSERT INTO compounds(name,definition,definition_checksum,format) ",
+								 "VALUES(:name,:definition,:definition_checksum,:format)", bind.data=data)
+	}else{
+		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
+						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES('",
+																	  row[1],"','",row[2],"','",row[3],"','",row[4],"')", sep=""))))
+	}
+
+insertFeature <- function(conn,name,values)
+	if(inherits(conn,"SQLiteConnection")){
+		dbGetPreparedQuery(conn, paste("INSERT INTO feature_",name,"(compound_id,",name,") ",
+												 "VALUES(:compound_id,:",name,")"), bind.data=values)
+	}else{
+		apply(data,1,function(row) 
+				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
+											 VALUES(",row[1],",", if(!is.numeric(row[2]))
+													  {paste("'",row[2],"'",sep="")} else {row[2]},")")))
+	}
 

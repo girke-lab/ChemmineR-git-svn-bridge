@@ -2,7 +2,8 @@
 CREATE TABLE compounds(
 	compound_id INTEGER PRIMARY KEY,
 	name TEXT NOT NULL DEFAULT "",
-	definition TEXT NOT NULL DEFAULT "" UNIQUE,
+	definition TEXT NOT NULL  UNIQUE,
+	defintion_checksum TEXT NOT NULL UNIQUE,
 	format TEXT NOT NULL DEFAULT ""
 );
 
@@ -23,9 +24,9 @@ CREATE TABLE descriptors (
 /*
 
 -- executed to create a new feature
-CREATE TABLE featurex (
+CREATE TABLE feature_x (
 	compound_id INTEGER REFERENCES compound(compound_id) ON DELETE CASCADE,
-	featurex TEXT
+	x TEXT
 );
 CREATE INDEX featurex_index ON featurex(featurex);
 
