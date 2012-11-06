@@ -142,17 +142,32 @@ bufferResultSet <- function(rs,rsProcessor,batchSize=1000){
 	}
 }
 definition2SDFset <- function(defs){
-	sdfset=c()
-	suppressWarnings(lapply(defs,function(def){ 
-			 sdf=read.SDFset(unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE))
-			 #cid(sdf)=sdfid(sdf)
-			 #print(paste(cid(sdf),sdfid(sdf)))
-			 sdfset<<-if(length(sdfset)==0) sdf else c(sdfset,sdf)
-	} ))
-	sdfset
 
-	#x = if(length(def) != 1) def else unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE)
-	#read.SDFset(x)
+#	f = file()
+#	lapply(defs,function(def) cat(def,file=f))
+#	flush(f)
+#	sdfset = read.SDFset(read.SDFstr(f))
+#	close(f)
+#	return(sdfset)
+
+	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
+
+
+#	sdfset=c()
+#	count=0
+#	suppressWarnings(lapply(defs,function(def){ 
+#			 sdf=read.SDFset(unlist(strsplit(def,"\n",fixed=TRUE),use.names=FALSE))
+#			 #cid(sdf)=sdfid(sdf)
+#			 #print(paste(cid(sdf),sdfid(sdf)))
+#			 sdfset<<-if(length(sdfset)==0) sdf else c(sdfset,sdf)
+#			 count<<-count+1 #this somehow keeps the memory under control. who knows why
+#			# l=length(sdfset)
+#			# if( l %% 500 == 0){
+#			#	 print(length(sdfset))
+#			#	 gc()
+#			# }
+#	} ))
+#	sdfset
 }
 
 loadSdf2 <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startline=1, restartNlines=100000){
@@ -341,10 +356,34 @@ findCompounds <- function(conn,featureNames,tests){
 #}
 getCompounds <- function(conn,compoundIds,filename=NA){
 	
-	if(!is.na(filename))
+	if(!is.na(filename)){
 		f=file(filename,"w")
+#	}else {
+#		f=file()
+#	}
 
-	sdfset = c()
+		resultProcessor = function(rows){
+			lapply(rows[2][[1]],function(def) cat(def,file=f))
+			#cat(rows[2][[1]],file=f)
+		}
+	}else{
+		sdfset = rep(NA,length(compoundIds))
+		count=1
+		resultProcessor = function(rows){
+			print(dim(rows))
+				#print(system.time(sdfs <<- definition2SDFset(rows[2][[1]])))
+				#print(system.time(cid(sdfs) <<- as.character(rows[1][[1]])))
+				#print(system.time(sdfset <<- if(length(sdfset)==0) sdfs else c(sdfset,sdfs)))
+				print(system.time({
+										l=length(rows[2][[1]])
+										sdfset[count:(count+l-1)]<<-as(definition2SDFset(rows[2][[1]]),"SDF")
+										names(sdfset)[count:(count+l-1)]<<-as.character(rows[1][[1]])
+										count<<-count+l
+
+				}))
+		}
+	}
+
 
 	indexChunkSize=100000
 	start=1
@@ -356,27 +395,22 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		compoundIdSet = compoundIds[start:end]
 		start=end+1
 
-		rs = dbOp(dbSendQuery(conn,
+		rs = dbSendQuery(conn,
 							  paste("SELECT compound_id,definition FROM compounds where compound_id in (",
-									  paste(compoundIdSet,collapse=","),")")))
-		bufferResultSet(rs,function(rows){
-					sdfs = definition2SDFset(rows[2][[1]])
-					cid(sdfs) = as.character(rows[1][[1]])
-					if(!is.na(filename))
-						write.SDF(sdfs,file=f)
-					else
-						sdfset <<- if(length(sdfset)==0)
-									sdfs
-								else
-									c(sdfset,sdfs)
-				 })
-		dbOp(dbClearResult(rs))
+									  paste(compoundIdSet,collapse=","),")"))
+		bufferResultSet(rs, resultProcessor,1000)
+		dbClearResult(rs)
 	}
 
 
-	if(!is.na(filename))
+	if(!is.na(filename)){
 		close(f)
-	sdfset
+	}
+	else{
+	#	sdfset = read.SDFset(read.SDFstr(f))
+		return(as(sdfset,"SDFset"))
+	}
+#	sdfset
 }
 
 indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
