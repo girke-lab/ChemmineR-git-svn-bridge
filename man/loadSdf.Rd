@@ -5,7 +5,7 @@
 	Load SDF Data
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+	Load an SDF formatted file into the database
 }
 \usage{
 loadSdf(conn, sdfFile, batchSize = 10000, validate = FALSE)

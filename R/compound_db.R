@@ -23,7 +23,9 @@ initDb <- function(handle){
 	if( ! all(c("compounds","descriptor_types","descriptors") %in% tableList)) {
 		print("createing db")
 
-		statements = unlist(strsplit(paste(readLines("inst/schema/compounds.SQLite"),collapse=""),";",fixed=TRUE))
+		statements = unlist(strsplit(paste(
+							  readLines(system.file("schema/compounds.SQLite",package="ChemmineR",mustWork=TRUE)),
+							  collapse=""),";",fixed=TRUE))
 		#print(statements)
 
 		Map(function(sql) dbOp(dbGetQuery(conn,sql)),statements)
@@ -132,7 +134,7 @@ definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
 
-loadSdf2 <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startline=1, restartNlines=100000){
+loadSdf <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startline=1, restartNlines=100000){
 	## Define loop parameters 
 	stop <- FALSE 
 	f <- file(sdfFile, "r")
@@ -215,7 +217,7 @@ loadSdf2 <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startli
 }
 
 
-loadSdf <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
+loadSdf_slow <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 	f = file(sdfFile,"r")
 
 	tryCatch({

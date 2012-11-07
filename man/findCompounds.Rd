@@ -5,7 +5,9 @@
 	Find Compounds in Database
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+	Performs an SQL query to find compounds matching the given tests. Each test
+	should be in the format: "<feature name> <SQL operator> <value>". They will all be "AND"'d together.
+	All feature names used in any test should be given in the featureNames argument
 }
 \usage{
 findCompounds(conn, featureNames, tests)

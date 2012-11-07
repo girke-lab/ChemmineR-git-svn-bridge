@@ -5,7 +5,8 @@
 	Iinitialize Database
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+	This will ensure that the database connection given is ready for use. If it does not find the tables it needs, it
+	will try to create them.
 }
 \usage{
 initDb(handle)
@@ -13,7 +14,8 @@ initDb(handle)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{handle}{
-%%     ~~Describe \code{handle} here~~
+	  This can be either a filename, in which case we assume it is the naem of an SQLite database and use RSQLite to
+	  connect to it, or else any DBI Connection.
 }
 }
 \details{

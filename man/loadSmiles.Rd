@@ -5,7 +5,7 @@
 	Load SMILES Data
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+	Load a SMILES formated file into the database
 }
 \usage{
 loadSmiles(conn, smileFile, batchSize = 10000)

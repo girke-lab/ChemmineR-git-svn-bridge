@@ -5,7 +5,7 @@
 	Get Compounds From Database
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+	Create SDF objects from the given set of compound ids. Id numbers can be found using the findCompounds function.
 }
 \usage{
 getCompounds(conn, compoundIds, filename = NA)
