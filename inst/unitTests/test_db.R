@@ -8,27 +8,63 @@ test_aaa.clean <- function(){
 test_aa.initDb<-function(){
 	conn = initDb("test.db")
 	checkTrue(file.exists("test.db"))
+	checkException(initDb(c(1,2)))
+	checkTrue(all(c("compounds","descriptor_types","descriptors") %in% dbListTables(conn)))
+	checkTrue(inherits(conn,"DBIConnection"))
+	dbDisconnect(conn)
 }
 
 test_ba.loadSdf<-function(){
 	data(sdfsample)
-	tempFile=tempfile()
-	write.SDF(sdfsample,tempFile)
+
+
+	firstHalf=tempfile()
+	write.SDF(sdfsample[1:50],firstHalf)
+	secondHalf=tempfile()
+	write.SDF(sdfsample[51:100],secondHalf)
+
 	conn = initDb("test.db")
-	loadSdf(conn,tempFile,function(sdfset)cbind(MW=MW(sdfset)) )
+	print("loading first half")
+	loadSdf(conn,firstHalf,function(sdfset)
+			  data.frame( 
+					  MW=MW(sdfset),
+					  rings(sdfset, type="count", upper=6, arom=TRUE)) )
+
+	print("loading incomplete features")
+	checkException(loadSdf(conn,secondHalf,function(sdfset)
+			  data.frame( CID=cid(sdfset),
+					  rings(sdfset, type="count", upper=6, arom=TRUE)) ))
+
+	print("loading second half")
+	loadSdf(conn,secondHalf,function(sdfset)
+			  data.frame( CID=cid(sdfset),
+					  MW=MW(sdfset),
+					  rings(sdfset, type="count", upper=6, arom=TRUE)) )
+	print("done loading")
+
 
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM compounds")[1][[1]]
 	checkEquals(compoundCount ,length(cid(sdfsample)))
 	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_MW")[1][[1]]
 	checkEquals(featureCount ,length(cid(sdfsample)))
+	dbDisconnect(conn)
 }
 
 test_ca.findCompounds<-function(){
 
 	conn = initDb("test.db")
 
-	indexes = findCompounds(conn,"MW","MW < 400")
+	indexes = findCompounds(conn,"MW",c("MW < 400"))
 	print(paste("found",length(indexes)," compounds"))
+	checkEquals(length(indexes),70)
+
+	checkException(findCompounds(conn,"MW",c("MW < 400","RINGS > 3")))
+
+	indexes=findCompounds(conn,c("MW","RINGS"),c("MW < 400","RINGS > 3"))
+	print(paste("found",length(indexes)," compounds"))
+	checkEquals(length(indexes),20)
+
+	dbDisconnect(conn)
 
 }
 
@@ -45,5 +81,58 @@ test_da.getCompounds<-function(){
 	checkTrue(file.exists("test.sdf"))
 	sdfFromFile = read.SDFset("test.sdf")
 	checkEquals(length(cid(sdfFromFile)),70)
+	dbDisconnect(conn)
 
 }
+
+
+test_ea.comparison <- function()
+{
+	filename = "~/runs/kinase/kinase.sdf"
+	#filename = "~/runs/protein/proteins.sdf"
+#	options(warn=2)
+	options(error=traceback)
+	streamTest <- function(){
+		#sink("/dev/null")
+		t1=system.time(sdfStream(input=filename,output="index.stream", silent=TRUE, fct=function(sdfset)
+					 cbind(MW=MW(sdfset)  )))
+		t2=system.time(index <- read.delim("index.stream",row.names=1))
+		#index[index$sdfid %in% c("3540","5329468","32014"),]
+		t3=system.time(queryIds <- index[index$MW < 400,])
+		#t4=system.time(read.SDFindex(file=filename,index=queryIds,type="file",outfile="stream_result.sdf"))
+		t4=system.time(read.SDFindex(file=filename,index=queryIds))
+		#sink()
+		print(t1) #loadSdf
+		print(t2) #
+		print(t3) #findCompounds
+		print(t4) #write compounds
+	}
+	dbTest <- function(){
+		print(system.time(conn<-initDb("tempdb")))
+		###print(system.time(loadSdf(conn,filename,validate=TRUE)))
+		print(system.time(loadSdf(conn,filename,function(sdfset)cbind(MW=MW(sdfset)))))
+		###print(system.time(indexes <<- findCompounds(conn,function(sdf){ MW(sdf) < 400 }) ))
+		print(system.time(indexes <<- findCompounds(conn,"MW","MW < 400")))
+#		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
+		print(system.time(getCompounds(conn, indexes)))
+		dbDisconnect(conn)
+	}
+
+	#library(RSQLite)
+	#library(digest)
+	unlink("tempdb")
+
+	print("stream:")
+	#Rprof()
+	print(system.time(streamTest()))
+	#Rprof(NULL)
+	#summaryRprof("Rprof.out")
+	
+	print("db:")
+#	Rprof()
+	print(system.time(dbTest()))
+#	Rprof(NULL)
+#	summaryRprof("Rprof.out")
+
+}
+

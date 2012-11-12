@@ -80,7 +80,7 @@ addNewFeatures <- function(conn,data, featureGenerator){
 	#will need to query all existing compounds and add these features
 	if(length(newFeatures) != 0){
 		message("adding new features to existing compounds. This could take a while")
-		lapply(newFeatures,function(name) createFeature(conn,name,class(data[,name])))
+		lapply(newFeatures,function(name) createFeature(conn,name,is.numeric(data[,name])))
 		indexExistingCompounds(conn,newFeatures,featureGenerator)
 		
 	}
@@ -130,6 +130,22 @@ bufferResultSet <- function(rs,rsProcessor,batchSize=1000){
 		rsProcessor(chunk)
 	}
 }
+batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
+
+	numIndices=length(allIndices)
+
+	if(numIndices==0)
+		return()
+
+	start=1
+	for(end in seq(1,numIndices,by=batchSize)+batchSize){
+		end = min(end,numIndices)
+		print(paste(start,end))
+		indexSet= allIndices[start:end]
+		start=end+1
+		indexProcessor(indexSet)
+	}
+}
 definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
@@ -156,64 +172,67 @@ loadSdf <- function(conn,sdfFile,fct=function(x) cbind(), Nlines=10000, startlin
 	counter <- 0
 	cmpid <- 1
 	partial <- NULL
-	dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
-	while(!stop) {
-		counter <- counter + 1
-		chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
-		if(length(chunk) > 0) {
-			if(length(partial) > 0) {
-				chunk <- c(partial, chunk)
-			}
-			## Assure that lines of least 2 complete molecules are stored in chunk if available
-			inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-			while(inner) {
-				chunklength <- length(chunk)
-				chunk <- c(chunk, readLines(f, n = n))
-				if(chunklength == length(chunk)) { 
-					inner <- FALSE 
-				} else {
-					#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-					inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
+	tryCatch({
+		dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
+		while(!stop) {
+			counter <- counter + 1
+			chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+			if(length(chunk) > 0) {
+				if(length(partial) > 0) {
+					chunk <- c(partial, chunk)
 				}
+				## Assure that lines of least 2 complete molecules are stored in chunk if available
+				inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+				while(inner) {
+					chunklength <- length(chunk)
+					chunk <- c(chunk, readLines(f, n = n))
+					if(chunklength == length(chunk)) { 
+						inner <- FALSE 
+					} else {
+						#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+						inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
+					}
+				}
+				y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+				index <- which(y!=-1)
+				indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+				complete <- chunk[1:index[length(index)]]
+				if((index[length(index)]+1) <= length(chunk)) {
+					partial <- chunk[(index[length(index)]+1):length(chunk)]
+				} else {
+					partial <- NULL
+				}
+
+				sdfset <- read.SDFset(read.SDFstr(complete))
+				valid = validSDF(sdfset)
+				sdfset=sdfset[valid]
+
+
+				userFeatures <- fct(sdfset)
+
+		#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
+		#		names = unlist(Map(function(x) x[1],sdfstrList))
+		#		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+
+				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
+				names = complete[indexDF[,1]]
+				systemFields=data.frame(name=names[valid],definition=defs[valid],format="sdf")
+
+				allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+				loadDb(conn,allFields,fct)
+
+				
 			}
-			y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
-			index <- which(y!=-1)
-			indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
-			complete <- chunk[1:index[length(index)]]
-			if((index[length(index)]+1) <= length(chunk)) {
-				partial <- chunk[(index[length(index)]+1):length(chunk)]
-			} else {
-				partial <- NULL
+			if(length(chunk) == 0) {
+				stop <- TRUE
+				close(f)
 			}
-
-			sdfset <- read.SDFset(read.SDFstr(complete))
-			valid = validSDF(sdfset)
-			sdfset=sdfset[valid]
-
-
-			userFeatures <- fct(sdfset)
-
-	#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
-	#		names = unlist(Map(function(x) x[1],sdfstrList))
-	#		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-
-			defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
-			names = complete[indexDF[,1]]
-			systemFields=data.frame(name=names[valid],definition=defs[valid],format="sdf")
-
-			allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-			loadDb(conn,allFields,fct)
-
-			
 		}
-		if(length(chunk) == 0) {
-			stop <- TRUE
-			close(f)
-		}
-	}
-
-	dbOp(dbCommit(conn))
-
+		dbOp(dbCommit(conn))
+	},error=function(e){
+		dbRollback(conn)
+		stop(paste("db error while loading sdf data: ",e$message))
+	})
 }
 
 
@@ -285,12 +304,20 @@ findCompounds <- function(conn,featureNames,tests){
 	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
 	# ... where test1 AND test2 AND ...
 	featureTables = paste("feature_",featureNames,sep="")
-	sql = paste("SELECT compound_id FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
+	tryCatch({
+		sql = paste("SELECT compound_id FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
 					" USING(compound_id) WHERE ",paste("(",paste(tests,collapse=") AND ("),")") ) 
 	
-	#print(paste("query sql:",sql))
-	result = dbGetQuery(conn,sql)
-	result[1][[1]]
+		#print(paste("query sql:",sql))
+		result = dbGetQuery(conn,sql)
+		result[1][[1]]
+	},error=function(e){
+		if(length(grep("no such column",e$message))!=0){
+			stop("featureNames must contain every feature used in a test")
+		}else{
+			stop(paste("error in findCompounds:",e$message))
+		}
+	})
 
 }
 
@@ -313,24 +340,13 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 			}
 	}
 
-
-	indexChunkSize=100000
-	start=1
-	print(paste("length:",length(compoundIds)))
-	for(end in seq(1,length(compoundIds),by=indexChunkSize)+indexChunkSize){
-	
-		end = min(end,length(compoundIds))
-		print(paste(start,end))
-		compoundIdSet = compoundIds[start:end]
-		start=end+1
-
+	batchByIndex(compoundIds,function(compoundIdSet){
 		rs = dbSendQuery(conn,
 							  paste("SELECT compound_id,definition FROM compounds where compound_id in (",
 									  paste(compoundIdSet,collapse=","),")"))
 		bufferResultSet(rs, resultProcessor,1000)
 		dbClearResult(rs)
-	}
-
+	})
 
 	if(!is.na(filename)){
 		close(f)
@@ -340,35 +356,38 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 }
 
 indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
-	rs = dbOp(dbSendQuery(conn,"SELECT compound_id,definition FROM compounds "))
-	bufferResultSet(rs,function(rows){
-				tryCatch({
-						sdfset = definition2SDFset(rows)
-						userFeatures  = featureGenerator(sdfset)
-						print(userFeatures)
-						lapply(newFeatures, function(name){
-								 print(paste("name:",name))
-								 insertFeature(conn,name,cbind(compound_id=rows[1,],userFeatures[name]))
-					   })
-					},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
-				)
-			 })
-	dbClearResult(rs)
+
+	# we have to batch by index because we need to execute an insert statment along
+	# the way and R DBI does not allow you to do two things at once.
+	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM compounds")[1][[1]],function(compoundIdSet){
+		tryCatch({
+				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
+								  paste(compoundIdSet,collapse=","),")"))
+
+				sdfset = definition2SDFset(rows[2][[1]])
+				userFeatures  = featureGenerator(sdfset)
+				lapply(newFeatures, function(name){
+						 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],userFeatures[name]))
+				})
+			},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
+		)
+
+	},1000)
 }
 
-createFeature <- function(conn,name, type){
+createFeature <- function(conn,name, isNumeric){
 
 
-	sqlType = if(type == "numeric") "NUMERIC" else "TEXT"
-	print(paste("sql type: ",sqlType))
+	sqlType = if(isNumeric) "NUMERIC" else "TEXT"
+	print(paste("adding",name,", sql type: ",sqlType))
 	dbGetQuery(conn,
 		paste("CREATE TABLE feature_",name," (
 			compound_id INTEGER REFERENCES compound(compound_id) ON DELETE CASCADE, ",
 			name," ",sqlType," )",sep=""))
-	print("made table")
+	#print("made table")
 	dbGetQuery(conn,paste("CREATE INDEX feature_",name,"_index ON
 								 feature_",name,"(",name,")",sep=""))
-	print("made index")
+	#print("made index")
 
 }
 
@@ -384,7 +403,6 @@ insertDef <- function(conn,data)
 
 insertNamedDef <- function(conn,data) 
 	if(inherits(conn,"SQLiteConnection")){
-		print("preparing")
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(name,definition,definition_checksum,format) ",
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else{

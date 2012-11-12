@@ -8,22 +8,23 @@
 	Load an SDF formatted file into the database
 }
 \usage{
-loadSdf(conn, sdfFile, batchSize = 10000, validate = FALSE)
+loadSdf(conn, sdfFile, fct = function(x) cbind(), Nlines =
+                 10000, startline = 1, restartNlines = 1e+05)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{conn}{
-%%     ~~Describe \code{conn} here~~
-}
+	}
   \item{sdfFile}{
-%%     ~~Describe \code{sdfFile} here~~
-}
-  \item{batchSize}{
-%%     ~~Describe \code{batchSize} here~~
-}
-  \item{validate}{
-%%     ~~Describe \code{validate} here~~
-}
+	}
+  \item{fct}{
+	}
+  \item{Nlines}{
+	}
+  \item{startline}{
+  }
+  \item{restartNlines}{
+  }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
