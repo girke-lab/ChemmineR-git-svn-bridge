@@ -1,5 +1,5 @@
 
-debug = TRUE
+debug = FALSE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))

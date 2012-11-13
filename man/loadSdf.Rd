@@ -8,8 +8,8 @@
 	Load an SDF formatted file into the database
 }
 \usage{
-loadSdf(conn, sdfFile, fct = function(x) cbind(), Nlines =
-                 10000, startline = 1, restartNlines = 1e+05)
+loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) data.frame(descriptor=c(),type=c()),
+				Nlines = 10000, startline = 1, restartNlines = 1e+05)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,6 +18,8 @@ loadSdf(conn, sdfFile, fct = function(x) cbind(), Nlines =
   \item{sdfFile}{
 	}
   \item{fct}{
+	}
+	\item{descriptors}{
 	}
   \item{Nlines}{
 	}
