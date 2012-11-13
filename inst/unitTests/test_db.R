@@ -88,38 +88,34 @@ test_da.getCompounds<-function(){
 
 test_ea.comparison <- function()
 {
-	filename = "~/runs/kinase/kinase.sdf"
-	#filename = "~/runs/protein/proteins.sdf"
+	#filename = "~/runs/kinase/kinase.sdf"
+	filename = "~/runs/protein/proteins.sdf"
 #	options(warn=2)
 	options(error=traceback)
 	streamTest <- function(){
 		#sink("/dev/null")
-		t1=system.time(sdfStream(input=filename,output="index.stream", silent=TRUE, fct=function(sdfset)
-					 cbind(MW=MW(sdfset)  )))
-		t2=system.time(index <- read.delim("index.stream",row.names=1))
+		print(system.time(sdfStream(input=filename,output="index.stream", silent=TRUE, fct=function(sdfset)
+					 cbind(MW=MW(sdfset)  ))))
+		print(system.time(index <- read.delim("index.stream",row.names=1)))
 		#index[index$sdfid %in% c("3540","5329468","32014"),]
-		t3=system.time(queryIds <- index[index$MW < 400,])
-		#t4=system.time(read.SDFindex(file=filename,index=queryIds,type="file",outfile="stream_result.sdf"))
-		t4=system.time(read.SDFindex(file=filename,index=queryIds))
+		print(system.time(queryIds <- index[index$MW < 400,]))
+		print(system.time(read.SDFindex(file=filename,index=queryIds,type="file",outfile="stream_result.sdf")))
+		#print(system.time(read.SDFindex(file=filename,index=queryIds)))
 		#sink()
-		print(t1) #loadSdf
-		print(t2) #
-		print(t3) #findCompounds
-		print(t4) #write compounds
+		#print(t1) #loadSdf
+		#print(t2) #
+		#print(t3) #findCompounds
+		#print(t4) #write compounds
 	}
 	dbTest <- function(){
 		print(system.time(conn<-initDb("tempdb")))
-		###print(system.time(loadSdf(conn,filename,validate=TRUE)))
 		print(system.time(loadSdf(conn,filename,function(sdfset)cbind(MW=MW(sdfset)))))
-		###print(system.time(indexes <<- findCompounds(conn,function(sdf){ MW(sdf) < 400 }) ))
 		print(system.time(indexes <<- findCompounds(conn,"MW","MW < 400")))
-#		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
-		print(system.time(getCompounds(conn, indexes)))
+		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
+	#	print(system.time(getCompounds(conn, indexes)))
 		dbDisconnect(conn)
 	}
 
-	#library(RSQLite)
-	#library(digest)
 	unlink("tempdb")
 
 	print("stream:")
