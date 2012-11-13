@@ -64,19 +64,16 @@ loadDb <- function(conn,data,featureGenerator){
 loadDescriptors <- function(conn,data){
 	#expects a data frame with "definition_checksum" and "descriptor"
 
-	req_columns=c("definition_checksum","descriptors","descriptor_type")
+	req_columns=c("definition_checksum","descriptor","descriptor_type")
 	if(!all(req_columns %in% colnames(data)))
-		stop(paste("missing some names, found",colnames(data),"need",paste(req_columns,collapse=",")))
+		stop(paste("missing some names, found",paste(colnames(data),collapse=","),"need",paste(req_columns,collapse=",")))
 
 	#ensure the needed descriptor types are available for the insertDescriptor function to use
 	unique_types = unique(data["descriptor_type"])
 	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")[1][[1]]
 	insertDescriptorType(conn,data.frame(descriptor_type=setdiff(unique_types,all_descriptor_types)))
 
-	
-	insertDescriptors(conn,data)
-
-
+	insertDescriptor(conn,data)
 }
 addNewFeatures <- function(conn,data, featureGenerator){
 	if(dim(data)[1] == 0){ # no data given
@@ -169,7 +166,7 @@ definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
 
-loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),descriptors=function(x) data.frame(descriptor=c(),type=c()), 
+loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
 						  Nlines=10000, startline=1, restartNlines=100000){
 	## Define loop parameters 
 	stop <- FALSE 
@@ -461,7 +458,7 @@ insertDescriptor <- function(conn,data){
 		dbGetPreparedQuery(conn, paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
 							(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
-							:descriptor )" ,bind.data=data))
+							:descriptor )") ,bind.data=data)
 	}else{
 		apply(data,1,function(row) 
 			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",

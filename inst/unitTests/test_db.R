@@ -1,7 +1,7 @@
 
 test_aaa.clean <- function(){
 
-	unlink(c("test.db","test.sdf"))
+	unlink(c("test.db","test.sdf","test_desc.db"))
 	
 }
 
@@ -48,6 +48,18 @@ test_ba.loadSdf<-function(){
 	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_MW")[1][[1]]
 	checkEquals(featureCount ,length(cid(sdfsample)))
 	dbDisconnect(conn)
+
+	#test loading descriptors
+	conn=initDb("test_desc.db")
+	loadSdf(conn,firstHalf,function(sdfset) data.frame(MW=MW(sdfset)),
+			  descriptors=function(sdfset) 
+				data.frame(descriptor_type="ap",descriptor=unlist(lapply(ap(sdf2ap(sdfset)),
+														function(ap) paste(ap,collapse=", ")))))
+	descriptorCount= dbGetQuery(conn,"SELECT count(*) FROM descriptors")[1][[1]]
+	checkEquals(descriptorCount,50)
+	typeCount= dbGetQuery(conn,"SELECT count(*) FROM descriptor_types WHERE descriptor_type = 'ap' ")[1][[1]]
+	checkEquals(typeCount,1)
+					
 }
 
 test_ca.findCompounds<-function(){
