@@ -1,11 +1,14 @@
 
-debug = TRUE
+debug = FALSE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
 	#print(system.time(dbExpr))
 	dbExpr
 }
+
+
+
 
 initDb <- function(handle){
 
@@ -211,8 +214,6 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		checksums=loadDb(conn,allFields,fct)
 
 		descriptor_data = descriptors(sdfset)
-		print("descriptor data: ")
-		print(str(descriptor_data))
 		if(length(descriptor_data) != 0)
 			loadDescriptors(conn,cbind(checksums,descriptor_data))
 
