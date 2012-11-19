@@ -8,7 +8,7 @@
 	Load an SDF formatted file into the database
 }
 \usage{
-loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) data.frame(descriptor=c(),type=c()),
+loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()),
 				Nlines = 10000, startline = 1, restartNlines = 1e+05)
 }
 %- maybe also 'usage' for other objects documented here.

@@ -1,5 +1,5 @@
 
-debug = FALSE
+debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -59,7 +59,7 @@ loadDb <- function(conn,data,featureGenerator){
 				stop(paste("error sending query:",e$message))
 			}
 	})
-	data["definition_checksum"]
+	as.matrix(data["definition_checksum"],rownames.force=FALSE)
 }
 loadDescriptors <- function(conn,data){
 	#expects a data frame with "definition_checksum" and "descriptor"
@@ -113,9 +113,12 @@ insertUserFeatures<- function(conn,data){
 
 	compoundFields = dbListFields(conn,"compounds")
 	userFieldNames = setdiff(colnames(data),compoundFields)
+	if(length(userFieldNames)==0) return()
 
 	tableList=dbListTables(conn)
 	existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+	if(length(existingFeatures)==0) return()
+
 
 		
 	#index all new compounds for all features
@@ -129,6 +132,9 @@ insertUserFeatures<- function(conn,data){
 	sapply(userFieldNames,function(name) insertFeature(conn,name,data))
 
 }
+
+
+########### Large query/file utilities ################
 bufferLines <- function(fh,batchSize,lineProcessor){
 	while(TRUE){
 		lines = readLines(fh,n=batchSize)
@@ -138,13 +144,14 @@ bufferLines <- function(fh,batchSize,lineProcessor){
 			break;
 	}
 }
-bufferResultSet <- function(rs,rsProcessor,batchSize=1000){
+bufferResultSet <- function(rs,rsProcessor,batchSize=1000,closeRS=FALSE){
 	while(TRUE){
 		chunk = fetch(rs,n=batchSize)
 		if(dim(chunk)[1]==0) # 0 rows in data frame
 			break;
 		rsProcessor(chunk)
 	}
+	if(closeRS) dbClearResult(rs)
 }
 batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 
@@ -162,12 +169,57 @@ batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 		indexProcessor(indexSet)
 	}
 }
+selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
+	#print(paste("all indexes: ",paste(allIndices,collapse=", ")))
+
+	#TODO: possibly pre-allocate result here, if performance is a problem
+	result=NA
+	batchByIndex(allIndices, function(indexBatch){
+			#print(paste("query:",genQuery(indexBatch)))
+			df = dbGetQuery(conn,genQuery(indexBatch))
+			#print(paste("got",paste(dim(df),collapse=" "),"results"))
+			result <<- if(is.na(result)) df else  rbind(result,df)
+			#print(paste("total results so far: ",length(result)))
+	},batchSize)
+	#print(paste("final count: ",length(result)))
+	result
+
+}
+###############################################################
+
+
 definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
 
-loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
+loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
+						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
 						  Nlines=10000, startline=1, restartNlines=100000){
+
+	if(inherits(sdfFile,"SDFset")){
+		if(debug) print("loading SDFset")
+		sdfset=sdfFile
+
+		sdfstrList=as(as(sdfset,"SDFstr"),"list")
+		names = unlist(Map(function(x) x[1],sdfstrList))
+		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+
+		systemFields=data.frame(name=names,definition=defs,format="sdf")
+
+		userFeatures <- fct(sdfset)
+		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+		checksums=loadDb(conn,allFields,fct)
+
+		descriptor_data = descriptors(sdfset)
+		print("descriptor data: ")
+		print(str(descriptor_data))
+		if(length(descriptor_data) != 0)
+			loadDescriptors(conn,cbind(checksums,descriptor_data))
+
+		return(findCompoundsByChecksum(conn,checksums))
+
+	}
+	compoundIds=c()
 	## Define loop parameters 
 	stop <- FALSE 
 	f <- file(sdfFile, "r")
@@ -242,6 +294,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),descriptors=functi
 				if(length(descriptor_data) != 0)
 					loadDescriptors(conn,cbind(checksums,descriptor_data))
 
+				compoundIds = c(compoundIds,findCompoundsByChecksum(conn,checksums))
 				
 			}
 			if(length(chunk) == 0) {
@@ -254,6 +307,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),descriptors=functi
 		dbRollback(conn)
 		stop(paste("db error while loading sdf data: ",e$message))
 	})
+	compoundIds
 }
 
 
@@ -316,8 +370,12 @@ loadSdf_slow <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 loadSmiles <- function(conn, smileFile,batchSize=10000){
 
 	f = file(smileFile,"r")
-	bufferLines(f,batchSize=batchSize,function(lines) loadDb(conn,data.frame(definition=lines,format="smile")))
+	compoundIds = c()
+	bufferLines(f,batchSize=batchSize,function(lines) 
+					compoundIds <<- c(compoundIds,
+											findCompoundsByChecksum(conn,loadDb(conn,data.frame(definition=lines,format="smile")))))
 	close(f)
+	compoundIds
 }
 
 findCompounds <- function(conn,featureNames,tests){
@@ -343,13 +401,17 @@ findCompounds <- function(conn,featureNames,tests){
 }
 findCompoundsByChecksum <- function(conn,checksums){
 
-	ids=c()
-	batchByIndex(checksums, function(checksumBatch){
-			df = dbGetQuery(conn,paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
-										 ('",paste(checksumBatch,collapse="','"),"')"))
-			ids = c(ids,df[1][[1]])
-	},1000)
-	ids
+	selectInBatches(conn,checksums,function(batch) 
+			paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
+					('",paste(batch,collapse="','"),"')",sep=""),1000)[1][[1]]
+
+#	ids=c()
+#	batchByIndex(checksums, function(checksumBatch){
+#			df = dbGetQuery(conn,paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
+#										 ('",paste(checksumBatch,collapse="','"),"')"))
+#			ids = c(ids,df[1][[1]])
+#	},1000)
+#	ids
 }
 
 getCompounds <- function(conn,compoundIds,filename=NA){

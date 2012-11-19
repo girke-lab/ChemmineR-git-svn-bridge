@@ -24,7 +24,15 @@ test_ba.loadSdf<-function(){
 	write.SDF(sdfsample[51:100],secondHalf)
 
 	conn = initDb("test.db")
-	print("loading first half")
+	print("loading first half, no features")
+	compIds=loadSdf(conn,sdfsample[1:50])
+	checkEquals(length(compIds),50)
+	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM compounds")[1][[1]]
+	checkEquals(compoundCount ,50)
+	unlink("test.db")
+	conn = initDb("test.db")
+
+	print("loading first half,with features")
 	loadSdf(conn,firstHalf,function(sdfset)
 			  data.frame( 
 					  MW=MW(sdfset),
