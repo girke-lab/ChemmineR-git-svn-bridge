@@ -468,8 +468,9 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", ...) {
         }
         if(type=="cluster") {
                 ## Run Jarvis-Patrick clustering on nearest neighbor matrix (nnm)
+                if(any(c("matrix", "data.frame") %in% class(x))) nnm <- x # If pregenerated matrix is provided
                 ## (i) Initialize algorithm by generating numeric vector with increasing cluster numbers
-                clusters <- seq(along=nnm[,1]); names(clusters) <- rownames(nnm) 
+		clusters <- seq(along=nnm[,1]); names(clusters) <- rownames(nnm) 
                 "%in%" <- function(x, table) match(x, table, nomatch = 0, incomparables=NA) > 0 # Sets NAs of %in% function as incompatible entries which is required when non-standard cutoff is used.
                 for(i in seq(along=nnm[,1])) {
                         ## (ii) Identify for each nnm row the remaining rows with at least k common neighbors
