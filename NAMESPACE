@@ -67,6 +67,7 @@ export(
 	## Database backend functions
 	## Source: compound_db.R
 	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
+	"getCompoundNames",
 
 	## large file/query utilites
 	"bufferLines","bufferResultSet","batchByIndex","selectInBatches"

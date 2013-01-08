@@ -2,7 +2,7 @@
 CREATE TABLE compounds(
 	compound_id INTEGER PRIMARY KEY,
 	name TEXT NOT NULL DEFAULT "",
-	definition TEXT NOT NULL  UNIQUE,
+	definition TEXT NOT NULL,
 	definition_checksum TEXT NOT NULL UNIQUE,
 	format TEXT NOT NULL DEFAULT ""
 );

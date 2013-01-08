@@ -37,6 +37,27 @@ initDb <- function(handle){
 	conn
 }
 
+allowDups <- function(expr){
+	#this is not really safe, nor is it cross-db compatable
+	tryCatch(expr,error=function(e){
+			if(length(grep("column .* is not unique",e$message))!=0){
+				warning(paste("found dup sending query:",e$message))
+			}else{
+				stop(e$message)
+			}
+	})
+}
+dbTransaction <- function(conn,expr){
+	tryCatch({
+		dbGetQuery(conn,"BEGIN TRANSACTION")
+		ret=expr
+		dbCommit(conn)
+		ret
+	},error=function(e){
+		dbRollback(conn)
+		stop(paste("db error inside transaction: ",e$message))
+	})
+}
 loadDb <- function(conn,data,featureGenerator){
 
 	if(debug) print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
@@ -44,24 +65,21 @@ loadDb <- function(conn,data,featureGenerator){
 	data=cbind(data,definition_checksum=sapply(as.vector(data[,"definition"]),
 													  function(def) digest(def,serialize=FALSE) ))
 
-	tryCatch({
-		addNewFeatures(conn,data,featureGenerator)
+	numCompounds = dim(data)[1]
+	dups=0
 
-		if(all(c("name","definition","format") %in% colnames(data))){
-			insertNamedDef(conn,data)
-		}else if(all(c("definition","format") %in% colnames(data))){
-			insertDef(conn,data)
-		}else {
-			stop("given data must have columns either (definition,format), or (name,definiton,format)")
-		}
+	addNewFeatures(conn,data,featureGenerator)
 
-		insertUserFeatures(conn,data)
-	},error=function(e){
-			if(length(grep("column definition is not unique",e$message))==0){
-				#print(sys.calls())
-				stop(paste("error sending query:",e$message))
-			}
-	})
+	if(all(c("name","definition","format") %in% colnames(data))){
+		save(data,file="data.Rdata")
+		insertNamedDef(conn,data)
+	}else if(all(c("definition","format") %in% colnames(data))){
+		insertDef(conn,data)
+	}else {
+		stop("given data must have columns either (definition,format), or (name,definiton,format)")
+	}
+
+	insertUserFeatures(conn,data)
 	as.matrix(data["definition_checksum"],rownames.force=FALSE)
 }
 loadDescriptors <- function(conn,data){
@@ -72,9 +90,11 @@ loadDescriptors <- function(conn,data){
 		stop(paste("missing some names, found",paste(colnames(data),collapse=","),"need",paste(req_columns,collapse=",")))
 
 	#ensure the needed descriptor types are available for the insertDescriptor function to use
-	unique_types = unique(data["descriptor_type"])
-	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")[1][[1]]
-	insertDescriptorType(conn,data.frame(descriptor_type=setdiff(unique_types,all_descriptor_types)))
+	unique_types = unique(data[["descriptor_type"]])
+	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")[[1]]
+	newTypes = setdiff(unique_types,all_descriptor_types)
+	if(length(newTypes) > 0)
+		insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
 
 	insertDescriptor(conn,data)
 }
@@ -172,12 +192,14 @@ batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 		indexProcessor(indexSet)
 	}
 }
+#this does not guarentee a consistant ordering of the result
 selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 	#print(paste("all indexes: ",paste(allIndices,collapse=", ")))
 
+	indices = unique(allIndices)
 	#TODO: possibly pre-allocate result here, if performance is a problem
 	result=NA
-	batchByIndex(allIndices, function(indexBatch){
+	batchByIndex(indices, function(indexBatch){
 			#print(paste("query:",genQuery(indexBatch)))
 			df = dbGetQuery(conn,genQuery(indexBatch))
 			#print(paste("got",paste(dim(df),collapse=" "),"results"))
@@ -211,14 +233,17 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 
 		userFeatures <- fct(sdfset)
 		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-		checksums=loadDb(conn,allFields,fct)
+		cmdIds=dbTransaction(conn,{
+			checksums=loadDb(conn,allFields,fct)
 
-		descriptor_data = descriptors(sdfset)
-		if(length(descriptor_data) != 0)
-			loadDescriptors(conn,cbind(checksums,descriptor_data))
+			#We assume descriptors are in the same order as compounds
+			descriptor_data = descriptors(sdfset)
+			if(length(descriptor_data) != 0)
+				loadDescriptors(conn,cbind(checksums,descriptor_data))
 
-		return(findCompoundsByChecksum(conn,checksums))
-
+			findCompoundsByChecksum(conn,checksums)
+	   })
+		return(cmdIds)
 	}
 	compoundIds=c()
 	## Define loop parameters 
@@ -242,8 +267,8 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 	counter <- 0
 	cmpid <- 1
 	partial <- NULL
-	tryCatch({
-		dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
+
+	dbTransaction(conn,{
 		while(!stop) {
 			counter <- counter + 1
 			chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
@@ -303,20 +328,16 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 				close(f)
 			}
 		}
-		dbOp(dbCommit(conn))
-	},error=function(e){
-		dbRollback(conn)
-		stop(paste("db error while loading sdf data: ",e$message))
+
+		compoundIds
 	})
-	compoundIds
 }
 
 
 loadSdf_slow <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 	f = file(sdfFile,"r")
 
-	tryCatch({
-		dbOp(dbGetQuery(conn,"BEGIN TRANSACTION"))
+	dbTransaction(conn,{
 		compoundLines=rep("",batchSize)
 		compoundQueue=data.frame(name=rep(NA,1000),definition=NA,format=NA)
 		compoundCount=1
@@ -359,11 +380,6 @@ loadSdf_slow <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
 		if(debug) print(paste("loading last batch",compoundCount))
 		#print(compoundQueue[,c(1,3)])
 		loadDb(conn,compoundQueue[1:compoundCount-1,])
-		dbOp(dbCommit(conn))
-	},error=function(e){
-		print(paste("import failed:",e$message))
-		traceback()
-		dbOp(dbRollback(conn))
 	})
 	close(f)
 }
@@ -400,28 +416,24 @@ findCompounds <- function(conn,featureNames,tests){
 	})
 
 }
+#incosistant ordering
 findCompoundsByChecksum <- function(conn,checksums){
 
 	selectInBatches(conn,checksums,function(batch) 
 			paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
 					('",paste(batch,collapse="','"),"')",sep=""),1000)[1][[1]]
-
-#	ids=c()
-#	batchByIndex(checksums, function(checksumBatch){
-#			df = dbGetQuery(conn,paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
-#										 ('",paste(checksumBatch,collapse="','"),"')"))
-#			ids = c(ids,df[1][[1]])
-#	},1000)
-#	ids
 }
 
 getCompounds <- function(conn,compoundIds,filename=NA){
 	
+	processedCount=0
 	if(!is.na(filename)){
 		f=file(filename,"w")
 
-		resultProcessor = function(rows)
+		resultProcessor = function(rows){
 			lapply(rows[2][[1]],function(def) cat(def,"\n",sep="",file=f))
+			processedCount <<- processedCount + dim(rows)[1]
+		}
 	}else{
 		sdfset = rep(NA,length(compoundIds))
 		count=1
@@ -430,6 +442,7 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 					sdfset[count:(count+l-1)]<<-as(definition2SDFset(rows[2][[1]]),"SDF")
 					names(sdfset)[count:(count+l-1)]<<-as.character(rows[1][[1]])
 					count<<-count+l
+					processedCount <<- processedCount + dim(rows)[1]
 			}
 	}
 
@@ -441,13 +454,29 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		dbClearResult(rs)
 	})
 
+	if(length(compoundIds) != processedCount) {
+		if(debug) print(str(sdfset))
+		warning(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
+	}
+
 	if(!is.na(filename)){
 		close(f)
 	}else{
 		return(as(sdfset,"SDFset"))
 	}
 }
+getCompoundNames <- function(conn, compoundIds){
 
+	result = selectInBatches(conn,compoundIds,function(ids)
+					  paste("SELECT compound_id, name FROM compounds where compound_id in (",
+									  paste(ids,collapse=","),")"))
+
+	n=result$name
+	names(n)=result$compound_id
+	#print(n[as.character(compoundIds)])
+	n[as.character(compoundIds)]
+	#as.matrix(merge(data.frame(compound_id=compoundIds),result,sort=FALSE)[[2]])
+}
 indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
 
 	# we have to batch by index because we need to execute an insert statment along
@@ -475,7 +504,7 @@ createFeature <- function(conn,name, isNumeric){
 	if(debug) print(paste("adding",name,", sql type: ",sqlType))
 	dbGetQuery(conn,
 		paste("CREATE TABLE feature_",name," (
-			compound_id INTEGER REFERENCES compound(compound_id) ON DELETE CASCADE, ",
+			compound_id INTEGER PRIMARY KEY REFERENCES compound(compound_id) ON DELETE CASCADE, ",
 			name," ",sqlType," )",sep=""))
 	#print("made table")
 	dbGetQuery(conn,paste("CREATE INDEX feature_",name,"_index ON
@@ -484,7 +513,9 @@ createFeature <- function(conn,name, isNumeric){
 
 }
 
-insertDef <- function(conn,data)  
+rmDups <- function(data,columns) data[!duplicated(data[,columns]),]
+insertDef <- function(conn,data)  {
+	data = rmDups(data,"definition_checksum")
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(definition,definition_checksum,format) ",
 								 "VALUES(:definition,:definition_checksum,:format)",sep=""), bind.data=data)
@@ -493,8 +524,10 @@ insertDef <- function(conn,data)
 						 paste("INSERT INTO compounds(definition,definition_checksum,format)
 																			  VALUES('",row[1],"','",row[2],"','",row[3],"')", sep=""))))
 	}
+}
 
-insertNamedDef <- function(conn,data) 
+insertNamedDef <- function(conn,data) {
+	data = rmDups(data,"definition_checksum")
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(name,definition,definition_checksum,format) ",
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
@@ -503,6 +536,7 @@ insertNamedDef <- function(conn,data)
 						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES('",
 																	  row[1],"','",row[2],"','",row[3],"','",row[4],"')", sep=""))))
 	}
+}
 
 insertFeature <- function(conn,name,values){
 	if(debug) print(paste("name:",name))
@@ -517,6 +551,7 @@ insertFeature <- function(conn,name,values){
 	}
 }
 insertDescriptor <- function(conn,data){
+	data = rmDups(data,c("definition_checksum","descriptor_type"))
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn, paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
