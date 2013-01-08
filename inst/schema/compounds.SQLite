@@ -1,11 +1,13 @@
 
 CREATE TABLE compounds(
-	compound_id INTEGER PRIMARY KEY,
-	name TEXT NOT NULL DEFAULT "",
+	compound_id INTEGER  PRIMARY KEY ,
+	name TEXT NOT NULL DEFAULT '',
 	definition TEXT NOT NULL,
 	definition_checksum TEXT NOT NULL UNIQUE,
-	format TEXT NOT NULL DEFAULT ""
+	format TEXT NOT NULL 
 );
+INSERT INTO compounds(compound_id,format,definition,definition_checksum)
+	VALUES(200,'junk','this is to shift the id numbers to ferret out index bugs','junk');
 
 CREATE TABLE descriptor_types (
 	descriptor_type_id INTEGER PRIMARY KEY,

@@ -416,14 +416,29 @@ findCompounds <- function(conn,featureNames,tests){
 	})
 
 }
-#incosistant ordering
-findCompoundsByChecksum <- function(conn,checksums){
 
-	selectInBatches(conn,checksums,function(batch) 
-			paste("SELECT compound_id FROM compounds WHERE definition_checksum IN
-					('",paste(batch,collapse="','"),"')",sep=""),1000)[1][[1]]
+#undefined ordering by default
+findCompoundsByChecksum <- function(conn,checksums,keepOrder=FALSE)
+	findCompoundsByX(conn,"definition_checksum",checksums,keepOrder)
+findCompoundsByName<- function(conn,names,keepOrder=FALSE)
+	findCompoundsByX(conn,"name",names,keepOrder)
+
+findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE){
+	result = selectInBatches(conn,data,function(batch) 
+			paste("SELECT compound_id,",fieldName
+					," FROM compounds WHERE ",fieldName," IN
+					('",paste(batch,collapse="','"),"')",sep=""),1000)
+	ids = result$compound_id
+	if(length(ids)!=length(data))
+		stop(paste("found only",length(ids),"out of",length(data),
+					  "queries given"))
+	if(keepOrder){
+		names(ids)=result[[fieldName]]
+		ids[data]
+	}else{
+		ids
+	}
 }
-
 getCompounds <- function(conn,compoundIds,filename=NA){
 	
 	processedCount=0

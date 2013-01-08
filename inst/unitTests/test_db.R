@@ -6,6 +6,7 @@ test_aaa.clean <- function(){
 }
 
 test_aa.initDb<-function(){
+	#DEACTIVATED("temp")
 	conn = initDb("test.db")
 	checkTrue(file.exists("test.db"))
 	checkException(initDb(c(1,2)))
@@ -15,14 +16,19 @@ test_aa.initDb<-function(){
 }
 
 test_ba.loadSdf<-function(){
+	#DEACTIVATED("temp")
 	data(sdfsample)
 
 
 	conn = initDb("test.db")
-	print("loading first half, no features")
-	compIds=loadSdf(conn,sdfsample[c(1,2,1,3)])
+	print("loading first half, no features, with exception")
+	#checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
+	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
+	print(compIds)
 	checkEquals(length(compIds),3)
 	dbDisconnect(conn)
+
+
 	conn = initDb("test.db") # use new conn to make sure changes are durable
 	print("loading first half, no features")
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM compounds")[1][[1]]
@@ -77,6 +83,7 @@ test_ba.loadSdf<-function(){
 
 test_ca.findCompounds<-function(){
 
+	DEACTIVATED("temp")
 	conn = initDb("test.db")
 
 	indexes = findCompounds(conn,"MW",c("MW < 400"))
@@ -95,6 +102,7 @@ test_ca.findCompounds<-function(){
 
 test_da.getCompounds<-function(){
 
+	DEACTIVATED("temp")
 	conn = initDb("test.db")
 
 	indexes = findCompounds(conn,"MW","MW < 400")
@@ -114,10 +122,10 @@ test_da.getCompounds<-function(){
 test_ea.comparison <- function()
 {
 
-	DEACTIVATED("local test")
-	#filename = "~/runs/kinase/kinase.sdf"
+	#DEACTIVATED("local test")
+	filename = "~/runs/kinase/kinase.sdf"
 	#filename = "~/runs/protein/proteins.sdf"
-	filename = "~/runs/protein/proteins-1000.sdf"
+	#filename = "~/runs/protein/proteins-1000.sdf"
 #	options(warn=2)
 	options(error=traceback)
 	streamTest <- function(){
@@ -137,7 +145,16 @@ test_ea.comparison <- function()
 	}
 	dbTest <- function(){
 		print(system.time(conn<-initDb("tempdb")))
-		print(system.time(loadSdf(conn,filename,function(sdfset)cbind(MW=MW(sdfset)))))
+		print(system.time(loadSdf(conn,filename,function(sdfset)cbind(MW=MW(sdfset)),
+										  function(x) {
+											  print(paste("apset time",length(x)))
+											  print(system.time(aps<<-sdf2ap(x)))
+											  #data.frame(descriptor_type="ap",
+															 #descriptor = unlist(lapply(ap(aps), 
+																					#function(x) paste(x,collapse=", "))))
+											  data.frame(descriptor_type=c(),descriptor=c())
+										  }
+										)))
 		print(system.time(indexes <<- findCompounds(conn,"MW","MW < 400")))
 		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
 	#	print(system.time(getCompounds(conn, indexes)))
