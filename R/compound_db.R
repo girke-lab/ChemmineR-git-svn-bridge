@@ -37,16 +37,6 @@ initDb <- function(handle){
 	conn
 }
 
-allowDups <- function(expr){
-	#this is not really safe, nor is it cross-db compatable
-	tryCatch(expr,error=function(e){
-			if(length(grep("column .* is not unique",e$message))!=0){
-				warning(paste("found dup sending query:",e$message))
-			}else{
-				stop(e$message)
-			}
-	})
-}
 dbTransaction <- function(conn,expr){
 	tryCatch({
 		dbGetQuery(conn,"BEGIN TRANSACTION")
@@ -496,7 +486,8 @@ indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
 
 	# we have to batch by index because we need to execute an insert statment along
 	# the way and R DBI does not allow you to do two things at once.
-	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM compounds")[1][[1]],function(compoundIdSet){
+	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM
+									compounds WHERE format!='junk' ")[1][[1]],function(compoundIdSet){
 		tryCatch({
 				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
 								  paste(compoundIdSet,collapse=","),")"))

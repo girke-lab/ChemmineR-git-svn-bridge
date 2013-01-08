@@ -1,15 +1,15 @@
 .onLoad <- function(libname, pkgname) 
 {
-    if (!is.null(getOption('disable.chemminer.performance.pack'))
-            && getOption('disable.chemminer.performance.pack') == 1) {
-        cat("ChemmineR Performance Pack is explicitly disabled.\n")
-        options(.use.chemminer.pp = 0)
-    } else if (suppressWarnings(require('ChemmineRpp', quietly=T))) {
-        cat("Using ChemmineR Performance Pack for calculation.",
-        "Set `disable.chemminer.performance.pack' option to 1",
-        "to disable the use of ChemmineR Performance Pack.\n")
-        options(.use.chemminer.pp = 1)
-    }
+#pp#    if (!is.null(getOption('disable.chemminer.performance.pack'))
+#pp#            && getOption('disable.chemminer.performance.pack') == 1) {
+#pp#        cat("ChemmineR Performance Pack is explicitly disabled.\n")
+#pp#        options(.use.chemminer.pp = 0)
+#pp#    } else if (suppressWarnings(require('ChemmineRpp', quietly=T))) {
+#pp#        cat("Using ChemmineR Performance Pack for calculation.",
+#pp#        "Set `disable.chemminer.performance.pack' option to 1",
+#pp#        "to disable the use of ChemmineR Performance Pack.\n")
+#pp#        options(.use.chemminer.pp = 1)
+#pp#    }
 }
 
 .db.header.size <- 16

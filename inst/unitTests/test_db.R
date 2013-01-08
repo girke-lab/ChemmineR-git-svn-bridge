@@ -24,15 +24,15 @@ test_ba.loadSdf<-function(){
 	print("loading first half, no features, with exception")
 	#checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
 	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
-	print(compIds)
 	checkEquals(length(compIds),3)
 	dbDisconnect(conn)
 
 
 	conn = initDb("test.db") # use new conn to make sure changes are durable
 	print("loading first half, no features")
-	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM compounds")[1][[1]]
-	checkEquals(compoundCount ,3)
+	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
+										compounds WHERE format!='junk'")[1][[1]]
+	checkEquals(compoundCount, 3)
 	unlink("test.db")
 
 
@@ -62,7 +62,8 @@ test_ba.loadSdf<-function(){
 	print("done loading")
 
 
-	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM compounds")[1][[1]]
+	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
+										compounds WHERE format!='junk'")[1][[1]]
 	checkEquals(compoundCount ,length(cid(sdfsample)))
 	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_MW")[1][[1]]
 	checkEquals(featureCount ,length(cid(sdfsample)))
@@ -83,7 +84,7 @@ test_ba.loadSdf<-function(){
 
 test_ca.findCompounds<-function(){
 
-	DEACTIVATED("temp")
+	#DEACTIVATED("temp")
 	conn = initDb("test.db")
 
 	indexes = findCompounds(conn,"MW",c("MW < 400"))
@@ -102,7 +103,7 @@ test_ca.findCompounds<-function(){
 
 test_da.getCompounds<-function(){
 
-	DEACTIVATED("temp")
+	#DEACTIVATED("temp")
 	conn = initDb("test.db")
 
 	indexes = findCompounds(conn,"MW","MW < 400")
@@ -122,7 +123,7 @@ test_da.getCompounds<-function(){
 test_ea.comparison <- function()
 {
 
-	#DEACTIVATED("local test")
+	DEACTIVATED("local test")
 	filename = "~/runs/kinase/kinase.sdf"
 	#filename = "~/runs/protein/proteins.sdf"
 	#filename = "~/runs/protein/proteins-1000.sdf"
