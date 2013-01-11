@@ -33,7 +33,7 @@ test_ba.loadSdf<-function(){
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
 										compounds WHERE format!='junk'")[1][[1]]
 	checkEquals(compoundCount, 3)
-	unlink("test.db")
+	unlinkResult <- unlink("test.db")
 
 
 	firstHalf=tempfile()
@@ -41,7 +41,7 @@ test_ba.loadSdf<-function(){
 	secondHalf=tempfile()
 	write.SDF(sdfsample[51:100],secondHalf)
 
-	conn = initDb("test.db")
+	conn = initDb("test2.db")
 
 	print("loading first half,with features")
 	loadSdf(conn,firstHalf,function(sdfset)
@@ -85,7 +85,7 @@ test_ba.loadSdf<-function(){
 test_ca.findCompounds<-function(){
 
 	#DEACTIVATED("temp")
-	conn = initDb("test.db")
+	conn = initDb("test2.db")
 
 	indexes = findCompounds(conn,"MW",c("MW < 400"))
 	print(paste("found",length(indexes)," compounds"))
@@ -104,7 +104,7 @@ test_ca.findCompounds<-function(){
 test_da.getCompounds<-function(){
 
 	#DEACTIVATED("temp")
-	conn = initDb("test.db")
+	conn = initDb("test2.db")
 
 	indexes = findCompounds(conn,"MW","MW < 400")
 
