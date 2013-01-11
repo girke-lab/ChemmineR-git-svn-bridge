@@ -20,7 +20,7 @@ test_ba.loadSdf<-function(){
 	data(sdfsample)
 
 
-	conn = initDb("test.db")
+	conn = initDb("test1.db")
 	print("loading first half, no features, with exception")
 	#checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
 	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
@@ -28,12 +28,12 @@ test_ba.loadSdf<-function(){
 	dbDisconnect(conn)
 
 
-	conn = initDb("test.db") # use new conn to make sure changes are durable
+	conn = initDb("test1.db") # use new conn to make sure changes are durable
 	print("loading first half, no features")
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
 										compounds WHERE format!='junk'")[1][[1]]
 	checkEquals(compoundCount, 3)
-	unlinkResult <- unlink("test.db")
+	#unlink("test.db") #fails on windows
 
 
 	firstHalf=tempfile()
