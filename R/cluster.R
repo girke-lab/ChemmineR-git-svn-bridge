@@ -420,21 +420,24 @@ symmetric=TRUE, quiet=FALSE)
 ## Function to perform Jarvis-Patrick clustering. The algorithm requires a
 ## nearest neighbor table, which consists of 'j' nearest neighbors for each item
 ## in the dataset. This information is then used to join items into clusters
-## that share at least 'k' nearest neighbors. The values for 'j' and 'k' are
-## user-defined parameters. The jarvisPatrick() function can generate the
-## nearest neighbor table for APset and FPset objects and then perform Jarvis-
-## Patrick clustering on that table. It also accepts a precomputed nearest 
-## neighbor table in form of an object of class matrix. The output is a cluster
-## vector with the item labels in the name slot and the cluster IDs in the data
-## slot. Alternatively, the function can return the nearest neighbor matrix.
-## As third parameter the user can set a minimum similarity value for generating 
+## with the following requirements: 
+##       (a) they are contained in each other's neighbor list
+##       (b) they share at least 'k' nearest neighbors
+## The values for 'j' and 'k' are user-defined parameters. The jarvisPatrick() 
+## function can generate the nearest neighbor table for APset and FPset objects 
+## and then perform Jarvis-Patrick clustering on that table. It also accepts 
+## a precomputed nearest neighbor table in form of an object of class matrix. 
+## The output is a cluster vector with the item labels in the name slot and the 
+## cluster IDs in the data slot. Alternatively, the function can return the nearest 
+## neighbor matrix. As third parameter the user can set a minimum similarity value for generating 
 ## the nearest neighbor table. The latter is an optional setting that is not part 
 ## of the original Jarvis-Patrick algorithm. It allows to generate more tight 
 ## clusters and minimizes some limitations of this method, such as joining unrelated
 ## items when clustering small datasets.  
-jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", ...) {      
+jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...) {      
         ## Check inputs
         if(!any(c("APset", "FPset", "matrix") %in% class(x))) stop("class(x) needs to be APset, FPset or matrix")
+        if(!any(c("a1a2b", "a1b", "b") %in% mode)) stop("mode argument can only be assigned a1a2b, a1b or b")
         ## If class(x) is APset or FPset, generate nearest neighbor matrix (nnm)
         if(any(c("APset", "FPset") %in% class(x))) {
                 if(is.na(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
@@ -466,29 +469,62 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", ...) {
         if(type=="matrix") {
                 return(nnm) 
         }
-        if(type=="cluster") {
-                ## Run Jarvis-Patrick clustering on nearest neighbor matrix (nnm)
-                if(any(c("matrix", "data.frame") %in% class(x))) nnm <- x # If pregenerated matrix is provided
-                ## (i) Initialize algorithm by generating numeric vector with increasing cluster numbers
+	## Run Jarvis-Patrick clustering on nearest neighbor matrix (nnm)
+	if(type=="cluster") {
+		if(any(c("matrix", "data.frame") %in% class(x))) nnm <- x # If pre-generated matrix is provided
+		
+		## Initialize algorithm by generating numeric vector with increasing cluster numbers
 		clusters <- seq(along=nnm[,1]); names(clusters) <- rownames(nnm) 
-                "%in%" <- function(x, table) match(x, table, nomatch = 0, incomparables=NA) > 0 # Sets NAs of %in% function as incompatible entries which is required when non-standard cutoff is used.
-                for(i in seq(along=nnm[,1])) {
-                        ## (ii) Identify for each nnm row the remaining rows with at least k common neighbors
-                        nncount <- rowSums(matrix(as.character(t(nnm[i:length(nnm[,1]),])) %in% nnm[i,], length(nnm[,1])-i+1, length(nnm[1,]), byrow=TRUE)) 
-                        above <- nncount >= k
-                        ## (iii) Assign to new members always smallest cluster number to maintain assignments of previous 
-                        ##       iterations. This allows single pass through nnm and results in a single linkage like behavior.
-                        if(length(clusters[i:length(clusters)][above])!=0) {
-                                clusters[i:length(clusters)][above] <- min(clusters[i:length(clusters)][above])
-                        }
-                }
-                ## Assign continuous numbers as cluster names
-                clusterstmp <- sort(clusters)
-                tmp <- 1:length(unique(clusterstmp)); names(tmp) <- unique(clusterstmp)
-                tmp <- tmp[as.character(clusterstmp)]; names(tmp) <- names(clusterstmp)
-                clusters <- tmp[names(clusters)]
-                return(clusters)
-        }
+		"%in%" <- function(x, table) match(x, table, nomatch = 0, incomparables=NA) > 0 # Sets NAs of %in% function as incompatible entries which is required when non-standard cutoff is used.
+		
+		## Clustering with both requirements (a) and (b) 
+		if(mode=="a1a2b" | mode=="a1b") {
+			for(i in seq(along=nnm[,1])) {
+				## (Q1) Are objects in each other's nearest neighbor list?
+				## (Q1.1) Check for query 
+				index <- which(nnm[,1] %in% nnm[i,])
+				nnmsub <- nnm[index, , drop = FALSE]
+				## (Q1.2) Check reverse for subjects (query hits)
+				if(mode=="a1a2b") {
+					revcheck <- rowSums(nnmsub==nnmsub[1,1]) > 0
+					nnmsub <- nnmsub[revcheck,]
+					index <- index[revcheck] 
+				}
+
+				## (Q2) Do objects have at least k nearest neighbors in common?
+				if(length(index)>1) {
+					## Identify for each nnm row the remaining rows with at least k common neighbors
+					nncount <- rowSums(matrix(as.character(t(nnmsub)) %in% nnmsub[1,], length(nnmsub[,1]), length(nnmsub[1,]), byrow=TRUE))
+					index <- index[nncount >= k]
+					index <- index[index >= i]
+					##  Assign to new members always smallest cluster number to maintain assignments of previous 
+					##  iterations. This allows single pass through nnm and results in a single linkage like behavior.
+					if(length(index)>1) {
+						clusters[i:length(clusters)][index-(i-1)] <- min(clusters[i:length(clusters)][index-(i-1)])
+					}
+				}
+			}
+		}
+		## Clustering only with requirement (b) 
+		if(mode=="b") {
+			for(i in seq(along=nnm[,1])) {
+				## Identify for each nnm row the remaining rows with at least k common neighbors
+				nncount <- rowSums(matrix(as.character(t(nnm[i:length(nnm[,1]),])) %in% nnm[i,], length(nnm[,1])-i+1, length(nnm[1,]), byrow=TRUE)) 
+				above <- nncount >= k
+				## Assign to new members always smallest cluster number to maintain assignments of previous 
+				## iterations. This allows single pass through nnm and results in a single linkage like behavior.
+				if(length(clusters[i:length(clusters)][above])!=0) {
+					clusters[i:length(clusters)][above] <- min(clusters[i:length(clusters)][above])
+				}
+			}
+		}
+		## Assign continuous numbers as cluster names
+		clusterstmp <- sort(clusters)
+		tmp <- 1:length(unique(clusterstmp)); names(tmp) <- unique(clusterstmp)
+		tmp <- tmp[as.character(clusterstmp)]; names(tmp) <- names(clusterstmp)
+		clusters <- tmp[names(clusters)]
+		return(clusters)
+	}
 }
 ## Usage:
 # library(ChemmineR)

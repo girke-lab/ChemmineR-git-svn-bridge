@@ -1053,7 +1053,7 @@ load("distmat.rda") # Loads distance matrix.
 @
 
 \subsection{Jarvis-Patrick Clustering}
-The Jarvis-Patrick clustering algorithm is widely used in cheminformatics \citep{Jarvis1973a}. It requires a nearest neighbor table, which consists of \Rfunarg{j} nearest neighbors for each item (\textit{e.g.} compound). The nearest neighbor table is then used to join items into clusters that share at least \Rfunarg{k} nearest neighbors. The values for \Rfunarg{j} and \Rfunarg{k} are user-defined parameters. The \Rfunction{jarvisPatrick} function implemented in \Rpackage{ChemmineR} can generate the nearest neighbor table for \Rclass{APset} and \Rclass{FPset} objects and then perform Jarvis-Patrick clustering on that table. It also accepts a precomputed nearest neighbor table in form of a \Rclass{matrix} object. The output is a cluster \Rclass{vector} with the item labels in the name slot and the cluster IDs in the data slot. Alternatively, the function can return the nearest neighbor matrix. As third parameter the user can set a minimum similarity \Rfunarg{cutoff} value for generating the nearest neighbor table. The latter is an optional setting that is not part of the original Jarvis-Patrick algorithm. It allows to generate more tight clusters and to minimize certain limitations of this method, such as false joins of completely unrelated items when operating on small data sets.\\
+The Jarvis-Patrick clustering algorithm is widely used in cheminformatics \citep{Jarvis1973a}. It requires a nearest neighbor table, which consists of \Rfunarg{j} nearest neighbors for each item (\textit{e.g.} compound). The nearest neighbor table is then used to join items into clusters when they meet the following requirements: (a) they are contained in each other's neighbor list and (b) they share at least \Rfunarg{k} nearest neighbors. The values for \Rfunarg{j} and \Rfunarg{k} are user-defined parameters. The \Rfunction{jarvisPatrick} function implemented in \Rpackage{ChemmineR} can generate the nearest neighbor table for \Rclass{APset} and \Rclass{FPset} objects and then perform Jarvis-Patrick clustering on that table. It also accepts a precomputed nearest neighbor table in form of a \Rclass{matrix} object. The output is a cluster \Rclass{vector} with the item labels in the name slot and the cluster IDs in the data slot. Alternatively, the function can return the nearest neighbor matrix. As third parameter the user can set a minimum similarity \Rfunarg{cutoff} value for generating the nearest neighbor table. The latter is an optional setting that is not part of the original Jarvis-Patrick algorithm. It allows to generate more tight clusters and to minimize certain limitations of this method, such as false joins of completely unrelated items when operating on small data sets.\\
 
 \noindent Load/create sample \Rclass{APset} and \Rclass{FPset}:
 <<eval=TRUE, keep.source=TRUE>>=
@@ -1063,13 +1063,13 @@ fpset <- desc2fp(apset)
      
 \noindent Standard Jarvis-Patrick clustering on \Rclass{APset} and \Rclass{FPset} objects:
 <<eval=TRUE, keep.source=TRUE>>=
-jarvisPatrick(apset, j=6, k=5) # Using "APset"
-jarvisPatrick(fpset, j=6, k=5) # Using "FPset"
+jarvisPatrick(apset, j=6, k=5, mode="a1a2b") # Using "APset"
+jarvisPatrick(fpset, j=6, k=5, mode="a1a2b") # Using "FPset"
 @
 
-\noindent Modified Jarvis-Patrick clustering with minimum similarity \Rfunarg{cutoff} value (here Tanimoto coefficient):
+\noindent The following example runs Jarvis-Patrick clustering with a minimum similarity \Rfunarg{cutoff} value (here Tanimoto coefficient). In addition, it uses the much more exhaustive \Rfunarg{"b"} method that generates larger cluster sizes, but significantly increased the run time. For more details, consult the corresponding help file with \Rfunarg{?jarvisPatrick}.
 <<eval=TRUE, keep.source=TRUE>>=
-jarvisPatrick(fpset, j=6, k=2, cutoff=0.6, method="Tanimoto")
+jarvisPatrick(fpset, j=6, k=2, cutoff=0.6, method="Tanimoto", mode="b")
 @
 
 \noindent Output nearest neighbor table (\Rclass{matrix}):
@@ -1080,7 +1080,7 @@ nnm[1:4,]
 
 \noindent Perform clustering on precomputed nearest neighbor table:
 <<eval=TRUE, keep.source=TRUE>>=
-jarvisPatrick(nnm, j=6, k=5)
+jarvisPatrick(nnm, j=6, k=5, mode="b")
 @
      
 

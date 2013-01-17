@@ -1,4 +1,7 @@
 changelog
+	version 2.11.10
+		- improved performance of jarvisPatrick function
+	
 	version 2.11.9
 		- fixed bug in jarvisPatrick function with pre-generated NN matrix
 	
