@@ -1,6 +1,8 @@
 ## IMPORTS
 import(methods, graphics, stats, RCurl,DBI,digest)
 
+useDynLib(ChemmineR)
+
 ## EXPORTS
 ## S4 Classes
 ## Source: AllClasses.R
