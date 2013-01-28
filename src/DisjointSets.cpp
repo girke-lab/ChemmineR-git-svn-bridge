@@ -4,6 +4,7 @@
 // Implementaton is as described in http://en.wikipedia.org/wiki/Disjoint-set_data_structure
 
 #include <cassert>
+#include <cstddef>
 
 #include "DisjointSets.h"
 

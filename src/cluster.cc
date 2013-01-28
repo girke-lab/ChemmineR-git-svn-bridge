@@ -102,17 +102,6 @@ void static prepare_neighbors(const char* nbr_file, int skip, int p)
 	}
 }
 
-void print_neighbors()
-{
-	for (int i = 0; i < nbr_list.size(); i ++) {
-		std::cout << i;
-		for (int j = 0; j < nbr_list[i].size(); j ++) {
-			std::cout << " " << nbr_list[i][j];
-		}
-		std::cout << std::endl;
-	}
-}
-
 /* size of neighbor set intersection. Expect a sorted list */
 int nbr_intersect(std::vector<int>& nbrs1, std::vector<int>& nbrs2)
 {
@@ -237,6 +226,19 @@ SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrs,
 }
 #endif
 
+/* R doesn't like cout
+
+void print_neighbors()
+{
+	for (int i = 0; i < nbr_list.size(); i ++) {
+		std::cout << i;
+		for (int j = 0; j < nbr_list[i].size(); j ++) {
+			std::cout << " " << nbr_list[i][j];
+		}
+		std::cout << std::endl;
+	}
+}
+
 void print_clusters(DisjointSets &s)
 {
 	print_clusters(s,names.size());
@@ -297,6 +299,7 @@ void print_cluster_stat(DisjointSets &s,int print_pair = 0)
 		std::cout << std::endl;
 	}
 }
+*/
 
 /*
  *
