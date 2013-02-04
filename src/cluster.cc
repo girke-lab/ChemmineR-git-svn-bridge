@@ -130,7 +130,7 @@ void checkPair(DisjointSets &s,int i, int j,int m)
 	//printf("%d:%d\n",i,j);
 	if (s.FindSet(i) == s.FindSet(j)) return;
 
-	//printf("different sets\n");
+	//printf("different sets. m=%d\n",m);
 	// check condition 2
 	if (nbr_intersect(nbr_list[i], nbr_list[j]) < m)
 		return;
@@ -192,8 +192,13 @@ SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrs,
 		for(int j=0; j<K; j++)  //cols
 		{  // R arrays are column major 
 			int n=INTEGER(neighbors)[j*N+i];
-			if( n!= NA_INTEGER && n != -1)
-				nbrs.push_back(INTEGER(neighbors)[j*N+i]-1);
+			if( n== NA_INTEGER || n == -1)
+				continue;
+			n--;
+			if(n < 0 || n >= N) //raise error
+				error("index value out of range");
+
+			nbrs.push_back(n);
 		}
 		std::sort(nbrs.begin(), nbrs.end());
 		nbr_list.push_back(nbrs);

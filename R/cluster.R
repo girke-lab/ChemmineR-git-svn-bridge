@@ -485,13 +485,13 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...)
 
 		#print(nnm)
 		clusters = if(mode=="a1a2b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=TRUE)
+						jarvisPatrick_c(nnm,j,fast=FALSE,bothDirections=TRUE)
 					else if(mode=="a1b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=FALSE)
+						jarvisPatrick_c(nnm,j,fast=FALSE,bothDirections=FALSE)
 					else   # if(mode=="b") only remaining option
-						jarvisPatrick_c(nnm,k,fast=TRUE)
-		clusters=rownames(nnm)[clusters]
-		names(clusters)=rownames(nnm)
+						jarvisPatrick_c(nnm,j,fast=TRUE)
+		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
+		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
 		#print(clusters)
 		
 		### Initialize algorithm by generating numeric vector with increasing cluster numbers
