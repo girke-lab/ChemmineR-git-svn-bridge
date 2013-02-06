@@ -415,7 +415,8 @@ symmetric=TRUE, quiet=FALSE)
 
 
 jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE){
-	      .Call("jarvis_patrick",neighbors,as.integer(minNbrs),
+			n= matrix(as.integer(neighbors),nrow(neighbors),ncol(neighbors))
+	      .Call("jarvis_patrick",n,as.integer(minNbrs),
 					as.integer(fast),as.integer(bothDirections))
 }
 
@@ -485,60 +486,15 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...)
 
 		#print(nnm)
 		clusters = if(mode=="a1a2b")
-						jarvisPatrick_c(nnm,j,fast=FALSE,bothDirections=TRUE)
+						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=TRUE)
 					else if(mode=="a1b")
-						jarvisPatrick_c(nnm,j,fast=FALSE,bothDirections=FALSE)
+						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=FALSE)
 					else   # if(mode=="b") only remaining option
-						jarvisPatrick_c(nnm,j,fast=TRUE)
+						jarvisPatrick_c(nnm,k,fast=TRUE)
 		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
 		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
 		#print(clusters)
 		
-		### Initialize algorithm by generating numeric vector with increasing cluster numbers
-		#clusters <- seq(along=nnm[,1]); names(clusters) <- rownames(nnm) 
-		#"%in%" <- function(x, table) match(x, table, nomatch = 0, incomparables=NA) > 0 # Sets NAs of %in% function as incompatible entries which is required when non-standard cutoff is used.
-		#
-		### Clustering with both requirements (a) and (b) 
-		#if(mode=="a1a2b" | mode=="a1b") {
-		#	for(i in seq(along=nnm[,1])) {
-		#		## (Q1) Are objects in each other's nearest neighbor list?
-		#		## (Q1.1) Check for query 
-		#		index <- which(nnm[,1] %in% nnm[i,])
-		#		nnmsub <- nnm[index, , drop = FALSE]
-		#		## (Q1.2) Check reverse for subjects (query hits)
-		#		if(mode=="a1a2b") {
-		#			revcheck <- rowSums(nnmsub==nnmsub[1,1]) > 0
-		#			nnmsub <- nnmsub[revcheck,]
-		#			index <- index[revcheck] 
-		#		}
-
-		#		## (Q2) Do objects have at least k nearest neighbors in common?
-		#		if(length(index)>1) {
-		#			## Identify for each nnm row the remaining rows with at least k common neighbors
-		#			nncount <- rowSums(matrix(as.character(t(nnmsub)) %in% nnmsub[1,], length(nnmsub[,1]), length(nnmsub[1,]), byrow=TRUE))
-		#			index <- index[nncount >= k]
-		#			index <- index[index >= i]
-		#			##  Assign to new members always smallest cluster number to maintain assignments of previous 
-		#			##  iterations. This allows single pass through nnm and results in a single linkage like behavior.
-		#			if(length(index)>1) {
-		#				clusters[i:length(clusters)][index-(i-1)] <- min(clusters[i:length(clusters)][index-(i-1)])
-		#			}
-		#		}
-		#	}
-		#}
-		### Clustering only with requirement (b) 
-		#if(mode=="b") {
-		#	for(i in seq(along=nnm[,1])) {
-		#		## Identify for each nnm row the remaining rows with at least k common neighbors
-		#		nncount <- rowSums(matrix(as.character(t(nnm[i:length(nnm[,1]),])) %in% nnm[i,], length(nnm[,1])-i+1, length(nnm[1,]), byrow=TRUE)) 
-		#		above <- nncount >= k
-		#		## Assign to new members always smallest cluster number to maintain assignments of previous 
-		#		## iterations. This allows single pass through nnm and results in a single linkage like behavior.
-		#		if(length(clusters[i:length(clusters)][above])!=0) {
-		#			clusters[i:length(clusters)][above] <- min(clusters[i:length(clusters)][above])
-		#		}
-		#	}
-		#}
 		## Assign continuous numbers as cluster names
 		clusterstmp <- sort(clusters)
 		tmp <- 1:length(unique(clusterstmp)); names(tmp) <- unique(clusterstmp)

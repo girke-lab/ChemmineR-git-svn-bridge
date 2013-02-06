@@ -71,7 +71,10 @@ export(
 	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
 	"getCompoundNames","findCompoundsByName",
 
+	"jarvisPatrick_c",
+
 	## large file/query utilites
 	"bufferLines","bufferResultSet","batchByIndex","selectInBatches"
+
 )
 
