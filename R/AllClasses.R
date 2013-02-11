@@ -1789,7 +1789,7 @@ read.AP <- function(x, type, colid,isFile = class(x)=="character" & length(x)==1
                         x <- read.delim(x, sep="\t", row.names=1)
                         ids <- row.names(x); x <- x[,colid]; names(x) <- ids
                 }
-                desclist <- strsplit(as.character(x), ", ", perl = TRUE)
+                desclist <- strsplit(as.character(x), ", ", fixed = TRUE)
                 desclist <- lapply(desclist, as.numeric)
                 names(desclist) <- names(x)
                 return(as(desclist, "APset"))
