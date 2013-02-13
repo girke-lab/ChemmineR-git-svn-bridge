@@ -44,7 +44,7 @@ data(sdfsample)
 sdf <- sdfsample[[1]]
 
 ## Return list 
-SDF2apcmp(sdf)
+cmp <- SDF2apcmp(sdf)
 
 }
 

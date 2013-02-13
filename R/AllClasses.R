@@ -614,6 +614,10 @@ SDF2apcmp <- function(SDF) {
 	u <- as.numeric(bondblock(SDF)[,1])
 	n_atoms <- length(atoms)
 	n_bonds <- length(u)
+	v <- as.numeric(bondblock(SDF)[,2])
+	t <- as.numeric(bondblock(SDF)[,3])
+
+	cmp = list(atoms=atoms, bonds=list(u=u, v=v, t=t), n_atoms=n_atoms, n_bonds=n_bonds)
 
 	if(.has.pp()){
 	   # assume we have and SDF object, not and SDFset
@@ -625,12 +629,10 @@ SDF2apcmp <- function(SDF) {
 			cat("SDF not well-formatted!")
 			return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
 		}
-		return(list(n_atoms=n_atoms, n_bonds=n_bonds, desc_obj=d))
+		cmp$desc_obj=d
 	}
 
-	v <- as.numeric(bondblock(SDF)[,2])
-	t <- as.numeric(bondblock(SDF)[,3])
-	return(list(atoms=atoms, bonds=list(u=u, v=v, t=t), n_atoms=n_atoms, n_bonds=n_bonds))
+	return(cmp)
 }
 
 ## Define AP/APset S4 classes for single AP vector and AP list
