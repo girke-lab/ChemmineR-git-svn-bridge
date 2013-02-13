@@ -1,15 +1,15 @@
 .onLoad <- function(libname, pkgname) 
 {
-#pp#    if (!is.null(getOption('disable.chemminer.performance.pack'))
-#pp#            && getOption('disable.chemminer.performance.pack') == 1) {
-#pp#        cat("ChemmineR Performance Pack is explicitly disabled.\n")
-#pp#        options(.use.chemminer.pp = 0)
-#pp#    } else if (suppressWarnings(require('ChemmineRpp', quietly=T))) {
-#pp#        cat("Using ChemmineR Performance Pack for calculation.",
-#pp#        "Set `disable.chemminer.performance.pack' option to 1",
-#pp#        "to disable the use of ChemmineR Performance Pack.\n")
-#pp#        options(.use.chemminer.pp = 1)
-#pp#    }
+    if (!is.null(getOption('disable.chemminer.performance.pack'))
+            && getOption('disable.chemminer.performance.pack') == 1) {
+        cat("ChemmineR Performance Pack is explicitly disabled.\n")
+        options(.use.chemminer.pp = 0)
+    } else if (suppressWarnings(require('ChemmineRpp', quietly=T))) {
+        cat("Using ChemmineR Performance Pack for calculation.",
+        "Set `disable.chemminer.performance.pack' option to 1",
+        "to disable the use of ChemmineR Performance Pack.\n")
+        options(.use.chemminer.pp = 1)
+    }
 }
 
 .db.header.size <- 16
@@ -274,7 +274,6 @@
 .gen_atom_pair <- function(cmp)
 {
     if (.has.pp() && class(cmp$desc_obj) == "_p_Descriptors") {
-		 #print("using pp")
         if (is.null(cmp$desc_obj))
             return(vector())
         desc <- c()
@@ -285,8 +284,6 @@
         if (length(desc) == 0) return(desc)
         return(.factor_to_vector(as.factor(desc)))
     }
-	 #print("not using pp")
-	 #print(class(cmp$desc_obj))
 
     num_bonds <- length(cmp[['bonds']][['u']])
     if (num_bonds == 0)
