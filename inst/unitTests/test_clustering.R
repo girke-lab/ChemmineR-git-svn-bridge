@@ -2,21 +2,33 @@
 
 test_dj.jarvisPatrick <- function() {
 
-	numNbrs=5
-	minNbrs=2
+	numNbrs=10 #5
+	minNbrs=2 # 3
 	data(sdfsample)
 	aps=sdf2ap(sdfsample)
 	fp=desc2fp(aps)
 
+#	clustering = jarvisPatrick(aps,j=numNbrs,k=minNbrs,cutoff=0.5,mode="a1a2b",linkage="average")
+#	print(clustering)
+#	print(table(clustering))
+#	sizes=table(clustering)
+#	print(sizes[sizes!=1])
+#	return()
+
+
+
 	for(data in list(aps,fp))
-		for(cutoff in list(NA,0.7))
-			for(mode in c("a1a2b","a1b","b")){
-				print(paste("cutoff:",cutoff,"mode:",mode))
-				clustering = jarvisPatrick(data,j=numNbrs,k=minNbrs,cutoff=cutoff,mode=mode)
-				counts = table(clustering)
-				print(counts[counts > 1])
-				#print(clustering)
-			}
+		for(cutoff in list(NA,0.5))
+			for(mode in c("a1a2b","a1b","b"))
+				for(linkage in c("single","average","complete")){
+					print(paste("cutoff:",cutoff,"mode:",mode,"linkage:",linkage))
+					clustering = jarvisPatrick(data,j=numNbrs,k=minNbrs,cutoff=cutoff,mode=mode,linkage=linkage)
+					#print(clustering)
+					#print(table(clustering))
+					sizes=table(clustering)
+					print(sizes[sizes!=1])
+				}
+			
 	#clustering = jarvisPatrick(fp,j=numNbrs,k=minNbrs)
 	#print(clustering)
 }

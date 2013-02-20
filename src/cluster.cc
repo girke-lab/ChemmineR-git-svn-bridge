@@ -10,6 +10,7 @@
 #include "DisjointSets.h"
 #include <map>
 #include <vector>
+#include <list>
 #include <fstream>
 #include <iostream>
 #include <cstring>
@@ -20,9 +21,11 @@
 #include <R.h>
 #include <Rinternals.h>
 
+using namespace std;
+
 extern "C" {
 	SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrs,
-		SEXP fast,SEXP bothDirections);
+		SEXP fast,SEXP bothDirections,SEXP linkage);
 }
 #endif
 
@@ -31,10 +34,16 @@ void print_clusters(DisjointSets &s,int N);
 
 #define LINE_BUF_SIZE 10240
 
+#define SINGLE 0
+#define AVERAGE 1
+#define COMPLETE 2
+
 //This is not thread safe
 std::map<std::string, int> name_to_id;
 std::vector<std::string> names;
 std::vector<std::vector<int> > nbr_list;
+
+vector<list<int> >  cluster_members;
 
 /* read in a neighbor file */
 void static prepare_neighbors(const char* nbr_file, int skip, int p)
@@ -124,45 +133,140 @@ int contains(int x, std::vector<int> &list)
 			return 1;
 	return 0;
 }
-
-void checkPair(DisjointSets &s,int i, int j,int m)
+void printClusterMembers()
 {
+	int row=-1;
+	for(vector<list<int> >::iterator i = cluster_members.begin(); i != cluster_members.end(); i++)
+	{
+		row++;
+		if(i->size()<=1)
+			continue;
+		cout<<row<<": ";
+		for(list<int>::iterator j = i->begin(); j != i->end(); j++)
+			cout<<*j<<", ";
+		cout<<endl;
+	}
+	cout<<"--------------------------"<<endl;
+}
+
+void checkPair(DisjointSets &s,int i, int j,int m,int linkage)
+{
+	int si = s.FindSet(i);
+	int sj = s.FindSet(j);
 	//printf("%d:%d\n",i,j);
-	if (s.FindSet(i) == s.FindSet(j)) return;
+	if (si == sj) return;
+
+	//printf("%d:%d\n",i,j);
 
 	//printf("different sets. m=%d\n",m);
 	// check condition 2
-	if (nbr_intersect(nbr_list[i], nbr_list[j]) < m)
-		return;
+	if(linkage==SINGLE)
+	{
+			if (nbr_intersect(nbr_list[i], nbr_list[j]) < m)
+				return;
+			//printf("merged %d and %d\n",s.FindSet(i), s.FindSet(j));
+			s.Union(s.FindSet(i), s.FindSet(j));
+	}else{
+		if(linkage==AVERAGE)
+		{
+			int minPairsNeeded = (cluster_members[si].size() * cluster_members[sj].size() + 1 ) / 2;
+			int pairsPassed = 0;
+			int pairsFailed = 0;
+			//cout<<"minPairs: "<<minPairsNeeded<<" passed: "<<pairsPassed<<" failed: "<<pairsFailed<<endl;
+
+			for(list<int>::iterator k = cluster_members[si].begin(); k != cluster_members[si].end(); k++)
+			{
+				for(list<int>::iterator l = cluster_members[sj].begin(); l != cluster_members[sj].end(); l++)
+				{
+					//if any pair  fails the requirement, stop
+					if(nbr_intersect(nbr_list[*k],nbr_list[*l]) >= m)
+						pairsPassed++;
+					else 
+						pairsFailed++;
+
+					if(pairsPassed >= minPairsNeeded)
+						break; //we've already gotten what we need
+					if(pairsFailed > minPairsNeeded)
+						return; // its hopeless, give up now
+				}
+				if(pairsPassed >= minPairsNeeded)
+					break;
+			}
+			//cout<<" minPairs: "<<minPairsNeeded<<" passed: "<<pairsPassed<<" failed: "<<pairsFailed<<endl;
+			if(pairsPassed < minPairsNeeded)
+				return;
+		} else if(linkage==COMPLETE)
+		{
+			for(list<int>::iterator k = cluster_members[si].begin(); k != cluster_members[si].end(); k++)
+			{
+				for(list<int>::iterator l = cluster_members[sj].begin(); l != cluster_members[sj].end(); l++)
+				{
+					//if any pair  fails the requirement, stop
+					if(nbr_intersect(nbr_list[*k],nbr_list[*l]) < m)
+						return;
+				}
+			}
+		}
+		// i and j are mergeable
+		//printf("merged %d and %d\n",s.FindSet(i), s.FindSet(j));
+		s.Union(s.FindSet(i), s.FindSet(j));
+		int newRep = s.FindSet(i);
+		int otherRep = newRep == si ? sj : si;
+
+		//append members of otherRep to end of newRep and remove otherRep
+		cluster_members[newRep].splice(cluster_members[newRep].end(),cluster_members[otherRep]);
+		//printClusterMembers();
+
+	}
+
 
 	//printf("met intersection req\n");
 	// merging clusters
 	//printf("merged %d and %d\n",s.FindSet(i), s.FindSet(j));
-	s.Union(s.FindSet(i), s.FindSet(j));
+	//s.Union(s.FindSet(i), s.FindSet(j));
+}
+void initClusterMembers(int n)
+{
+	cluster_members.clear();
+	for(int i=0;i < n; i++)
+	{
+		list<int> l;
+		l.push_back(i);
+		cluster_members.push_back(l);
+	}
+	//printClusterMembers();
 }
 
-DisjointSets clusterAllPairs(int n,int m)
+DisjointSets clusterAllPairs(int n,int m,int linkage)
 {
 	DisjointSets s;
 	s.AddElements(n);
+
+	if(linkage != SINGLE)
+		initClusterMembers(n);
+
 	for (int i = 0; i < n; i ++) {
 		if( ! nbr_list[i].empty())
 			for (int j = i+1;  j < n; j ++) { 
-				checkPair(s,i,j,m);
+				checkPair(s,i,j,m,linkage);
 			}
 		//print_clusters(s,n);
 	}
 	return s;
 }
 
-DisjointSets cluster(int n,int m,int bothDirections)
+DisjointSets cluster(int n,int m,int bothDirections,int linkage)
 {
 	DisjointSets s;
 	s.AddElements(n);
+
+	if(linkage != SINGLE)
+		initClusterMembers(n);
+
 	for (int i = 0; i < n; i ++) {
 		for (int j = 0; j < nbr_list[i].size(); j ++) {
 			if(!bothDirections || contains(i,nbr_list[j]))
-				checkPair(s,i,nbr_list[i][j],m);
+				checkPair(s,i,nbr_list[i][j],m,linkage);
 		}
 	//	print_clusters(s,n);
 	}
@@ -170,7 +274,7 @@ DisjointSets cluster(int n,int m,int bothDirections)
 }
 DisjointSets cluster(int m)
 {
-	return cluster(names.size(),m,0);
+	return cluster(names.size(),m,0,SINGLE);
 }
 
 void loadNNMatrix(int N, int K, int minNbrs, SEXP neighbors)
@@ -241,7 +345,7 @@ void loadNNList(int N,  int minNbrs,SEXP neighbors)
 
 #ifdef NO_MAIN
 SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrsSexp,
-		SEXP fast,SEXP bothDirections)
+		SEXP fast,SEXP bothDirections,SEXP linkageSexp)
 {
 	// neightbors is NxKx2  last 2 are (id,distance)
 	
@@ -250,6 +354,7 @@ SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrsSexp,
 	int N,K;
 
 	int minNbrs = INTEGER(minNbrsSexp)[0];
+	int linkage = INTEGER(linkageSexp)[0];
 
 
 	if(isNewList(neighbors))
@@ -265,13 +370,13 @@ SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrsSexp,
 		K = INTEGER(dims)[1]; // num neighbors given
 		loadNNMatrix(N,K,minNbrs,neighbors);
 	}
-	//Rprintf("N:%d, K:%d,m:%d\n",N,K,minNbrs);
+	//Rprintf("N:%d, K:%d,m:%d,linkage:%d\n",N,K,minNbrs,linkage);
 
 
 	// do actual clustering
 	DisjointSets s= *INTEGER(fast)? 
-		cluster(N,minNbrs,*INTEGER(bothDirections)):
-		clusterAllPairs(N,minNbrs);
+		cluster(N,minNbrs,*INTEGER(bothDirections),linkage):
+		clusterAllPairs(N,minNbrs,linkage);
 
 	//Rprintf("done clustering\n");
 	//print_clusters(s,N);

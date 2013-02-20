@@ -414,12 +414,17 @@ symmetric=TRUE, quiet=FALSE)
 }
 
 
-jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE){
+jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE,linkage = "single"){
+
+			linkage = if(linkage == "single") 0
+						 else if(linkage == "average") 1
+						 else if(linkage == "complete") 2
+
 			n=if(is.list(neighbors)) Map(as.integer,neighbors)
 				else if(is.matrix(neighbors))  matrix(as.integer(neighbors),nrow(neighbors),ncol(neighbors))
 				else error("neighbors must be an integer valued list or matrix, but found: ",class(neighbors))
 	      .Call("jarvis_patrick",n,as.integer(minNbrs),
-					as.integer(fast),as.integer(bothDirections))
+					as.integer(fast),as.integer(bothDirections),as.integer(linkage))
 }
 
 ###############################
@@ -443,7 +448,7 @@ jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE){
 ## of the original Jarvis-Patrick algorithm. It allows to generate more tight 
 ## clusters and minimizes some limitations of this method, such as joining unrelated
 ## items when clustering small datasets.  
-jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...) {      
+jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", linkage="single", ...) {      
         ## Check inputs
         if(!any(c("APset", "FPset", "matrix") %in% class(x))) stop("class(x) needs to be APset, FPset or matrix")
         if(!any(c("a1a2b", "a1b", "b") %in% mode)) stop("mode argument can only be assigned a1a2b, a1b or b")
@@ -494,11 +499,11 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...)
 
 		#print(nnm)
 		clusters = if(mode=="a1a2b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=TRUE)
+						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=TRUE,linkage=linkage)
 					else if(mode=="a1b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=FALSE)
+						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=FALSE,linkage=linkage)
 					else   # if(mode=="b") only remaining option
-						jarvisPatrick_c(nnm,k,fast=TRUE)
+						jarvisPatrick_c(nnm,k,fast=TRUE,linkage=linkage)
 		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
 		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
 		#print(clusters)
