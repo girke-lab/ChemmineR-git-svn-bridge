@@ -415,7 +415,9 @@ symmetric=TRUE, quiet=FALSE)
 
 
 jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE){
-			n= matrix(as.integer(neighbors),nrow(neighbors),ncol(neighbors))
+			n=if(is.list(neighbors)) Map(as.integer,neighbors)
+				else if(is.matrix(neighbors))  matrix(as.integer(neighbors),nrow(neighbors),ncol(neighbors))
+				else error("neighbors must be an integer valued list or matrix, but found: ",class(neighbors))
 	      .Call("jarvis_patrick",n,as.integer(minNbrs),
 					as.integer(fast),as.integer(bothDirections))
 }
@@ -456,26 +458,32 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", ...)
                         if(class(x)=="APset") {
                                 nnm <- t(sapply(seq(along=x), function(y) cmp.search(x, x[y], type=1, cutoff=j, quiet = TRUE, ...)))
                         }
+								rownames(nnm) <- cid(x)
+								colnames(nnm) <- seq(along=nnm[1,])
                 } 
                 if(is.numeric(cutoff) & cutoff <= 1) { # Non-standard Jarvis-Patrick clustering with cutoff
-                        nnm <- matrix(NA, length(x), j)
+                        #nnm <- matrix(NA, length(x), j)
+								nnm <- vector("list",length(x))
+								names(nnm) = cid(x)
+
                         if(class(x)=="FPset") {
 										  nameToNum = 1:length(x)
 										  names(nameToNum)=cid(x)
-                                for(i in seq(along=nnm[,1])) {
-                                        tmp <- names(fpSim(x[i], x, cutoff=cutoff, top=j, ...))
-                                        nnm[i,1:length(tmp)] <- nameToNum[tmp]
+                                for(i in seq(length(x))) {
+                                        #tmp <- names(fpSim(x[i], x, cutoff=cutoff, top=j, ...))
+                                        #nnm[i,1:length(tmp)] <- nameToNum[tmp]
+                                        nnm[[i]] <- as.integer(nameToNum[names(fpSim(x[i], x, cutoff=cutoff, ...))])
                                 }
                         }
                         if(class(x)=="APset") {
-                                for(i in seq(along=nnm[,1])) {
-                                        tmp <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)[1:j]
-                                        nnm[i,1:length(tmp)] <- tmp
+                                for(i in seq(length(x))) {
+                                        #tmp <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)[1:j]
+                                        #nnm[i,1:length(tmp)] <- tmp
+                                        nnm[[i]] <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)
+
                                 }
                         }
                 }
-                rownames(nnm) <- cid(x)
-                colnames(nnm) <- seq(along=nnm[1,])
         }
         if(type=="matrix") {
                 return(nnm) 

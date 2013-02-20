@@ -146,9 +146,10 @@ DisjointSets clusterAllPairs(int n,int m)
 	DisjointSets s;
 	s.AddElements(n);
 	for (int i = 0; i < n; i ++) {
-		for (int j = i+1; j < n; j ++) { 
-			checkPair(s,i,j,m);
-		}
+		if( ! nbr_list[i].empty())
+			for (int j = i+1;  j < n; j ++) { 
+				checkPair(s,i,j,m);
+			}
 		//print_clusters(s,n);
 	}
 	return s;
@@ -172,20 +173,10 @@ DisjointSets cluster(int m)
 	return cluster(names.size(),m,0);
 }
 
-#ifdef NO_MAIN
-SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrs,
-		SEXP fast,SEXP bothDirections)
+void loadNNMatrix(int N, int K, int minNbrs, SEXP neighbors)
 {
-	// neightbors is NxKx2  last 2 are (id,distance)
-	
-	//load nbr_list with data from neighbors
-   SEXP dims= getAttrib(neighbors,R_DimSymbol);
-   int N = INTEGER(dims)[0]; // num compounds
-   int K = INTEGER(dims)[1]; // num neighbors given
-
-	//Rprintf("N:%d, K:%d,m:%d\n",N,K,*INTEGER(minNbrs));
-
 	nbr_list.clear();
+	std::vector<int> empty_list;
 	for(unsigned i=0; i<N; i++) //rows
 	{
 		std::vector<int> nbrs;
@@ -200,15 +191,87 @@ SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrs,
 
 			nbrs.push_back(n);
 		}
-		std::sort(nbrs.begin(), nbrs.end());
-		nbr_list.push_back(nbrs);
+		if(nbrs.size() < minNbrs) // will end up a singleton
+		{
+			nbr_list.push_back(empty_list); //placeholder to maintin proper index values
+		}
+		else{
+			std::sort(nbrs.begin(), nbrs.end());
+			nbr_list.push_back(nbrs);
+		}
 	}
 	//Rprintf("loaded nbr_list\n");
+	
+}
+void loadNNList(int N,  int minNbrs,SEXP neighbors)
+{
+	nbr_list.clear();
+	std::vector<int> empty_list;
+	for(unsigned i=0; i<N; i++) //rows
+	{
+		std::vector<int> nbrs;
+		SEXP row = VECTOR_ELT(neighbors,i);
+		int K = length(row);
+
+		for(int j=0; j<K; j++)  //cols
+		{  // R arrays are column major 
+
+			int n = INTEGER(row)[j];
+			if( n== NA_INTEGER || n == -1)
+				continue;
+			n--;
+			if(n < 0 || n >= N) //raise error
+				error("index value out of range");
+
+			nbrs.push_back(n);
+		}
+		if(nbrs.size() < minNbrs) // will end up a singleton
+		{
+			nbr_list.push_back(empty_list); //placeholder to maintin proper index values
+		}
+		else{
+			std::sort(nbrs.begin(), nbrs.end());
+			nbr_list.push_back(nbrs);
+		}
+	}
+	//Rprintf("loaded nbr_list\n");
+	
+
+}
+
+#ifdef NO_MAIN
+SEXP jarvis_patrick(SEXP neighbors,SEXP minNbrsSexp,
+		SEXP fast,SEXP bothDirections)
+{
+	// neightbors is NxKx2  last 2 are (id,distance)
+	
+	//load nbr_list with data from neighbors
+	
+	int N,K;
+
+	int minNbrs = INTEGER(minNbrsSexp)[0];
+
+
+	if(isNewList(neighbors))
+	{
+		N = length(neighbors);
+		loadNNList(N,minNbrs,neighbors);
+	}
+	else
+	{
+
+		SEXP dims= getAttrib(neighbors,R_DimSymbol);
+		N = INTEGER(dims)[0]; // num compounds
+		K = INTEGER(dims)[1]; // num neighbors given
+		loadNNMatrix(N,K,minNbrs,neighbors);
+	}
+	//Rprintf("N:%d, K:%d,m:%d\n",N,K,minNbrs);
+
 
 	// do actual clustering
 	DisjointSets s= *INTEGER(fast)? 
-		cluster(N,*INTEGER(minNbrs),*INTEGER(bothDirections)):
-		clusterAllPairs(N,*INTEGER(minNbrs));
+		cluster(N,minNbrs,*INTEGER(bothDirections)):
+		clusterAllPairs(N,minNbrs);
 
 	//Rprintf("done clustering\n");
 	//print_clusters(s,N);
