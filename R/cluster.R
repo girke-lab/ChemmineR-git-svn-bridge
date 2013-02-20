@@ -499,11 +499,11 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", link
 
 		#print(nnm)
 		clusters = if(mode=="a1a2b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=TRUE,linkage=linkage)
+						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
 					else if(mode=="a1b")
-						jarvisPatrick_c(nnm,k,fast=FALSE,bothDirections=FALSE,linkage=linkage)
+						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
 					else   # if(mode=="b") only remaining option
-						jarvisPatrick_c(nnm,k,fast=TRUE,linkage=linkage)
+						jarvisPatrick_c(nnm,k,fast=FALSE,linkage=linkage)
 		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
 		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
 		#print(clusters)

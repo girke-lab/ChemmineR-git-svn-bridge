@@ -5,11 +5,11 @@
 	Jarvis Patrick Clustering in C code
 }
 \description{
-	This not meant to be used directly, use jarvisPatrick instead. It is exposed so other
+	This not meant to be used directly, use \code{\link{jarvisPatrick}} instead. It is exposed so other
 	libraries can make use of it.
 }
 \usage{
-jarvisPatrick_c(neighbors, minNbrs, fast = TRUE, bothDirections = FALSE)
+jarvisPatrick_c(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE,linkage = "single")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,6 +33,9 @@ jarvisPatrick_c(neighbors, minNbrs, fast = TRUE, bothDirections = FALSE)
 	  false and fast is false, than neither element must contain the other as a neighbor, though
 	  in all cases there must still be at least \code{minNbrs} neibhros in common.
 }
+	\item{linkage}{
+		See \code{\link{jarvisPatrick}} for details.
+	}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -60,15 +63,5 @@ jarvisPatrick_c(neighbors, minNbrs, fast = TRUE, bothDirections = FALSE)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (neighbors, minNbrs, fast = TRUE, bothDirections = FALSE) 
-{
-    n = matrix(as.integer(neighbors), nrow(neighbors), ncol(neighbors))
-    .Call("jarvis_patrick", n, as.integer(minNbrs), as.integer(fast), 
-        as.integer(bothDirections))
-}
 }
