@@ -1,10 +1,10 @@
 .onLoad <- function(libname, pkgname) 
 {
-    if (!is.null(getOption('disable.chemminer.performance.pack'))
-            && getOption('disable.chemminer.performance.pack') == 1) {
-        packageStartupMessage("ChemmineR Performance Pack is explicitly disabled.\n")
-        options(.use.chemminer.pp = 0)
-    }
+#    if (!is.null(getOption('disable.chemminer.performance.pack'))
+#            && getOption('disable.chemminer.performance.pack') == 1) {
+#        packageStartupMessage("ChemmineR Performance Pack is explicitly disabled.\n")
+#        options(.use.chemminer.pp = 0)
+#    }
 	 # We don't actually load ChmmineRpp here as this is not advised according to ?.onAttach.
 	 # Instead we check and require it in .has.pp()
 }
@@ -989,27 +989,28 @@ db.explain <- function(desc)
 
 .has.pp <- function()
 {
-	if(!is.null(getOption('.use.chemminer.pp'))){
-		if(getOption('.use.chemminer.pp')==0)
-			return(FALSE)
-		else if(getOption('.use.chemminer.pp')==1){
-			require('ChemmineRpp',quietly=TRUE) # its possible for this to be unloaded during the 'check' phase
-			return(TRUE)
-		}
-	}
-	else if(suppressWarnings(require('ChemmineRpp', quietly=T))) {
-	   message("Using ChemmineR Performance Pack for calculation.",
-      "Set `disable.chemminer.performance.pack' option to 1",
-      "to disable the use of ChemmineR Performance Pack.\n")
-      options(.use.chemminer.pp = 1)
-		return(TRUE)
-    }else{
-      options(.use.chemminer.pp = 0)
-		return(FALSE)
-	}
-
-    #!is.null(getOption('.use.chemminer.pp')) &&
-    #    getOption('.use.chemminer.pp') != 0
+	TRUE
+#	if(!is.null(getOption('.use.chemminer.pp'))){
+#		if(getOption('.use.chemminer.pp')==0)
+#			return(FALSE)
+#		else if(getOption('.use.chemminer.pp')==1){
+#			require('ChemmineRpp',quietly=TRUE) # its possible for this to be unloaded during the 'check' phase
+#			return(TRUE)
+#		}
+#	}
+#	else if(suppressWarnings(require('ChemmineRpp', quietly=T))) {
+#	   message("Using ChemmineR Performance Pack for calculation.",
+#      "Set `disable.chemminer.performance.pack' option to 1",
+#      "to disable the use of ChemmineR Performance Pack.\n")
+#      options(.use.chemminer.pp = 1)
+#		return(TRUE)
+#    }else{
+#      options(.use.chemminer.pp = 0)
+#		return(FALSE)
+#	}
+#
+#    #!is.null(getOption('.use.chemminer.pp')) &&
+#    #    getOption('.use.chemminer.pp') != 0
 }
 
 ########### New Functions ###########

@@ -620,7 +620,7 @@ SDF2apcmp <- function(SDF) {
 	cmp = list(atoms=atoms, bonds=list(u=u, v=v, t=t), n_atoms=n_atoms, n_bonds=n_bonds)
 
 	if(.has.pp()){
-	   # assume we have and SDF object, not and SDFset
+	   # assume we have an SDF object, not an SDFset
 		sdfstr=as(as(SDF,"SDFstr"),"list")[[1]]
 		defs = paste(sdfstr,collapse="\n")
 		#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
