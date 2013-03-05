@@ -525,7 +525,80 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", link
 # jarvisPatrick(x=fpset, j=2, k=2, type="matrix")
 
 
+nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
 
+	if(any(c("APset", "FPset") %in% class(x))) {
+			 if(!is.null(minNbrs) && is.null(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
+
+						buildNnm = function(set,simFun){
+							  nameToNum = 1:length(set)
+							  names(nameToNum)=cid(set)
+							  nnm = list()
+							  for(i in 1:length(set)){
+									sim = simFun(set[i],set)
+									nnm$ids = rbind(nnm$ids, nameToNum[names(sim)])
+									nnm$names = rbind(nnm$names, names(sim))
+									nnm$similarities = rbind(nnm$similarities,sim)
+							  }
+							  nnm
+						}
+
+						if(class(x)=="FPset") {
+								  nnm = buildNnm(x,function(item,set) fpSim(item,set,top=minNbrs,...))
+						} 
+						if(class(x)=="APset") {
+								  nnm = buildNnm(x,function(item,set) cmp.search(set,item,type=2,cutoff=minNbrs,quiet=TRUE,...))
+						}
+						#rownames(nnm) <- cid(x)
+						#colnames(nnm) <- seq(along=nnm[1,])
+			 } 
+			 else if(is.null(minNbrs) &&  ! is.null(cutoff) && is.numeric(cutoff) && cutoff <= 1) {  # Non-standard Jarvis-Patrick clustering with cutoff
+						buildNnm = function(set,simFun){
+
+							nnm=list()
+							N=length(set)
+							nnm$ids <- vector("list",N)
+							nnm$names <- vector("list",N)
+							nnm$similarities<- vector("list",N)
+							#names(nnm) = cid(x)
+
+						   nameToNum = 1:N
+						   names(nameToNum)=cid(set)
+
+						   for(i in 1:N) {
+								 sim = simFun(set[i],set)
+								 nnm$ids[[i]] = as.integer(nameToNum[names(sim)])
+								 nnm$names[[i]] = names(sim)
+								 nnm$similarities[[i]]=as.numeric(sim)
+						   }
+							nnm
+						}
+
+						if(class(x)=="FPset") {
+							  nnm = buildNnm(x,function(item,set) fpSim(item,set,cutoff=cutoff,...))
+						}
+						if(class(x)=="APset") {
+							  nnm = buildNnm(x,function(item,set) cmp.search(set,item,type=2,cutoff=cutoff,quiet=TRUE,...))
+						}
+			 }
+	}else
+		stop("class(x) needs to be APset or FPset")
+
+	nnm
+
+}
+
+trimNeighbors <- function(nnm,cutoff){
+
+	if(class(nnm$similarities) == "matrix"){
+
+	}else if(class(nnm$similarities == "list"){
+
+	}else
+		stop("don't know how to handle nnm$similarities of type ",class(nnm$similarities))
+
+
+}
 
 
 
