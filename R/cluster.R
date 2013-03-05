@@ -448,73 +448,117 @@ jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE,lin
 ## of the original Jarvis-Patrick algorithm. It allows to generate more tight 
 ## clusters and minimizes some limitations of this method, such as joining unrelated
 ## items when clustering small datasets.  
-jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", linkage="single", ...) {      
-        ## Check inputs
-        if(!any(c("APset", "FPset", "matrix") %in% class(x))) stop("class(x) needs to be APset, FPset or matrix")
-        if(!any(c("a1a2b", "a1b", "b") %in% mode)) stop("mode argument can only be assigned a1a2b, a1b or b")
-        ## If class(x) is APset or FPset, generate nearest neighbor matrix (nnm)
-        if(any(c("APset", "FPset") %in% class(x))) {
-                if(is.na(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
-                        if(class(x)=="FPset") {
-										  nameToNum = 1:length(x)
-										  names(nameToNum)=cid(x)
-                                nnm <- t(sapply(seq(along=x), function(y) nameToNum[names(fpSim(x[y], x, top=j, ...))]))
-                        } 
-                        if(class(x)=="APset") {
-                                nnm <- t(sapply(seq(along=x), function(y) cmp.search(x, x[y], type=1, cutoff=j, quiet = TRUE, ...)))
-                        }
-								rownames(nnm) <- cid(x)
-								colnames(nnm) <- seq(along=nnm[1,])
-                } 
-                if(is.numeric(cutoff) & cutoff <= 1) { # Non-standard Jarvis-Patrick clustering with cutoff
-                        #nnm <- matrix(NA, length(x), j)
-								nnm <- vector("list",length(x))
-								names(nnm) = cid(x)
+#jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", linkage="single", ...) {      
+#        ## Check inputs
+#        if(!any(c("APset", "FPset", "matrix") %in% class(x))) stop("class(x) needs to be APset, FPset or matrix")
+#        if(!any(c("a1a2b", "a1b", "b") %in% mode)) stop("mode argument can only be assigned a1a2b, a1b or b")
+#        ## If class(x) is APset or FPset, generate nearest neighbor matrix (nnm)
+#        if(any(c("APset", "FPset") %in% class(x))) {
+#                if(is.na(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
+#                        if(class(x)=="FPset") {
+#										  nameToNum = 1:length(x)
+#										  names(nameToNum)=cid(x)
+#                                nnm <- t(sapply(seq(along=x), function(y) nameToNum[names(fpSim(x[y], x, top=j, ...))]))
+#                        } 
+#                        if(class(x)=="APset") {
+#                                nnm <- t(sapply(seq(along=x), function(y) cmp.search(x, x[y], type=1, cutoff=j, quiet = TRUE, ...)))
+#                        }
+#								rownames(nnm) <- cid(x)
+#								colnames(nnm) <- seq(along=nnm[1,])
+#                } 
+#                if(is.numeric(cutoff) & cutoff <= 1) { # Non-standard Jarvis-Patrick clustering with cutoff
+#                        #nnm <- matrix(NA, length(x), j)
+#								nnm <- vector("list",length(x))
+#								names(nnm) = cid(x)
+#
+#                        if(class(x)=="FPset") {
+#										  nameToNum = 1:length(x)
+#										  names(nameToNum)=cid(x)
+#                                for(i in seq(length(x))) {
+#                                        #tmp <- names(fpSim(x[i], x, cutoff=cutoff, top=j, ...))
+#                                        #nnm[i,1:length(tmp)] <- nameToNum[tmp]
+#                                        nnm[[i]] <- as.integer(nameToNum[names(fpSim(x[i], x, cutoff=cutoff, ...))])
+#                                }
+#                        }
+#                        if(class(x)=="APset") {
+#                                for(i in seq(length(x))) {
+#                                        #tmp <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)[1:j]
+#                                        #nnm[i,1:length(tmp)] <- tmp
+#                                        nnm[[i]] <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)
+#
+#                                }
+#                        }
+#                }
+#        }
+#        if(type=="matrix") {
+#                return(nnm) 
+#        }
+#	## Run Jarvis-Patrick clustering on nearest neighbor matrix (nnm)
+#	if(type=="cluster") {
+#		if(any(c("matrix", "data.frame") %in% class(x))) nnm <- x # If pre-generated matrix is provided
+#
+#		#print(nnm)
+#		clusters = if(mode=="a1a2b")
+#						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
+#					else if(mode=="a1b")
+#						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
+#					else   # if(mode=="b") only remaining option
+#						jarvisPatrick_c(nnm,k,fast=FALSE,linkage=linkage)
+#		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
+#		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
+#		#print(clusters)
+#		
+#		## Assign continuous numbers as cluster names
+#		clusterstmp <- sort(clusters)
+#		tmp <- 1:length(unique(clusterstmp)); names(tmp) <- unique(clusterstmp)
+#		tmp <- tmp[as.character(clusterstmp)]; names(tmp) <- names(clusterstmp)
+#		clusters <- tmp[names(clusters)]
+#		return(clusters)
+#	}
+#}
 
-                        if(class(x)=="FPset") {
-										  nameToNum = 1:length(x)
-										  names(nameToNum)=cid(x)
-                                for(i in seq(length(x))) {
-                                        #tmp <- names(fpSim(x[i], x, cutoff=cutoff, top=j, ...))
-                                        #nnm[i,1:length(tmp)] <- nameToNum[tmp]
-                                        nnm[[i]] <- as.integer(nameToNum[names(fpSim(x[i], x, cutoff=cutoff, ...))])
-                                }
-                        }
-                        if(class(x)=="APset") {
-                                for(i in seq(length(x))) {
-                                        #tmp <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)[1:j]
-                                        #nnm[i,1:length(tmp)] <- tmp
-                                        nnm[[i]] <- cmp.search(x, x[i], type=1, cutoff=cutoff, quiet = TRUE, ...)
 
-                                }
-                        }
-                }
-        }
-        if(type=="matrix") {
-                return(nnm) 
-        }
+
+###############################
+## Jarvis-Patrick Clustering ##
+###############################
+## Added by ThG on 28-Oct-12
+## Function to perform Jarvis-Patrick clustering. The algorithm requires a
+## nearest neighbor table, which consists of neighbors for each item
+## in the dataset. This information is then used to join items into clusters
+## with the following requirements: 
+##       (a) they are contained in each other's neighbor list
+##       (b) they share at least 'k' nearest neighbors
+## The mode parameter can be used to relax some of these requirements. If mode='a1a2b' (default),
+## then all requirements are used, if mode='a1b' than condition a is relaxed to just
+## require that one item is contained in the others neighbors list. If mode='b', than
+## only condition b is used. This mode increases the time complexity from linear to
+## quadratic in the number of items hoewever.
+## The linkage parameter can be used to set the cluster merging criteria to either
+## 'single' (default), 'average', or 'complete'.
+## The output is a cluster vector with the item labels in the name slot and the 
+## cluster IDs in the data slot. 
+jarvisPatrick <- function(nnm,  k, mode="a1a2b", linkage="single") {      
 	## Run Jarvis-Patrick clustering on nearest neighbor matrix (nnm)
-	if(type=="cluster") {
-		if(any(c("matrix", "data.frame") %in% class(x))) nnm <- x # If pre-generated matrix is provided
 
-		#print(nnm)
-		clusters = if(mode=="a1a2b")
-						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
-					else if(mode=="a1b")
-						jarvisPatrick_c(nnm,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
-					else   # if(mode=="b") only remaining option
-						jarvisPatrick_c(nnm,k,fast=FALSE,linkage=linkage)
-		clusters=rownames(nnm,do.NULL=FALSE,prefix="cl")[clusters]
-		names(clusters)=rownames(nnm,do.NULL=FALSE,prefix="cl")
-		#print(clusters)
-		
-		## Assign continuous numbers as cluster names
-		clusterstmp <- sort(clusters)
-		tmp <- 1:length(unique(clusterstmp)); names(tmp) <- unique(clusterstmp)
-		tmp <- tmp[as.character(clusterstmp)]; names(tmp) <- names(clusterstmp)
-		clusters <- tmp[names(clusters)]
-		return(clusters)
-	}
+	#print(nnm)
+	clusters = if(mode=="a1a2b")
+					jarvisPatrick_c(nnm$ids,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
+				else if(mode=="a1b")
+					jarvisPatrick_c(nnm$ids,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
+				else   # if(mode=="b") only remaining option
+					jarvisPatrick_c(nnm$ids,k,fast=FALSE,linkage=linkage)
+
+	#print(clusters)
+
+	origClusterNames = unique(clusters)
+	origToNewNames = 1:length(origClusterNames)
+	names(origToNewNames) = origClusterNames
+	clusters = origToNewNames[as.character(clusters)]
+	names(clusters)=nnm$names
+	#print(clusters)
+
+	return(clusters)
 }
 ## Usage:
 # library(ChemmineR)
@@ -525,10 +569,10 @@ jarvisPatrick <- function(x, j, k, cutoff=NA, type="cluster", mode="a1a2b", link
 # jarvisPatrick(x=fpset, j=2, k=2, type="matrix")
 
 
-nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
+nearestNeighbors <- function(x, numNbrs=NULL,cutoff=NULL,...){
 
 	if(any(c("APset", "FPset") %in% class(x))) {
-			 if(!is.null(minNbrs) && is.null(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
+			 if(!is.null(numNbrs) && is.null(cutoff)) { # Standard Jarvis-Patrick clustering without cutoff
 
 						buildNnm = function(set,simFun){
 							  nameToNum = 1:length(set)
@@ -537,22 +581,22 @@ nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
 							  for(i in 1:length(set)){
 									sim = simFun(set[i],set)
 									nnm$ids = rbind(nnm$ids, nameToNum[names(sim)])
-									nnm$names = rbind(nnm$names, names(sim))
+									#nnm$names = rbind(nnm$names, names(sim))
 									nnm$similarities = rbind(nnm$similarities,sim)
 							  }
 							  nnm
 						}
 
 						if(class(x)=="FPset") {
-								  nnm = buildNnm(x,function(item,set) fpSim(item,set,top=minNbrs,...))
+								  nnm = buildNnm(x,function(item,set) fpSim(item,set,top=numNbrs,...))
 						} 
 						if(class(x)=="APset") {
-								  nnm = buildNnm(x,function(item,set) cmp.search(set,item,type=2,cutoff=minNbrs,quiet=TRUE,...))
+								  nnm = buildNnm(x,function(item,set) cmp.search(set,item,type=2,cutoff=numNbrs,quiet=TRUE,...))
 						}
 						#rownames(nnm) <- cid(x)
 						#colnames(nnm) <- seq(along=nnm[1,])
 			 } 
-			 else if(is.null(minNbrs) &&  ! is.null(cutoff) && is.numeric(cutoff) && cutoff <= 1) {  # Non-standard Jarvis-Patrick clustering with cutoff
+			 else if(! is.null(cutoff) && is.numeric(cutoff) && cutoff <= 1) {  # Non-standard Jarvis-Patrick clustering with cutoff
 						buildNnm = function(set,simFun){
 
 							nnm=list()
@@ -563,12 +607,11 @@ nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
 							#names(nnm) = cid(x)
 
 						   nameToNum = 1:N
-						   names(nameToNum)=cid(set)
-
+						   names(nameToNum)=cid(set) 
 						   for(i in 1:N) {
 								 sim = simFun(set[i],set)
 								 nnm$ids[[i]] = as.integer(nameToNum[names(sim)])
-								 nnm$names[[i]] = names(sim)
+								 #nnm$names[[i]] = names(sim)
 								 nnm$similarities[[i]]=as.numeric(sim)
 						   }
 							nnm
@@ -581,9 +624,13 @@ nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
 							  nnm = buildNnm(x,function(item,set) cmp.search(set,item,type=2,cutoff=cutoff,quiet=TRUE,...))
 						}
 			 }
+			 else
+				 stop("some input requirement not met. Either numNbrs or cutoff must be given, if cutoff is given, ",
+						"it must be a number between 0 and 1")
 	}else
 		stop("class(x) needs to be APset or FPset")
 
+	nnm$names=cid(x)
 	nnm
 
 }
@@ -591,12 +638,23 @@ nearestNeighbors <- function(x, minNbrs=NULL,cutoff=NULL){
 trimNeighbors <- function(nnm,cutoff){
 
 	if(class(nnm$similarities) == "matrix"){
-
-	}else if(class(nnm$similarities == "list"){
-
+		for(i in 1:nrow(nnm$similarities)){
+				 nonMatches = nnm$similarities[i,] < cutoff 
+				 nnm$similarities[i,nonMatches] = NA
+				 nnm$ids[i,nonMatches] = NA
+				 #nnm$names[i,nonMatches] = NA
+		}
+	}else if(class(nnm$similarities) == "list"){
+		for(i in 1:length(nnm$similarities)){
+				 matches = nnm$similarities[[i]] >= cutoff
+				 nnm$similarities[[i]] = nnm$similarities[[i]][matches]
+				 nnm$ids[[i]] = nnm$ids[[i]][matches]
+				 #nnm$names[[i]] = nnm$names[[i]][matches]
+		}
 	}else
 		stop("don't know how to handle nnm$similarities of type ",class(nnm$similarities))
 
+	nnm
 
 }
 

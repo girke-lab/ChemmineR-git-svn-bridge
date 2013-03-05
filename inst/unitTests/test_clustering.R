@@ -18,16 +18,20 @@ test_dj.jarvisPatrick <- function() {
 
 
 	for(data in list(aps,fp))
-		for(cutoff in list(NA,0.5))
+		for(cutoff in list(NULL,0.5))
+		{
+			nnm = nearestNeighbors(data,numNbrs=numNbrs,cutoff=cutoff)
 			for(mode in c("a1a2b","a1b","b"))
 				for(linkage in c("single","average","complete")){
 					print(paste("cutoff:",cutoff,"mode:",mode,"linkage:",linkage))
-					clustering = jarvisPatrick(data,j=numNbrs,k=minNbrs,cutoff=cutoff,mode=mode,linkage=linkage)
+					#clustering = jarvisPatrick(data,j=numNbrs,k=minNbrs,cutoff=cutoff,mode=mode,linkage=linkage)
+					clustering = jarvisPatrick(nnm,k=minNbrs,mode=mode,linkage=linkage)
 					#print(clustering)
 					#print(table(clustering))
 					sizes=table(clustering)
 					print(sizes[sizes!=1])
 				}
+		}
 			
 	#clustering = jarvisPatrick(fp,j=numNbrs,k=minNbrs)
 	#print(clustering)

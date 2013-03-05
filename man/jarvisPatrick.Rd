@@ -4,44 +4,34 @@
 Jarvis-Patrick Clustering
 }
 \description{ 
-	Function to perform Jarvis-Patrick clustering. The algorithm requires a nearest neighbor table, which
-	consists of \code{j} nearest neighbors for each item in the dataset. This information is then used to join items
-	into clusters when they meet the following requirements: (a) they are contained in each other's neighbor list and
-	(b) they share at least \code{k} nearest neighbors. The values for \code{j} and \code{k} are user-defined
-	parameters. The \code{jarvisPatrick} function can generate the nearest neighbor table for \code{APset} and
-	\code{FPset} objects and then perform Jarvis-Patrick clustering on that table. It also accepts a precomputed
-	nearest neighbor table in form of an object of class matrix. The output is a cluster vector with the item labels in
-	the name slot and the cluster IDs in the data slot. Alternatively, the function can return the nearest neighbor
-	matrix. As third parameter the user can set a minimum similarity \code{cutoff} value for generating the nearest
-	neighbor table. The latter is an optional setting that is not part of the original Jarvis-Patrick algorithm. It
-	allows to generate more tight clusters and to minimize some limitations of this method, such as joining completely
-	unrelated items when clustering small data sets.
+
+	Function to perform Jarvis-Patrick clustering. The algorithm requires a
+	nearest neighbor table, which consists of neighbors for each item
+	in the dataset. This information is then used to join items into clusters
+	with the following requirements: 
+		(a) they are contained in each other's neighbor list
+		(b) they share at least 'k' nearest neighbors
+	The nearest neighbor table can be computed with \code{\link{nearestNeighbors}}. 
+	For standard Jarvis-Patrick clustering, this function takes the number of neighbors to keep for each item.
+	It also has the option of passing a cutoff similarity value instead of the number of neighbors. In this mode, all 
+	neighbors which meet the cutoff criteria will be included in the table. 
+	This is a setting that is not part of the original Jarvis-Patrick algorithm. It
+	allows to generate tighter clusters and to minimize some limitations of this method, such as joining completely
+	unrelated items when clustering small data sets. Other extensions, such as the \code{linkage} parameter, can also
+	help improve the clustering quality.
 }
 \usage{
-jarvisPatrick(x, j, k, cutoff = NA, type = "cluster", mode = "a1a2b", linkage="single", ...)
+jarvisPatrick(nnm,  k, mode="a1a2b", linkage="single") 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
-Input of class \code{FPset}, \code{APset} or \code{matrix}. 
-}
-  \item{j}{
-Number of nearest neighbors to consider when generating nearest neighbor table.
-}
+  \item{nnm}{
+      A nearest neighbor table, as produced by \code{\link{nearestNeighbors}}.
+	}
   \item{k}{ 
-	  Minimum number of nearest neighbors two rows (items) in nearest neighbor table need to have in common to
+	  Minimum number of nearest neighbors two rows (items) in the nearest neighbor table need to have in common to
 	  join them into the same cluster. 
-}
-  \item{cutoff}{ 
-	  Uses a minimum similarity threshold when generating the nearest neighbor table. This parameter allows
-	  to obtain tighter clustering results. It is optional and is not part of the original Jarvis-Patrick algorithm. Under
-	  the default settings this behavior is turned off. If \code{cutoff} is set to a stringent value then it is often
-	  required to set \code{k} to a small value.  
-}
-  \item{type}{ 
-	  If \code{type = "cluster"}, Jarvis-Patrick clustering is performed and the result is returned in a
-	  named vector. If \code{type = "matrix"}, the nearest neighbors table is returned as \code{matrix}. 
-}
+	}
   \item{mode}{ 
 	  If \code{mode = "a1a2b"} (default), the clustering is run with both requirements (a) and (b); if
 	  \code{mode = "a1b"} then (a) is relaxed to a unidirectional requirement; and if \code{mode = "b"} then only
@@ -49,7 +39,7 @@ Number of nearest neighbors to consider when generating nearest neighbor table.
 	  "a1a2b" < "a1b" < "b". The run time of method "a1a2b" follows a close to linear relationship, while it is nearly
 	  quadratic for the much more exhaustive method "b". Only methods "a1a2b" and "a1b" are suitable for clustering
 	  very large data sets (e.g. >50,000 items) in a reasonable amount of time.   
-}
+	}
 	\item{linkage}{
 		Can be one of "single", "average", or "complete", for single linkage, average linkage and complete linkage
 		merge requirements, respectively. In the context of Jarvis-Patrick, average linkage means that at least half 
@@ -57,9 +47,6 @@ Number of nearest neighbors to consider when generating nearest neighbor table.
 		linkage, all pairs must pass the merge requirement. Single linkage is the normal case for Jarvis-Patrick and
 		just means that at least one pair must meet the requirement.
 	}
-  \item{\dots}{
-Arguments to be passed to/from other methods.
-}
 }
 \details{
 ...
@@ -81,6 +68,8 @@ Thomas Girke
 }
 \seealso{
 Functions: \code{cmp.cluster}
+   \code{\link{trimNeighbors}}
+   \code{\link{nearestNeighbors}}
 }
 \examples{
 ## Load/create sample APset and FPset 
@@ -88,20 +77,20 @@ data(apset)
 fpset <- desc2fp(apset)
 
 ## Standard Jarvis-Patrick clustering on APset/FPset objects
-jarvisPatrick(apset, j=6, k=5, mode="a1a2b")
-jarvisPatrick(fpset, j=6, k=5, mode="a1a2b")
+jarvisPatrick(nearestNeighbors(apset,numNbrs=6), k=5, mode="a1a2b")
+jarvisPatrick(nearestNeighbors(fpset,numNbrs=6), k=5, mode="a1a2b")
 
 ## Jarvis-Patrick clustering only with requirement (b) 
-jarvisPatrick(fpset, j=6, k=5, mode="b")
+jarvisPatrick(nearestNeighbors(fpset,numNbrs=6), k=5, mode="b")
 
 ## Modified Jarvis-Patrick clustering with minimum similarity 'cutoff' 
 ## value (here Tanimoto coefficient)
-jarvisPatrick(fpset, j=6, k=2, cutoff=0.6, method="Tanimoto")
+jarvisPatrick(nearestNeighbors(fpset,cutoff=0.6, method="Tanimoto"), k=2 )
 
 ## Output nearest neighbor table (matrix)
-nnm <- jarvisPatrick(fpset, j=6, k=5, type="matrix")
+nnm <- nearestNeighbors(fpset,numNbrs=6)
 
 ## Perform clustering on precomputed nearest neighbor table
-jarvisPatrick(nnm, j=6, k=5)
+jarvisPatrick(nnm, k=5)
 }
 \keyword{utilities}
