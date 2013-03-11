@@ -1396,11 +1396,14 @@ groups <- function(x, groups="fctgroup", type="countMA") {
 ## (6.4) Convert SDF Tail to Numeric and Character Matrices ##
 ##############################################################
 ## (6.4.1) Store everything in one character matrix
-datablock2ma <- function(datablocklist=datablock(sdfset), cleanup=" \\(.*", ...) {
-	if(exists("cleanup")) for(i in seq(along=datablocklist)) names(datablocklist[[i]]) <- gsub(cleanup, "", names(datablocklist[[i]])) # Required if name tags contain compound ids
-        columns <- unique(unlist(lapply(seq(along=datablocklist), function(x) names(datablocklist[[x]]))))
-        myMA <- matrix(NA, length(datablocklist), length(columns), dimnames=list(NULL, columns))
-        for(i in seq(along=datablocklist)) myMA[i, names(datablocklist[[i]])] <- datablocklist[[i]]
+datablock2ma <- function(datablocklist, cleanup=" \\(.*", ...) {
+	if(exists("cleanup")) 
+		for(i in seq(along=datablocklist)) 
+			names(datablocklist[[i]]) <- gsub(cleanup, "", names(datablocklist[[i]])) # Required if name tags contain compound ids
+   columns <- unique(unlist(lapply(seq(along=datablocklist), function(x) names(datablocklist[[x]]))))
+	myMA <- matrix(NA, length(datablocklist), length(columns), dimnames=list(NULL, columns))
+	for(i in seq(along=datablocklist)) 
+		myMA[i, names(datablocklist[[i]])] <- datablocklist[[i]]
 	rownames(myMA) <- names(datablocklist)
 	return(myMA)
 }
@@ -1408,7 +1411,7 @@ datablock2ma <- function(datablocklist=datablock(sdfset), cleanup=" \\(.*", ...)
 # blockmatrix <- datablock2ma(datablocklist=datablock(sdfset))
 
 ## (6.4.2) Split SDF tail matrix into character and numeric matrices
-splitNumChar <- function(blockmatrix=blockmatrix) {
+splitNumChar <- function(blockmatrix) {
 	# Define function to check for valid numeric values in a character vector
 	numberAble <- function(myvec, type=c("single", "vector"), extras = c(".", "NA")) {
 	    type <- match.arg(type)

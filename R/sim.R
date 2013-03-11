@@ -470,31 +470,33 @@ sdfs_to_desc <- function(filename, quiet=FALSE, type="normal", dbname="")
         cat("\nYou can use save(..., file='...', compress=TRUE)",
             "to save the database\n")
         close(con)
-    } else {
-        dbfile <- paste(dbname, '.cdb', sep='')
-        if (batch_parse(filename, dbfile) == 0) {
-            stop('Error in parsing using ChemmineR Performance Pack',
-                ' package. Check your input file.\n')
-        }
-        # indexing binary db
-        dbf <- file(dbfile, 'rb')
-        # skip header
-        seek(dbf, 16)
-        # read int size
-        intsize <- readBin(dbf, integer(), size=1)
-        for (id in 1:n_compounds) {
-            descdb[[id]] <- c("filedb:", dbname, seek(dbf))
-            d_size <- readBin(dbf, integer(), size=intsize)
-            seek(dbf, d_size * intsize, origin='current')
-        }
-        close(dbf)
-        cat("\nYour database has been generated and is backed by file",
-            dbfile, '\n')
-        cat("You can use save(..., file='...', compress=TRUE)", 
-            "to save the database\n")
-        cat("Also make sure", dbfile, "is not deleted or overwritten", 
-            "unless you do not need the database any more.\n")
-    }
+    } 
+	 # no longer supported
+	 #else {
+    #    dbfile <- paste(dbname, '.cdb', sep='')
+    #    if (batch_parse(filename, dbfile) == 0) {
+    #        stop('Error in parsing using ChemmineR Performance Pack',
+    #            ' package. Check your input file.\n')
+    #    }
+    #    # indexing binary db
+    #    dbf <- file(dbfile, 'rb')
+    #    # skip header
+    #    seek(dbf, 16)
+    #    # read int size
+    #    intsize <- readBin(dbf, integer(), size=1)
+    #    for (id in 1:n_compounds) {
+    #        descdb[[id]] <- c("filedb:", dbname, seek(dbf))
+    #        d_size <- readBin(dbf, integer(), size=intsize)
+    #        seek(dbf, d_size * intsize, origin='current')
+    #    }
+    #    close(dbf)
+    #    cat("\nYour database has been generated and is backed by file",
+    #        dbfile, '\n')
+    #    cat("You can use save(..., file='...', compress=TRUE)", 
+    #        "to save the database\n")
+    #    cat("Also make sure", dbfile, "is not deleted or overwritten", 
+    #        "unless you do not need the database any more.\n")
+    #}
     return(list(descdb=descdb, cids=cids, sdfsegs=sdf_seg,
                 source=filename, type=type))
 }

@@ -178,8 +178,8 @@ setClass('_p_Descriptors', contains = 'C++Reference')
 #x
 #})
 
-setAs('ExternalReference', 'character',
-function(from) {if (!is.null(from$"__str__")) from$"__str__"()})
+#setAs('ExternalReference', 'character',
+#function(from) {if (!is.null(from$"__str__")) from$"__str__"()})
 
 setMethod('print', 'ExternalReference',
 function(x) {print(as(x, "character"))})
@@ -279,21 +279,19 @@ attr(`delete_Descriptors`, "inputTypes") = c('_p_Descriptors')
 class(`delete_Descriptors`) = c("SWIGFunction", class('delete_Descriptors'))
 
 # Start of accessor method for Descriptors
-setMethod('$', '_p_Descriptors', function(x, name)
-
-{
-  accessorFuns = list('parse_sdf' = Descriptors_parse_sdf, 'parse_sdfile' = Descriptors_parse_sdfile, 'parse_smiles' = Descriptors_parse_smiles, 'get_descriptor' = Descriptors_get_descriptor, 'get_len' = Descriptors_get_len);
-  ;        idx = pmatch(name, names(accessorFuns));
-  if(is.na(idx)) 
-  return(callNextMethod(x, name));
-  f = accessorFuns[[idx]];
-  function(...){
-    f(x, ...)
-  };
-}
-
-
-);
+#setMethod('$', '_p_Descriptors', function(x, name)
+#
+#{
+#  accessorFuns = list('parse_sdf' = Descriptors_parse_sdf, 'parse_sdfile' = Descriptors_parse_sdfile, 'parse_smiles' = Descriptors_parse_smiles, 'get_descriptor' = Descriptors_get_descriptor, 'get_len' = Descriptors_get_len);
+#  ;        idx = pmatch(name, names(accessorFuns));
+#  if(is.na(idx)) 
+#  return(callNextMethod(x, name));
+#  f = accessorFuns[[idx]];
+#  function(...){
+#    f(x, ...)
+#  };
+#}
+#);
 # end of accessor method for Descriptors
 setMethod('delete', '_p_Descriptors', function(obj) {delete_Descriptors(obj)})
 # Start of similarity

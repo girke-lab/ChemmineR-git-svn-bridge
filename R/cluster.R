@@ -422,7 +422,7 @@ jarvisPatrick_c <- function(neighbors,minNbrs,fast=TRUE,bothDirections=FALSE,lin
 
 			n=if(is.list(neighbors)) Map(as.integer,neighbors)
 				else if(is.matrix(neighbors))  matrix(as.integer(neighbors),nrow(neighbors),ncol(neighbors))
-				else error("neighbors must be an integer valued list or matrix, but found: ",class(neighbors))
+				else stop("neighbors must be an integer valued list or matrix, but found: ",class(neighbors))
 	      .Call("jarvis_patrick",n,as.integer(minNbrs),
 					as.integer(fast),as.integer(bothDirections),as.integer(linkage))
 }

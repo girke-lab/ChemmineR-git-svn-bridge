@@ -9,9 +9,9 @@ Convert data blocks in \code{SDFset} to character matrix with
 \code{datablock2ma}, then store its numeric columns as numeric matrix and its
 character columns as character matrix.  }
 \usage{
-datablock2ma(datablocklist = datablock(sdfset), cleanup = " \\\(.*", ...)   
+datablock2ma(datablocklist, cleanup = " \\\(.*", ...)   
 
-splitNumChar(blockmatrix = blockmatrix)
+splitNumChar(blockmatrix)
 
 }
 \arguments{
