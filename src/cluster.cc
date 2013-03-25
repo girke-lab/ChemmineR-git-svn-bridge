@@ -291,7 +291,7 @@ void loadNNMatrix(int N, int K, int minNbrs, SEXP neighbors)
 				continue;
 			n--;
 			if(n < 0 || n >= N) //raise error
-				error("index value out of range");
+				error("Index value %d out of range. Should be in [1,%d]",n,N);
 
 			nbrs.push_back(n);
 		}
@@ -325,7 +325,7 @@ void loadNNList(int N,  int minNbrs,SEXP neighbors)
 				continue;
 			n--;
 			if(n < 0 || n >= N) //raise error
-				error("index value out of range");
+				error("Index value %d out of range. Should be in [1,%d]",n,N);
 
 			nbrs.push_back(n);
 		}

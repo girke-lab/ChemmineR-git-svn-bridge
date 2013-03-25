@@ -626,7 +626,7 @@ SDF2apcmp <- function(SDF) {
 		#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
 		d <- Descriptors()
 		if (Descriptors_parse_sdf(self=d, sdf=defs) == 0) {
-			cat("SDF not well-formatted!")
+			warning("SDF not well-formatted!")
 			return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
 		}
 		cmp$desc_obj=d
