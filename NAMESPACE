@@ -65,6 +65,7 @@ export(
     ## Clustering functions
     ## Source: cluster.R
     "cmp.cluster", "jarvisPatrick", "cluster.visualize" ,"nearestNeighbors","trimNeighbors",
+	 "fromNNMatrix","byCluster",
 
 	## Database backend functions
 	## Source: compound_db.R

@@ -34,13 +34,13 @@
 }
 \value{
    The return value is a list with the following components:
-   \item{ids}{index values of nearest neighbors, for each item. If \code{cutoff} is
+   \item{indexes}{index values of nearest neighbors, for each item. If \code{cutoff} is
       used, this will be a list of lists, otherwise it will be a matrix}
    \item{names}{The names of each item in the set, as returned by cid}
    \item{similarities}{The similarity values of each neighbor to the item for that row. 
       This will also be either a list of lists or a matrix, depending on whether or not
       \code{cutoff} was used. Each similarity values corresponds to the id number in the 
-      same position in the ids entry}
+      same position in the indexes entry}
 }
 \author{
    Kevin Horan

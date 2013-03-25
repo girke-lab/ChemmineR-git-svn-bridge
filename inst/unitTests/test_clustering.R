@@ -26,10 +26,7 @@ test_dj.jarvisPatrick <- function() {
 					print(paste("cutoff:",cutoff,"mode:",mode,"linkage:",linkage))
 					#clustering = jarvisPatrick(data,j=numNbrs,k=minNbrs,cutoff=cutoff,mode=mode,linkage=linkage)
 					clustering = jarvisPatrick(nnm,k=minNbrs,mode=mode,linkage=linkage)
-					#print(clustering)
-					#print(table(clustering))
-					sizes=table(clustering)
-					print(sizes[sizes!=1])
+					print(byCluster(clustering))
 				}
 		}
 			

@@ -543,11 +543,11 @@ jarvisPatrick <- function(nnm,  k, mode="a1a2b", linkage="single") {
 
 	#print(nnm)
 	clusters = if(mode=="a1a2b")
-					jarvisPatrick_c(nnm$ids,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
+					jarvisPatrick_c(nnm$indexes,k,fast=TRUE,bothDirections=TRUE,linkage=linkage)
 				else if(mode=="a1b")
-					jarvisPatrick_c(nnm$ids,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
+					jarvisPatrick_c(nnm$indexes,k,fast=TRUE,bothDirections=FALSE,linkage=linkage)
 				else   # if(mode=="b") only remaining option
-					jarvisPatrick_c(nnm$ids,k,fast=FALSE,linkage=linkage)
+					jarvisPatrick_c(nnm$indexes,k,fast=FALSE,linkage=linkage)
 
 	#print(clusters)
 
@@ -580,7 +580,7 @@ nearestNeighbors <- function(x, numNbrs=NULL,cutoff=NULL,...){
 							  nnm = list()
 							  for(i in 1:length(set)){
 									sim = simFun(set[i],set)
-									nnm$ids = rbind(nnm$ids, nameToNum[names(sim)])
+									nnm$indexes = rbind(nnm$indexes, nameToNum[names(sim)])
 									#nnm$names = rbind(nnm$names, names(sim))
 									nnm$similarities = rbind(nnm$similarities,sim)
 							  }
@@ -601,7 +601,7 @@ nearestNeighbors <- function(x, numNbrs=NULL,cutoff=NULL,...){
 
 							nnm=list()
 							N=length(set)
-							nnm$ids <- vector("list",N)
+							nnm$indexes <- vector("list",N)
 							nnm$names <- vector("list",N)
 							nnm$similarities<- vector("list",N)
 							#names(nnm) = cid(x)
@@ -610,7 +610,7 @@ nearestNeighbors <- function(x, numNbrs=NULL,cutoff=NULL,...){
 						   names(nameToNum)=cid(set) 
 						   for(i in 1:N) {
 								 sim = simFun(set[i],set)
-								 nnm$ids[[i]] = as.integer(nameToNum[names(sim)])
+								 nnm$indexes[[i]] = as.integer(nameToNum[names(sim)])
 								 #nnm$names[[i]] = names(sim)
 								 nnm$similarities[[i]]=as.numeric(sim)
 						   }
@@ -641,21 +641,37 @@ trimNeighbors <- function(nnm,cutoff){
 		for(i in 1:nrow(nnm$similarities)){
 				 nonMatches = nnm$similarities[i,] < cutoff 
 				 nnm$similarities[i,nonMatches] = NA
-				 nnm$ids[i,nonMatches] = NA
+				 nnm$indexes[i,nonMatches] = NA
 				 #nnm$names[i,nonMatches] = NA
 		}
 	}else if(class(nnm$similarities) == "list"){
 		for(i in 1:length(nnm$similarities)){
 				 matches = nnm$similarities[[i]] >= cutoff
 				 nnm$similarities[[i]] = nnm$similarities[[i]][matches]
-				 nnm$ids[[i]] = nnm$ids[[i]][matches]
+				 nnm$indexes[[i]] = nnm$indexes[[i]][matches]
 				 #nnm$names[[i]] = nnm$names[[i]][matches]
 		}
 	}else
 		stop("don't know how to handle nnm$similarities of type ",class(nnm$similarities))
 
 	nnm
+}
 
+fromNNMatrix<- function(data,names=rownames(data)){
+	list(indexes = data, names=names)
+}
+byCluster <- function(clustering,excludeSingletons=TRUE){
+
+		if(excludeSingletons)
+			sizes = table(clustering)
+
+		clusters = list()
+		for(mol in names(clustering)){
+			cid = as.character(clustering[[mol]])
+			if(!excludeSingletons || (excludeSingletons && sizes[[cid]] > 1))
+				clusters[[cid]] = c(clusters[[cid]], mol)
+		}
+		clusters
 }
 
 

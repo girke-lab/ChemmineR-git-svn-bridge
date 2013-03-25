@@ -24,7 +24,7 @@
 }
 \value{
    The return value has the same structure as \code{nnm}, with some neighbors
-   removed from the \code{ids} and \code{similarties} entries.
+   removed from the \code{indexes} and \code{similarties} entries.
 }
 \author{
    Kevin Horan
