@@ -270,44 +270,42 @@
 # this is an internal function and is not intended to be used by users
 .gen_atom_pair <- function(cmp)
 {
+	 desc <- c()
     if (.has.pp() && class(cmp$desc_obj) == "_p_Descriptors") {
         if (is.null(cmp$desc_obj))
             return(vector())
-        desc <- c()
         for (i in 1:Descriptors_get_len(self=cmp$desc_obj)) {
             desc <- c(desc,
                     Descriptors_get_descriptor(self=cmp$desc_obj, i=i-1))
         }
-        if (length(desc) == 0) return(desc)
-        return(.factor_to_vector(as.factor(desc)))
-    }
+    }else{
 
-    num_bonds <- length(cmp[['bonds']][['u']])
-    if (num_bonds == 0)
-        return(c())
-    dis <- .all_pairs_dist(cmp)
-    num_atoms <- length(cmp[['atoms']])
-    desc <- c()
-    tail <- 1
+		 num_bonds <- length(cmp[['bonds']][['u']])
+		 if (num_bonds == 0)
+			  return(c())
+		 dis <- .all_pairs_dist(cmp)
+		 num_atoms <- length(cmp[['atoms']])
+		 tail <- 1
 
-    a_desc <- .gen_all_atom_desc(cmp)
-    # for every pair of atoms
-    for (i in 1:num_atoms) {
-        for (j in i:num_atoms) {
-            if (i != j && dis[i,j] < 128 && cmp[['atoms']][i] != 'H' &&
-                    cmp[['atoms']][j] != 'H') {
-                # get the atom descriptor for the two atoms
-                desc_i <- a_desc[[i]]
-                desc_j <- a_desc[[j]]
-                # construct descriptor for the atom pair
-                if (desc_i >= desc_j)
-                    desc[tail] <- desc_i * 2^20 + dis[i,j] * 2^13 + desc_j
-                else
-                    desc[tail] <- desc_j * 2^20 + dis[i,j] * 2^13 + desc_i
-                tail <- tail + 1
-            }
-        }
-    }
+		 a_desc <- .gen_all_atom_desc(cmp)
+		 # for every pair of atoms
+		 for (i in 1:num_atoms) {
+			  for (j in i:num_atoms) {
+					if (i != j && dis[i,j] < 128 && cmp[['atoms']][i] != 'H' &&
+							  cmp[['atoms']][j] != 'H') {
+						 # get the atom descriptor for the two atoms
+						 desc_i <- a_desc[[i]]
+						 desc_j <- a_desc[[j]]
+						 # construct descriptor for the atom pair
+						 if (desc_i >= desc_j)
+							  desc[tail] <- desc_i * 2^20 + dis[i,j] * 2^13 + desc_j
+						 else
+							  desc[tail] <- desc_j * 2^20 + dis[i,j] * 2^13 + desc_i
+						 tail <- tail + 1
+					}
+			  }
+		 }
+	 }
     if (length(desc) == 0)
         return(desc)
     else 

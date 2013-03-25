@@ -61,7 +61,6 @@ loadDb <- function(conn,data,featureGenerator){
 	addNewFeatures(conn,data,featureGenerator)
 
 	if(all(c("name","definition","format") %in% colnames(data))){
-		save(data,file="data.Rdata")
 		insertNamedDef(conn,data)
 	}else if(all(c("definition","format") %in% colnames(data))){
 		insertDef(conn,data)
@@ -324,54 +323,8 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 }
 
 
-loadSdf_slow <- function(conn,sdfFile,batchSize=10000,validate=FALSE){
-	f = file(sdfFile,"r")
+smile2sdf <- function(smileFile){
 
-	dbTransaction(conn,{
-		compoundLines=rep("",batchSize)
-		compoundQueue=data.frame(name=rep(NA,1000),definition=NA,format=NA)
-		compoundCount=1
-		lineNum=1
-
-		bufferLines(f,batchSize,function(lines){
-					for(line in lines){
-						#print(paste(lineNum,":",line))
-						compoundLines[lineNum]<<-line
-						if(lineNum >= batchSize)
-							compoundLines[lineNum*2]<<-NA #expand array
-
-						if(line == "$$$$"){ #end of a compound
-							tryCatch({
-								if(validate)
-									read.SDFset(compoundLines[1:lineNum])
-
-								def=paste(compoundLines[1:lineNum],collapse="\n")
-
-								compoundQueue[compoundCount,]<<-c(compoundLines[1],def,"sdf")
-								compoundCount<<- compoundCount+1
-								if(compoundCount > dim(compoundQueue)[1]){
-									if(debug) print("loading batch")
-									if(debug) print(compoundCount)
-									loadDb(conn,compoundQueue)
-									compoundCount<<-1
-								}
-							},
-							error=function(e) {
-								print(paste("bad def found:",e$message))
-								#print("context:")
-								#print(compoundLines)
-							})
-							
-							lineNum<<-0
-						}
-						lineNum <<- lineNum + 1
-					}
-				 })
-		if(debug) print(paste("loading last batch",compoundCount))
-		#print(compoundQueue[,c(1,3)])
-		loadDb(conn,compoundQueue[1:compoundCount-1,])
-	})
-	close(f)
 }
 
 loadSmiles <- function(conn, smileFile,batchSize=10000){
