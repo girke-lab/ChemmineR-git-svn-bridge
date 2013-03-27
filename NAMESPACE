@@ -70,6 +70,7 @@ export(
 	## Source: compound_db.R
 	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
 	"getCompoundNames","findCompoundsByName",
+	"smile2sdf",
 
 	"jarvisPatrick_c",
 
