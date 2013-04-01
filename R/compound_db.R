@@ -172,13 +172,12 @@ batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 	if(numIndices==0)
 		return()
 
-	start=1
-	for(end in seq(1,numIndices,by=batchSize)+batchSize){
-		end = min(end,numIndices)
+	for(start in seq(1,numIndices,by=batchSize)){
+		end = min(start+batchSize-1,numIndices)
 		if(debug) print(paste(start,end))
-		indexSet= allIndices[start:end]
-		start=end+1
+		indexSet = allIndices[start:end]
 		indexProcessor(indexSet)
+
 	}
 }
 #this does not guarentee a consistant ordering of the result
