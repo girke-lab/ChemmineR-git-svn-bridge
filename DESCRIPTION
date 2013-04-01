@@ -1,12 +1,13 @@
 Package: ChemmineR
 Type: Package
 Title: Cheminformatics of Drug-like Small Molecule Data
-Version: 2.11.22
-Date: 2013-03-26
+Version: 2.11.23
+Date: 2013-04-01
 Author: Y. Eddie Cao, Kevin Horan, Tyler Backman, Yan Wang, Thomas Girke
 Maintainer: ChemmineR Team <see@url>
 Description: ChemmineR is a cheminformatics package for analyzing drug-like small molecule data in R. Its latest version contains functions for efficient processing of large numbers of molecules, physicochemical/structural property predictions, structural similarity searching, classification and clustering of compound libraries with a wide spectrum of algorithms. In addition, it offers visualization functions for compound clustering results and chemical structures.
 License: Artistic-2.0
+System Requirements: OpenBabel (>= 2.2.3)  with headers. http://openbabel.org
 Depends: R (>= 2.10.0), methods
 biocViews: MicrotitrePlateAssay, CellBasedAssays, Visualization, Infrastructure, DataImport, Clustering, Bioinformatics, Proteomics
 Imports: graphics, methods, stats, RCurl, DBI, digest, BiocGenerics
