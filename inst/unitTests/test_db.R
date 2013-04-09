@@ -123,8 +123,8 @@ test_ea.comparison <- function()
 {
 
 	DEACTIVATED("local test")
-	filename = "~/runs/kinase/kinase.sdf"
-	#filename = "~/runs/protein/proteins.sdf"
+	#filename = "~/runs/kinase/kinase.sdf"
+	filename = "~/runs/protein/proteins.sdf"
 	#filename = "~/runs/protein/proteins-1000.sdf"
 #	options(warn=2)
 	options(error=traceback)
@@ -147,8 +147,8 @@ test_ea.comparison <- function()
 		print(system.time(conn<-initDb("tempdb")))
 		print(system.time(loadSdf(conn,filename,function(sdfset)cbind(MW=MW(sdfset)),
 										  function(x) {
-											  print(paste("apset time",length(x)))
-											  print(system.time(aps<<-sdf2ap(x)))
+											  #print(paste("apset time",length(x)))
+											  #print(system.time(aps<<-sdf2ap(x)))
 											  #data.frame(descriptor_type="ap",
 															 #descriptor = unlist(lapply(ap(aps), 
 																					#function(x) paste(x,collapse=", "))))
