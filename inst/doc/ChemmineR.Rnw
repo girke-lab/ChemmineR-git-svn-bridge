@@ -501,10 +501,7 @@ For example, if dataset X is loaded with features F1 and F2, and then at a later
 new feature F3, the \Rfunarg{fct} function used to load dataset Y must compute and return features F1, F2, and F3. 
 \Rfunction{loadSdf} will call \Rfunarg{fct} with both datasets X and Y so that all features are available for all
 compounds. If any features are missing an error will be raised.
-
-If just new features are being added, but no new compounds, just provide any existing compound to trigger
-the computation of new features for all existing compounds. Note that you might want to provide 2 or more
-existing compounds, as data frame construction  can act differently if there is only one row. 
+If just new features are being added, but no new compounds, use the \Rfunction{addNewFeatures} function.
 
 In this example, we create a new database called ``test.db'' and load it with data
 from and \Rclass{SDFset}. We also define \Rfunarg{fct} to compute the molecular weight, ``MW'', and the

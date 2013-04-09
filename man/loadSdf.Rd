@@ -48,17 +48,17 @@ loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) d
   }
 }
 \details{
-		New features can also be added using this function. However, all compounds must have all features so if new
+	New features can also be added using this function. However, all compounds must have all features so if new
 	features are added to a new set of compounds, all existing features must be computable by the \code{fct} function 
 	given. If new features are detected, all existing compounds will be run through \code{fct} in order to compute
 	the new features for them as well.
-		For example, if dataset X is loaded with features F1 and F2, and then at a later time we load dataset Y with
+
+	For example, if dataset X is loaded with features F1 and F2, and then at a later time we load dataset Y with
 	new feature F3, the \code{fct} function used to load dataset Y must compute and return features F1, F2, and F3. 
 	\code{loadSdf} will call \code{fct} with both datasets X and Y so that all features are available for all
 	compounds. If any features are missing an error will be raised.
-		If just new features are being added, but no new compounds, just provide any existing compound to trigger
-	the computation of new features for all existing compounds. Note that you might want to provide 2 or more
-	existing compounds, as data frame construction  can act differently if there is only one row. 
+
+	If just new features are being added, but no new compounds, use the \code{\link{addNewFeatures}} function.
 }
 \value{
 	Returns the compound id numbers of each compound loaded. These can be used to retrieve compounds later.
