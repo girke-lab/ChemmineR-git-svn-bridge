@@ -131,7 +131,7 @@ test_da.getCompounds<-function(){
 test_ea.comparison <- function()
 {
 
-	#DEACTIVATED("local test")
+	DEACTIVATED("local test")
 	#filename = "~/runs/kinase/kinase.sdf"
 	filename = "~/runs/protein/proteins.sdf"
 	#filename = "~/runs/protein/proteins-1000.sdf"
