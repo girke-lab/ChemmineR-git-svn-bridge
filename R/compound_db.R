@@ -27,8 +27,11 @@ initDb <- function(handle){
 	if( ! all(c("compounds","descriptor_types","descriptors") %in% tableList)) {
 		print("createing db")
 
+		sqlFile = file.path("schema",if(inherits(conn,"SQLiteConnection")) "compounds.SQLite" 
+								  else if(inherits(conn,"PostgreSQLConnection")) "compounds.RPostgreSQL")
+																	
 		statements = unlist(strsplit(paste(
-							  readLines(system.file("schema/compounds.SQLite",package="ChemmineR",mustWork=TRUE)),
+							  readLines(system.file(sqlFile,package="ChemmineR",mustWork=TRUE)),
 							  collapse=""),";",fixed=TRUE))
 		#print(statements)
 
@@ -527,6 +530,7 @@ insertDef <- function(conn,data)  {
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(definition,definition_checksum,format) ",
 								 "VALUES(:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else{
+		stop("database ",class(conn)," unsupported")
 		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
 						 paste("INSERT INTO compounds(definition,definition_checksum,format)
 																			  VALUES('",row[1],"','",row[2],"','",row[3],"')", sep=""))))
@@ -535,10 +539,17 @@ insertDef <- function(conn,data)  {
 
 insertNamedDef <- function(conn,data) {
 	data = rmDups(data,"definition_checksum")
+	print(class(data))
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(name,definition,definition_checksum,format) ",
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		fields = c("name","definition","definition_checksum","format")
+		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
+						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)"),
+						 row)))
 	}else{
+		stop("database ",class(conn)," unsupported")
 		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
 						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES('",
 																	  row[1],"','",row[2],"','",row[3],"','",row[4],"')", sep=""))))
@@ -551,6 +562,7 @@ insertFeature <- function(conn,name,values){
 		dbGetPreparedQuery(conn, paste("INSERT INTO feature_",name,"(compound_id,",name,") ",
 												 "VALUES(:compound_id,:",name,")",sep=""), bind.data=values)
 	}else{
+		stop("database ",class(conn)," unsupported")
 		apply(data,1,function(row) 
 				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
 											 VALUES(",row[1],",", if(!is.numeric(row[2]))
@@ -565,6 +577,7 @@ insertDescriptor <- function(conn,data){
 							(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
 							:descriptor )") ,bind.data=data)
 	}else{
+		stop("database ",class(conn)," unsupported")
 		apply(data,1,function(row) 
 			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = '",row["definition_checksum"] ,"'),
@@ -577,6 +590,7 @@ insertDescriptorType <- function(conn,data){
 		dbGetPreparedQuery(conn,"INSERT INTO descriptor_types(descriptor_type) VALUES(:descriptor_type)",
 								 bind.data=data)
 	}else{
+		stop("database ",class(conn)," unsupported")
 		apply(data,1,function(row) 
 				dbGetQuery(conn,paste("INSERT INTO descriptor_types(descriptor_type) VALUES('",row[1],"')")))
 	}
