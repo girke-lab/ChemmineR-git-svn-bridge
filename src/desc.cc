@@ -101,6 +101,7 @@ static unsigned int _core(Molecule & mol, std::vector<unsigned int> & descriptor
 
   char atom, degree, pi_electrons;
 
+
   for (int i = 0; i < num_atoms; i++) {
     for (int j = i + 1; j < num_atoms; j++) {
       int dist = shortest[i][j];

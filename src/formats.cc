@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <sstream>
 
+using namespace std;
+
 #define MAX_LINE_LENGTH 100000
 
 #ifndef HAS_OPENBABEL
@@ -258,6 +260,7 @@ new_mol_from_sdfile(const char* sdfile)
 {
 	Molecule *mol = new Molecule;
 #ifdef HAS_OPENBABEL
+
 	mol->Clear();
 	OpenBabel::OBConversion conv;
     conv.SetInAndOutFormats("SDF", "SDF");
@@ -281,10 +284,15 @@ new_mol_from_sdf(const char* sdf)
 {
 	Molecule *mol = new Molecule;
 #ifdef HAS_OPENBABEL
+	
 	mol->Clear();
 	OpenBabel::OBConversion conv;
-    conv.SetInAndOutFormats("SDF", "SDF");
-	conv.ReadString(mol, std::string(sdf));
+   conv.SetInAndOutFormats("SDF", "SDF");
+
+	std::string _sdf(sdf);
+	std::istringstream ifs(_sdf);
+	conv.ReadString(mol, _sdf);
+   
 #else
 	std::string _sdf(sdf);
 	std::istringstream ifs(_sdf);
