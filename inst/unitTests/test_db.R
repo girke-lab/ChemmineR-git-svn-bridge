@@ -1,7 +1,7 @@
 
 test_aaa.clean <- function(){
 
-	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db"))
+	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db","part1.db","part2.db"))
 	
 }
 
@@ -64,7 +64,7 @@ test_ba.loadSdf<-function(){
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
 										compounds WHERE format!='junk'")[1][[1]]
 	checkEquals(compoundCount ,length(cid(sdfsample)))
-	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_MW")[1][[1]]
+	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_mw")[1][[1]]
 	checkEquals(featureCount ,length(cid(sdfsample)))
 	dbDisconnect(conn)
 
@@ -99,9 +99,9 @@ test_ca.findCompounds<-function(){
 	print(paste("found",length(indexes)," compounds"))
 	checkEquals(length(indexes),70)
 
-	checkException(findCompounds(conn,"MW",c("MW < 400","RINGS > 3")))
+	checkException(findCompounds(conn,"MW",c("mw < 400","rings > 3")))
 
-	indexes=findCompounds(conn,c("MW","RINGS"),c("MW < 400","RINGS > 3"))
+	indexes=findCompounds(conn,c("MW","RINGS"),c("mw < 400","rings > 3"))
 	print(paste("found",length(indexes)," compounds"))
 	checkEquals(length(indexes),20)
 
@@ -114,7 +114,7 @@ test_da.getCompounds<-function(){
 	#DEACTIVATED("temp")
 	conn = initDb("test2.db")
 
-	indexes = findCompounds(conn,"MW","MW < 400")
+	indexes = findCompounds(conn,"MW","mw < 400")
 
 	sdfset = getCompounds(conn,indexes)
 	checkEquals(length(cid(sdfset)),70)
@@ -126,7 +126,49 @@ test_da.getCompounds<-function(){
 	dbDisconnect(conn)
 
 }
-
+#Ktest_fa.mergeDatabases<-function() {
+#K
+#K	checkException(mergeDatabases(initDb("test1.db"),initDb("test2.db")))
+#K
+#K	#no features, no descriptors
+#K	conn1 = initDb("part1.db")
+#K	conn2 = initDb("part2.db")
+#K
+#K	loadSdf(conn1,sdfsample[1:50])
+#K	loadSdf(conn2,sdfsample[51:100])
+#K	mergeDatabases(c(conn2),conn1)
+#K
+#K	checkNumCompounds(conn1,length(cid(sdfsample)))
+#K
+#K	dbDisconnect(conn1)
+#K	dbDisconnect(conn2)
+#K
+#K	unlink(c("part1.db","part2.db"))
+#K
+#K	#with features and descriptors
+#K	conn1 = initDb("part1.db")
+#K	conn2 = initDb("part2.db")
+#K
+#K
+#K	fct = function(sdfset) data.frame(MW=MW(sdfset),sdfid=sdfid(sdfset))
+#K   descriptorFn=function(sdfset) 
+#K				data.frame(descriptor_type="ap",descriptor=unlist(lapply(ap(sdf2ap(sdfset)),
+#K														function(ap) paste(ap,collapse=", "))))
+#K	loadSdf(conn1,sdfsample[1:50],fct=fct,descriptors=descriptorFn)
+#K	loadSdf(conn2,sdfsample[51:100],fct=fct,descriptors=descriptorFn)
+#K	mergeDatabases(c(conn2),conn1)
+#K
+#K	checkNumCompounds(conn1,length(cid(sdfsample)))
+#K
+#K	dbDisconnect(conn1)
+#K	dbDisconnect(conn2)
+#K}
+#K
+#KcheckNumCompounds <- function(conn,count){
+#K	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
+#K										compounds WHERE format!='junk'")[1][[1]]
+#K	checkEquals(compoundCount ,count)
+#K}
 
 test_ea.comparison <- function()
 {
@@ -166,7 +208,7 @@ test_ea.comparison <- function()
 											  data.frame(descriptor_type=c(),descriptor=c())
 										  }
 										)))
-		print(system.time(indexes <<- findCompounds(conn,"MW","MW < 400")))
+		print(system.time(indexes <<- findCompounds(conn,"MW","mw < 400")))
 		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
 		print(system.time(sdfset<<-getCompounds(conn, indexes)))
 		print(length(sdfset))

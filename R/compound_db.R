@@ -51,8 +51,16 @@ dbTransaction <- function(conn,expr){
 		stop(paste("db error inside transaction: ",e$message))
 	})
 }
+dbGetQueryChecked <- function(conn,statement,...){
+	ret=dbGetQuery(conn,statement)
+	err=dbGetException(conn)
+	if(err$errorMsg[1] != "OK")
+		stop("error in dbGetQuery: ",err$errorMsg,"  ",traceback())
+	ret
+}
 loadDb <- function(conn,data,featureGenerator){
 
+	names(data)=tolower(names(data))
 	if(debug) print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
 
 	data=cbind(data,definition_checksum=sapply(as.vector(data[,"definition"]),
@@ -83,10 +91,12 @@ loadDescriptors <- function(conn,data){
 
 	#ensure the needed descriptor types are available for the insertDescriptor function to use
 	unique_types = unique(data[["descriptor_type"]])
-	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")[[1]]
-	newTypes = setdiff(unique_types,all_descriptor_types)
-	if(length(newTypes) > 0)
-		insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
+	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")
+
+	newTypes = if(nrow(all_descriptor_types)==0) unique_types 
+				  else setdiff(unique_types,all_descriptor_types$descriptor_type)
+
+	insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
 
 	insertDescriptor(conn,data)
 }
@@ -151,7 +161,7 @@ insertUserFeatures<- function(conn,data){
 	#fetch newly inserted compounds
 	
 	df = dbGetQuery(conn,paste("SELECT compound_id,definition_checksum FROM compounds LEFT JOIN feature_",
-								 userFieldNames[1]," as f USING(compound_id)  WHERE f.compound_id IS
+								 tolower(userFieldNames[1])," as f USING(compound_id)  WHERE f.compound_id IS
 								 NULL",sep=""))
 	data= merge(data,df)
 	sapply(userFieldNames,function(name) insertFeature(conn,name,data))
@@ -357,17 +367,20 @@ smile2sdf <- function(smileFile,sdfFile=tempfile()){
 #	compoundIds
 #}
 
+#TODO: document feature names must be lower case in the tests clause
 findCompounds <- function(conn,featureNames,tests){
 
 	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
 	# ... where test1 AND test2 AND ...
+	featureNames = tolower(featureNames)
+
 	featureTables = paste("feature_",featureNames,sep="")
 	tryCatch({
 		sql = paste("SELECT compound_id FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
 					" USING(compound_id) WHERE ",paste("(",paste(tests,collapse=") AND ("),")") ) 
 	
-		#print(paste("query sql:",sql))
-		result = dbGetQuery(conn,sql)
+		if(debug) print(paste("query sql:",sql))
+		result = dbGetQueryChecked(conn,sql)
 		result[1][[1]]
 	},error=function(e){
 		if(length(grep("no such column",e$message))!=0){
@@ -458,67 +471,72 @@ indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
 
 	# we have to batch by index because we need to execute an insert statment along
 	# the way and R DBI does not allow you to do two things at once.
-	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM
-									compounds WHERE format!='junk' ")[1][[1]],function(compoundIdSet){
-		tryCatch({
-				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
-								  paste(compoundIdSet,collapse=","),")"))
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")
+	if(length(ids) > 0)
+		batchByIndex(ids[1][[1]],function(compoundIdSet){
+			tryCatch({
+					rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
+									  paste(compoundIdSet,collapse=","),")"))
 
-				sdfset = definition2SDFset(rows[2][[1]])
-				userFeatures  = featureGenerator(sdfset)
-				lapply(newFeatures, function(name){
-						 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],userFeatures[name]))
-				})
-			},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
-		)
+					sdfset = definition2SDFset(rows[2][[1]])
+					userFeatures  = featureGenerator(sdfset)
+					names(userFeatures)=tolower(names(userFeatures))
+					lapply(newFeatures, function(name){
+							 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],userFeatures[name]))
+					})
+				},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
+			)
 
-	},1000)
+		},1000)
 }
 addNewFeatures <- function(conn,featureGenerator){
 
 	firstBatch = TRUE
 	newFeatures = c()
-	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM
-									compounds WHERE format!='junk' ")[1][[1]],function(compoundIdSet){
-		tryCatch({
-				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
-								  paste(compoundIdSet,collapse=","),")"))
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")
+	if(length(ids) > 0)
+		batchByIndex(ids[1][[1]],function(compoundIdSet){
+			tryCatch({
+					rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
+									  paste(compoundIdSet,collapse=","),")"))
 
-				sdfset = definition2SDFset(rows[2][[1]])
+					sdfset = definition2SDFset(rows[2][[1]])
 
-				data = featureGenerator(sdfset)
+					data = featureGenerator(sdfset)
+					names(data)=tolower(names(data))
 
-				if(firstBatch){
-					firstBatch<<-FALSE
-					features = featureDiff(conn,data)
-					newFeatures <<- features$new
-					for(name in features$new)
-						createFeature(conn,name,is.numeric(data[[name]]))
-				}
-				if(debug) print(paste("new features ",paste(newFeatures,collapse=",")))
-				lapply(newFeatures, function(name){
-						 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],data[name]))
-				})
-			},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
-		)
+					if(firstBatch){
+						firstBatch<<-FALSE
+						features = featureDiff(conn,data)
+						newFeatures <<- features$new
+						for(name in features$new)
+							createFeature(conn,name,is.numeric(data[[name]]))
+					}
+					if(debug) print(paste("new features ",paste(newFeatures,collapse=",")))
+					lapply(newFeatures, function(name){
+							 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],data[name]))
+					})
+				},error=function(e) stop(paste("error in addNewFeature:",e$message))
+			)
 
-	},1000)
+		},1000)
 
 
 }
 
 createFeature <- function(conn,name, isNumeric){
 
-
 	sqlType = if(isNumeric) "NUMERIC" else "TEXT"
 	if(debug) print(paste("adding",name,", sql type: ",sqlType))
-	dbGetQuery(conn,
+
+	dbGetQueryChecked(conn,
 		paste("CREATE TABLE feature_",name," (
-			compound_id INTEGER PRIMARY KEY REFERENCES compound(compound_id) ON DELETE CASCADE, ",
-			name," ",sqlType," )",sep=""))
+			compound_id INTEGER PRIMARY KEY REFERENCES compounds(compound_id) ON DELETE CASCADE, ",
+			"",name," ",sqlType," )",sep=""))
+
 	#print("made table")
 	dbGetQuery(conn,paste("CREATE INDEX feature_",name,"_index ON
-								 feature_",name,"(",name,")",sep=""))
+								 feature_",name,"(\"",name,"\")",sep=""))
 	#print("made index")
 
 }
@@ -529,30 +547,28 @@ insertDef <- function(conn,data)  {
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(definition,definition_checksum,format) ",
 								 "VALUES(:definition,:definition_checksum,:format)",sep=""), bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		fields = c("definition","definition_checksum","format")
+		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
+						 "INSERT INTO compounds(definition,definition_checksum,format) VALUES($1,$2,$3)",
+						 row)))
 	}else{
 		stop("database ",class(conn)," unsupported")
-		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
-						 paste("INSERT INTO compounds(definition,definition_checksum,format)
-																			  VALUES('",row[1],"','",row[2],"','",row[3],"')", sep=""))))
 	}
 }
 
 insertNamedDef <- function(conn,data) {
 	data = rmDups(data,"definition_checksum")
-	print(class(data))
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(name,definition,definition_checksum,format) ",
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		fields = c("name","definition","definition_checksum","format")
 		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
-						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)"),
+						 "INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)",
 						 row)))
 	}else{
 		stop("database ",class(conn)," unsupported")
-		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
-						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES('",
-																	  row[1],"','",row[2],"','",row[3],"','",row[4],"')", sep=""))))
 	}
 }
 
@@ -561,12 +577,17 @@ insertFeature <- function(conn,name,values){
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn, paste("INSERT INTO feature_",name,"(compound_id,",name,") ",
 												 "VALUES(:compound_id,:",name,")",sep=""), bind.data=values)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		fields = c("compound_id",name)
+		apply(values[,fields],1,function(row) 
+				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,\"",name,"\") ",
+											 "VALUES($1,$2)",sep=""),row))
 	}else{
 		stop("database ",class(conn)," unsupported")
-		apply(data,1,function(row) 
-				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
-											 VALUES(",row[1],",", if(!is.numeric(row[2]))
-													  {paste("'",row[2],"'",sep="")} else {row[2]},")")))
+#		apply(data,1,function(row) 
+#				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
+#											 VALUES(",row[1],",", if(!is.numeric(row[2]))
+#													  {paste("'",row[2],"'",sep="")} else {row[2]},")")))
 	}
 }
 insertDescriptor <- function(conn,data){
@@ -576,22 +597,30 @@ insertDescriptor <- function(conn,data){
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
 							(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
 							:descriptor )") ,bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		fields = c("definition_checksum","descriptor_type","descriptor")
+		apply(data[,fields],1,function(row) 
+			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
+					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum =$1 ),
+								(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = $2 ), $3)"),
+							row))
 	}else{
 		stop("database ",class(conn)," unsupported")
-		apply(data,1,function(row) 
-			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
-				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = '",row["definition_checksum"] ,"'),
-					(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = '",row["descriptor_type"],"'), 
-						'",row["descriptor"],"' )" ) ))
+#		apply(data,1,function(row) 
+#			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
+#				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = '",row["definition_checksum"] ,"'),
+#					(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = '",row["descriptor_type"],"'), 
+#						'",row["descriptor"],"' )" ) ))
 	}
 }
 insertDescriptorType <- function(conn,data){
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,"INSERT INTO descriptor_types(descriptor_type) VALUES(:descriptor_type)",
 								 bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		apply(data,1,function(row) 
+				dbGetQuery(conn,paste("INSERT INTO descriptor_types(descriptor_type) VALUES($1)"),row))
 	}else{
 		stop("database ",class(conn)," unsupported")
-		apply(data,1,function(row) 
-				dbGetQuery(conn,paste("INSERT INTO descriptor_types(descriptor_type) VALUES('",row[1],"')")))
 	}
 }
