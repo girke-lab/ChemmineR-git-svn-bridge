@@ -564,9 +564,12 @@ insertNamedDef <- function(conn,data) {
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		fields = c("name","definition","definition_checksum","format")
-		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
-						 "INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)",
-						 row)))
+		dbWriteTable(conn,"compounds",data[,fields],append=TRUE,row.names=FALSE)
+
+
+		#apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
+						 #"INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)",
+						 #row)))
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
@@ -579,15 +582,15 @@ insertFeature <- function(conn,name,values){
 												 "VALUES(:compound_id,:",name,")",sep=""), bind.data=values)
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		fields = c("compound_id",name)
-		apply(values[,fields],1,function(row) 
-				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,\"",name,"\") ",
-											 "VALUES($1,$2)",sep=""),row))
+
+		dbWriteTable(conn,paste("feature_",name,sep=""),values[,fields],append=TRUE,row.names=FALSE)
+
+
+	#	apply(values[,fields],1,function(row) 
+	#			dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,\"",name,"\") ",
+	#										 "VALUES($1,$2)",sep=""),row))
 	}else{
 		stop("database ",class(conn)," unsupported")
-#		apply(data,1,function(row) 
-#				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
-#											 VALUES(",row[1],",", if(!is.numeric(row[2]))
-#													  {paste("'",row[2],"'",sep="")} else {row[2]},")")))
 	}
 }
 insertDescriptor <- function(conn,data){
@@ -606,11 +609,6 @@ insertDescriptor <- function(conn,data){
 							row))
 	}else{
 		stop("database ",class(conn)," unsupported")
-#		apply(data,1,function(row) 
-#			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
-#				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = '",row["definition_checksum"] ,"'),
-#					(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = '",row["descriptor_type"],"'), 
-#						'",row["descriptor"],"' )" ) ))
 	}
 }
 insertDescriptorType <- function(conn,data){
