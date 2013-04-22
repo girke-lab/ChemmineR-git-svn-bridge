@@ -1,5 +1,6 @@
 
 debug = FALSE
+#debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -96,7 +97,11 @@ loadDescriptors <- function(conn,data){
 	newTypes = if(nrow(all_descriptor_types)==0) unique_types 
 				  else setdiff(unique_types,all_descriptor_types$descriptor_type)
 
-	insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
+	if(debug)
+		print(paste("existing desc types:",paste(all_descriptor_types,collapse=","),"needed right now: ",
+				paste(unique_types,collapse=",")," to be added: ",paste(newTypes,collapse=",")))
+	if(length(newTypes) > 0)
+		insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
 
 	insertDescriptor(conn,data)
 }
@@ -548,6 +553,7 @@ insertDef <- function(conn,data)  {
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(definition,definition_checksum,format) ",
 								 "VALUES(:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
+		if(debug) print(data[,"definition_checksum"])
 		fields = c("definition","definition_checksum","format")
 		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
 						 "INSERT INTO compounds(definition,definition_checksum,format) VALUES($1,$2,$3)",
