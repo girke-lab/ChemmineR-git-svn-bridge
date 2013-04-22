@@ -263,6 +263,8 @@ new_mol_from_sdfile(const char* sdfile)
 
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SDF")==0)
+		return NULL;
     conv.SetInAndOutFormats("SDF", "SDF");
 	conv.ReadFile(mol, std::string(sdfile));
 #else
@@ -287,6 +289,8 @@ new_mol_from_sdf(const char* sdf)
 	
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SDF")==0)
+		return NULL;
    conv.SetInAndOutFormats("SDF", "SDF");
 
 	std::string _sdf(sdf);
@@ -315,6 +319,8 @@ new_mol_from_smiles(const char* smiles)
 	Molecule *mol = new Molecule;
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SMILES")==0)
+		return NULL;
 	conv.SetInAndOutFormats("SMILES", "SMILES");
 	conv.ReadString(mol, std::string(smiles));
 	return mol;
