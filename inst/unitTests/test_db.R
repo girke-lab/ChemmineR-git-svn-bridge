@@ -84,9 +84,13 @@ test_bn.addNewFeatures<-function(){
 
 	conn = initDb("test2.db")
 	addNewFeatures(conn,function(sdfset) data.frame(new=cid(sdfset),new2=cid(sdfset)))
-	tables = dbListTables(conn)
-	checkTrue("feature_new" %in% tables)
-	checkTrue("feature_new2" %in% tables)
+	features = listFeatures(conn)
+	checkTrue("new" %in% features)
+	checkTrue("new2" %in% features)
+
+	#tables = dbListTables(conn)
+	#checkTrue("feature_new" %in% tables)
+	#checkTrue("feature_new2" %in% tables)
 
 }
 

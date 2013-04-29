@@ -71,7 +71,7 @@ export(
 	## Source: compound_db.R
 	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
 	"getCompoundNames","findCompoundsByName","addNewFeatures",
-	"smile2sdf",
+	"smile2sdf","listFeatures",
 
 	"jarvisPatrick_c",
 
