@@ -133,7 +133,8 @@ featureDiff <- function(conn,data) {
 		compoundFields = dbListFields(conn,"compounds")
 		userFieldNames = setdiff(colnames(data),compoundFields)
 
-		existingFeatures = listFeatures(conn)
+		tableList=dbListTables(conn)
+		existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
 
 		missingFeatures = setdiff(existingFeatures,userFieldNames)
 		newFeatures = setdiff(userFieldNames,existingFeatures)
@@ -259,7 +260,12 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 			if(length(descriptor_data) != 0)
 				loadDescriptors(conn,cbind(checksums,descriptor_data))
 
-			findCompoundsByChecksum(conn,checksums)
+			cmdIds=findCompoundsByChecksum(conn,checksums)
+			if(nrow(checksums) != length(cmdIds)){
+				stop("failed to insert all compounds. recieved ",nrow(checksums), 
+					  " but only inserted ",length(cmdIds))
+			}
+			cmdIds
 	   })
 		return(cmdIds)
 	}
@@ -338,7 +344,13 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 				if(length(descriptor_data) != 0)
 					loadDescriptors(conn,cbind(checksums,descriptor_data))
 
-				compoundIds = c(compoundIds,findCompoundsByChecksum(conn,checksums))
+				cmdIds = findCompoundsByChecksum(conn,checksums)
+				if(nrow(checksums) != length(cmdIds)){
+					stop("failed to insert all compounds. recieved ",nrow(checksums), 
+						  " but only inserted ",length(cmdIds))
+				}
+
+				compoundIds = c(compoundIds,cmdIds)
 				
 			}
 			if(length(chunk) == 0) {
@@ -528,11 +540,6 @@ addNewFeatures <- function(conn,featureGenerator){
 
 }
 
-listFeatures <- function(conn){
-
-	tableList=dbListTables(conn)
-	sub("^feature_","",tableList[grep("^feature_.*",tableList)])
-}
 createFeature <- function(conn,name, isNumeric){
 
 	sqlType = if(isNumeric) "NUMERIC" else "TEXT"
