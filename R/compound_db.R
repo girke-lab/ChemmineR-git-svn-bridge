@@ -574,7 +574,7 @@ insertNamedDef <- function(conn,data) {
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		fields = c("name","definition","definition_checksum","format")
-		dbWriteTable(conn,"compounds",data[,fields],append=TRUE,row.names=FALSE)
+		postgresqlWriteTable(conn,"compounds",data[,fields],append=TRUE,row.names=FALSE)
 
 
 		#apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
@@ -593,7 +593,7 @@ insertFeature <- function(conn,name,values){
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		fields = c("compound_id",name)
 
-		dbWriteTable(conn,paste("feature_",name,sep=""),values[,fields],append=TRUE,row.names=FALSE)
+		postgresqlWriteTable(conn,paste("feature_",name,sep=""),values[,fields],append=TRUE,row.names=FALSE)
 
 
 	#	apply(values[,fields],1,function(row) 
