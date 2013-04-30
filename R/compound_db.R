@@ -133,8 +133,7 @@ featureDiff <- function(conn,data) {
 		compoundFields = dbListFields(conn,"compounds")
 		userFieldNames = setdiff(colnames(data),compoundFields)
 
-		tableList=dbListTables(conn)
-		existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+		existingFeatures = listFeatures(conn)
 
 		missingFeatures = setdiff(existingFeatures,userFieldNames)
 		newFeatures = setdiff(userFieldNames,existingFeatures)
@@ -538,6 +537,12 @@ addNewFeatures <- function(conn,featureGenerator){
 		},1000)
 
 
+}
+
+listFeatures <- function(conn){
+	
+	 tableList=dbListTables(conn)
+	 sub("^feature_","",tableList[grep("^feature_.*",tableList)])
 }
 
 createFeature <- function(conn,name, isNumeric){
