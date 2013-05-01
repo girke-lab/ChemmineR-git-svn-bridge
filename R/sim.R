@@ -1187,32 +1187,54 @@ sdf2smiles <- function(sdf) {
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
-	sdf <- sdf2str(sdf[[1]])
-	sdf <- paste(sdf, collapse="\n")
-	response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- sub("\n$", "", response) # remove trailing newline
-	id <- sub(".*\t(.*)$", "\\1", response) # get id
-	response <- sub("\t.*$", "", response) # get smiles
-	names(response) <- id
-	return(response)
+
+	 sdfstrList=as(as(sdf,"SDFstr"),"list")
+	 defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
+	 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
+														  "\n",fixed=TRUE)),
+				 "\t",fixed=TRUE))
+	 smiles = t[,1]
+	 names(smiles)= t[,2]
+	 smiles
+
+
+
+
+#	sdf <- sdf2str(sdf[[1]])
+#	sdf <- paste(sdf, collapse="\n")
+#	response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
+#	if(grepl("^ERROR:", response)){
+#        stop(response)
+#    }
+#	response <- sub("\n$", "", response) # remove trailing newline
+#	id <- sub(".*\t(.*)$", "\\1", response) # get id
+#	response <- sub("\t.*$", "", response) # get smiles
+#	names(response) <- id
+#	return(response)
 }
 
 # perform smiles to sdf conversion through ChemMine Web Tools
+#SEXP ob_convert(SEXP fromE,SEXP toE, SEXP sourceStrE)
 smiles2sdf <- function(smiles) {
     if(! class(smiles) == "character"){
         stop('reference compound must be a smiles string of class \"character\"')
     }
-    if(! is.null(names(smiles))){
-        smiles <- paste(smiles, names(smiles)[1], sep="\t")
-    }
-	response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- strsplit(response, "\n")
-	response <- as(as(response, "SDFstr"), "SDFset")
-	return(response)
+
+	 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
+																		collapse="\n")))
+
+
+#    if(! is.null(names(smiles))){
+#        smiles <- paste(smiles, names(smiles)[1], sep="\t")
+#    }
+#	response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
+#	if(grepl("^ERROR:", response)){
+#        stop(response)
+#    }
+#	response <- strsplit(response, "\n")
+#	response <- as(as(response, "SDFstr"), "SDFset")
+#	return(response)
+}
+convertFormat <- function(from,to,source){
+	.Call("ob_convert",as.character(from),as.character(to),as.character(source))
 }

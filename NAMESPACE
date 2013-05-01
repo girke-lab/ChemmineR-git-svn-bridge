@@ -53,6 +53,7 @@ export(
     "cmp.search", "cmp.similarity", "cmp.parse", "cmp.parse1", 
     "sdf.subset", "db.explain", "cluster.sizestat", 
     "cmp.duplicated", "sdf.visualize", "db.subset",
+	 "smiles2sdf","sdf2smiles",
     
     ## Fingerprint functions
     ## Source: sim.R
@@ -71,7 +72,7 @@ export(
 	## Source: compound_db.R
 	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
 	"getCompoundNames","findCompoundsByName","addNewFeatures",
-	"smile2sdf","listFeatures",
+	"listFeatures",
 
 	"jarvisPatrick_c",
 

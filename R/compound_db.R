@@ -363,11 +363,11 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 }
 
 
-smile2sdf <- function(smileFile,sdfFile=tempfile()){
-	.Call("smile2sdf_file",as.character(smileFile),as.character(sdfFile))
-	#.Call("smile2sdf_string",as.character(smileFile))
-	sdfFile
-}
+#smile2sdf <- function(smileFile,sdfFile=tempfile()){
+#	.Call("smile2sdf_file",as.character(smileFile),as.character(sdfFile))
+#	#.Call("smile2sdf_string",as.character(smileFile))
+#	sdfFile
+#}
 
 
 
