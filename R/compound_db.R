@@ -363,24 +363,12 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 }
 
 
-#smile2sdf <- function(smileFile,sdfFile=tempfile()){
-#	.Call("smile2sdf_file",as.character(smileFile),as.character(sdfFile))
-#	#.Call("smile2sdf_string",as.character(smileFile))
-#	sdfFile
-#}
+smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
+	.Call("ob_convert_file","SMI","SDF",as.character(smileFile),as.character(sdfFile))
+	sdfFile
+}
 
 
-
-#loadSmiles <- function(conn, smileFile,batchSize=10000){
-#
-#	f = file(smileFile,"r")
-#	compoundIds = c()
-#	bufferLines(f,batchSize=batchSize,function(lines) 
-#					compoundIds <<- c(compoundIds,
-#											findCompoundsByChecksum(conn,loadDb(conn,data.frame(definition=lines,format="smile")))))
-#	close(f)
-#	compoundIds
-#}
 
 #TODO: document feature names must be lower case in the tests clause
 findCompounds <- function(conn,featureNames,tests){

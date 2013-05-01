@@ -1196,21 +1196,6 @@ sdf2smiles <- function(sdf) {
 	 smiles = t[,1]
 	 names(smiles)= t[,2]
 	 smiles
-
-
-
-
-#	sdf <- sdf2str(sdf[[1]])
-#	sdf <- paste(sdf, collapse="\n")
-#	response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-#	if(grepl("^ERROR:", response)){
-#        stop(response)
-#    }
-#	response <- sub("\n$", "", response) # remove trailing newline
-#	id <- sub(".*\t(.*)$", "\\1", response) # get id
-#	response <- sub("\t.*$", "", response) # get smiles
-#	names(response) <- id
-#	return(response)
 }
 
 # perform smiles to sdf conversion through ChemMine Web Tools
@@ -1223,17 +1208,6 @@ smiles2sdf <- function(smiles) {
 	 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
 																		collapse="\n")))
 
-
-#    if(! is.null(names(smiles))){
-#        smiles <- paste(smiles, names(smiles)[1], sep="\t")
-#    }
-#	response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-#	if(grepl("^ERROR:", response)){
-#        stop(response)
-#    }
-#	response <- strsplit(response, "\n")
-#	response <- as(as(response, "SDFstr"), "SDFset")
-#	return(response)
 }
 convertFormat <- function(from,to,source){
 	.Call("ob_convert",as.character(from),as.character(to),as.character(source))
