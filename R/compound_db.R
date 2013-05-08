@@ -233,7 +233,7 @@ definition2SDFset <- function(defs){
 }
 
 loadSmiles <- function(conn, smileFile,...){
-	loadSdf(conn,smile2sdf(smileFile),...)
+	loadSdf(conn,smile2sdfFile(smileFile),...)
 }
 loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
@@ -364,7 +364,8 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
-	.Call("ob_convert_file","SMI","SDF",as.character(smileFile),as.character(sdfFile))
+	.ensureOB("smile format only suppported with OpenBabelR package")
+	convertFormatFile("SMI","SDF",smileFile,sdfFile)
 	sdfFile
 }
 

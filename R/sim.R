@@ -993,6 +993,29 @@ db.explain <- function(desc)
     .factor_to_vector(as.factor(desc))
 }
 
+.haveOB <- function()
+{
+	if(!is.null(getOption('.haveOB'))){
+		# may need to to reset this to null in onLoad, run "check" to see
+		if(getOption('.haveOB')==0)
+			return(FALSE)
+		else if(getOption('.haveOB')==1)
+			return(TRUE)
+	}else if(suppressWarnings(require('OpenBabelR', quietly=T))) {
+		message("Using OpenBabelR")
+      options(.haveOB = 1)
+		return(TRUE)
+    }else{
+      options(.haveOB = 0)
+		return(FALSE)
+	}
+
+}
+.ensureOB <- function(mesg = "OpenBabelR is required to meke use of this function")
+{
+	if(!.haveOB())
+		stop(mesg)
+}
 .has.pp <- function()
 {
 	TRUE
@@ -1184,6 +1207,7 @@ searchSim <- function(sdf) {
 
 # perform sdf to smiles conversion through ChemMine Web Tools
 sdf2smiles <- function(sdf) {
+	 .ensureOB()
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
@@ -1201,6 +1225,7 @@ sdf2smiles <- function(sdf) {
 # perform smiles to sdf conversion through ChemMine Web Tools
 #SEXP ob_convert(SEXP fromE,SEXP toE, SEXP sourceStrE)
 smiles2sdf <- function(smiles) {
+	 .ensureOB()
     if(! class(smiles) == "character"){
         stop('reference compound must be a smiles string of class \"character\"')
     }
@@ -1209,6 +1234,4 @@ smiles2sdf <- function(smiles) {
 																		collapse="\n")))
 
 }
-convertFormat <- function(from,to,source){
-	.Call("ob_convert",as.character(from),as.character(to),as.character(source))
-}
+
