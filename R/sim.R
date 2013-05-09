@@ -1235,3 +1235,8 @@ smiles2sdf <- function(smiles) {
 
 }
 
+genDescriptors <- function(sdf){
+
+	.Call("genDescriptor",sdf)
+}
+
