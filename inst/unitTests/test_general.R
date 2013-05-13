@@ -20,12 +20,13 @@ test.genDescriptors <- function(){
 	for(i in 1:100){
 		sdf = sdfsample[[i]]
 		desc = genDescriptors(sdf)
-		desc = ChemmineR:::.factor_to_vector(as.factor(desc))
 		#print(desc);
 
-		oldDesc = ap(sdf2ap(sdf))
+		oldDesc=ChemmineR:::.gen_atom_pair(ChemmineR:::SDF2apcmp(sdf))
+                 
 		#print(oldDesc);
-		print(all(desc == oldDesc))
+		checkTrue(all(desc == oldDesc))
+		#print(all(desc == oldDesc))
 	}
 
 }
