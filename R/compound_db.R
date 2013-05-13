@@ -364,7 +364,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
-	.ensureOB("smile format only suppported with OpenBabelR package")
+	.ensureOB("smile format only suppported with ChemmineOB package")
 	convertFormatFile("SMI","SDF",smileFile,sdfFile)
 	sdfFile
 }

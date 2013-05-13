@@ -645,11 +645,11 @@ sdf2ap <- function(sdfset, type="AP") {
         if(class(sdfset)=="SDF") {
 	         if(type=="AP") {
                 	#return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
-                	return(new("AP", AP=genDescriptors(sdfset)))
+                	return(new("AP", AP=genAPDescriptors(sdfset)))
         	   }
 	         if(type=="character") {
                 	#return(paste(.gen_atom_pair(SDF2apcmp(sdfset)), collapse=", "))
-                	return(paste(genDescriptors(sdfset), collapse=", "))
+                	return(paste(genAPDescriptors(sdfset), collapse=", "))
         	   }
 	     }
         if(class(sdfset)=="SDFset") {
@@ -657,7 +657,7 @@ sdf2ap <- function(sdfset, type="AP") {
                 exception <- FALSE
                 for(i in seq(along=aplist)) {
                         #tmp <- try(.gen_atom_pair(SDF2apcmp(sdfset[[i]])), silent=TRUE)
-                        tmp <- try(genDescriptors(sdfset[[i]]))
+                        tmp <- try(genAPDescriptors(sdfset[[i]]))
                         if(length(tmp) > 0 & class(tmp)!="try-error") {
                                 aplist[[i]] <- tmp
                         } else if(length(tmp) == 0 & class(tmp)!="try-error") {

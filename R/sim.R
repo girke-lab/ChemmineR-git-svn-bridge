@@ -1001,8 +1001,8 @@ db.explain <- function(desc)
 			return(FALSE)
 		else if(getOption('.haveOB')==1)
 			return(TRUE)
-	}else if(suppressWarnings(require('OpenBabelR', quietly=T))) {
-		message("Using OpenBabelR")
+	}else if(suppressWarnings(require('ChemmineOB', quietly=T))) {
+		message("Using ChemmineOB")
       options(.haveOB = 1)
 		return(TRUE)
     }else{
@@ -1011,7 +1011,7 @@ db.explain <- function(desc)
 	}
 
 }
-.ensureOB <- function(mesg = "OpenBabelR is required to meke use of this function")
+.ensureOB <- function(mesg = "ChemmineOB is required to meke use of this function")
 {
 	if(!.haveOB())
 		stop(mesg)
@@ -1235,9 +1235,9 @@ smiles2sdf <- function(smiles) {
 
 }
 
-genDescriptors <- function(sdf){
+genAPDescriptors <- function(sdf){
 
-  .factor_to_vector(as.factor(.Call("genDescriptor",sdf)))
+  .factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
 	
 }
 

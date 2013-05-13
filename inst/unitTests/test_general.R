@@ -13,13 +13,13 @@ test.formatConversions <- function() {
 
 }
 
-test.genDescriptors <- function(){
+test.genAPDescriptors <- function(){
 
 	data(sdfsample)
 	
 	for(i in 1:100){
 		sdf = sdfsample[[i]]
-		desc = genDescriptors(sdf)
+		desc = genAPDescriptors(sdf)
 		#print(desc);
 
 		oldDesc=ChemmineR:::.gen_atom_pair(ChemmineR:::SDF2apcmp(sdf))

@@ -169,9 +169,9 @@ int getElemIndex(char* elem)
 }
 extern "C" {
 
-	SEXP genDescriptor(SEXP sdf);
+	SEXP genAPDescriptor(SEXP sdf);
 }
-SEXP genDescriptor(SEXP sdf)
+SEXP genAPDescriptor(SEXP sdf)
 {
 	SimpleMolecule *mol = new SimpleMolecule();
 

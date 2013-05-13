@@ -76,7 +76,7 @@ export(
 
 	"jarvisPatrick_c",
 
-	"genDescriptors",
+	"genAPDescriptors",
 
 	## large file/query utilites
 	"bufferLines","bufferResultSet","batchByIndex","selectInBatches"
