@@ -6,23 +6,25 @@
 Convert \code{SDFset} to SMILES (\code{character})
 }
 \description{
-Accepts one compound in an \code{SDFset} container and returns the corresponding
-SMILES string (Simplified Molecular Input Line Entry Specification). 
-The compound is submitted to the ChemMine Tools web service for conversion
+Accepts compounds in an \code{SDFset} container and returns the corresponding
+SMILES (Simplified Molecular Input Line Entry Specification) strings as a named vector. 
+If ChemineOB is available then OpenBabel is used to quickly convert each string to and SDF
+object. 
+Otherwise the compound is submitted to the ChemMine Tools web service for conversion
 with the Open Babel Open Source Chemistry Toolbox. If the input object
 contains multiple items, only the first is converted.
 }
 \usage{
-sdf2smiles(sdf)
+	sdf2smiles(sdf)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{sdf}{
-  	  A \code{SDFset} object which contains one compound
+  	  A \code{SDFset} object which containing the given compounds
 }
 }
 \value{
-\item{character}{ for details see ?"character"}
+	\item{character}{ for details see ?"character"}
 }
 \references{
 Chemmine web service: http://chemmine.ucr.edu
@@ -32,7 +34,7 @@ Open Babel: http://openbabel.org
 SMILES Format: http://en.wikipedia.org/wiki/Chemical_file_format#SMILES
 }
 \author{
-Tyler Backman
+Tyler Backman, Kevin Horan
 }
 
 \examples{

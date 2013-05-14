@@ -1207,31 +1207,64 @@ searchSim <- function(sdf) {
 
 # perform sdf to smiles conversion through ChemMine Web Tools
 sdf2smiles <- function(sdf) {
-	 .ensureOB()
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
 
-	 sdfstrList=as(as(sdf,"SDFstr"),"list")
-	 defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
-	 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
-														  "\n",fixed=TRUE)),
-				 "\t",fixed=TRUE))
-	 smiles = t[,1]
-	 names(smiles)= t[,2]
-	 smiles
+	 if(.haveOB()){
+		 sdfstrList=as(as(sdf,"SDFstr"),"list")
+		 defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
+		 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
+															  "\n",fixed=TRUE)),
+					 "\t",fixed=TRUE))
+		 smiles = t[,1]
+		 names(smiles)= t[,2]
+		 smiles
+	 }else{
+		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
+		 sdf2smilesWeb(sdf)
+	 }
+}
+sdf2smilesWeb <- function(sdf){
+
+	 sdf <- sdf2str(sdf[[1]])
+	 sdf <- paste(sdf, collapse="\n")
+	 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
+	 if(grepl("^ERROR:", response)){
+	        stop(response)
+	 }
+	 response <- sub("\n$", "", response) # remove trailing newline
+	 id <- sub(".*\t(.*)$", "\\1", response) # get id
+	 response <- sub("\t.*$", "", response) # get smiles
+	 names(response) <- id
+	 return(response)
 }
 
-# perform smiles to sdf conversion through ChemMine Web Tools
-#SEXP ob_convert(SEXP fromE,SEXP toE, SEXP sourceStrE)
 smiles2sdf <- function(smiles) {
-	 .ensureOB()
     if(! class(smiles) == "character"){
         stop('reference compound must be a smiles string of class \"character\"')
     }
-
-	 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
+	 if(.haveOB())
+		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
 																		collapse="\n")))
+	 else{
+		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
+		 smiles2sdfWeb(smiles)
+	 }
+}
+# perform smiles to sdf conversion through ChemMine Web Tools
+smiles2sdfWeb <- function(smiles) {
+
+	 if(! is.null(names(smiles)))
+        smiles <- paste(smiles, names(smiles)[1], sep="\t")
+    
+	 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
+	 if(grepl("^ERROR:", response))
+        stop(response)
+    
+	 response <- strsplit(response, "\n")
+	 response <- as(as(response, "SDFstr"), "SDFset")
+	 return(response)
 
 }
 
