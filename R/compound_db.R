@@ -207,6 +207,21 @@ batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 
 	}
 }
+parBatchByIndex <- function(allIndices,indexProcessor,reduce,cl,batchSize=100000){
+
+	numIndices=length(allIndices)
+
+	if(numIndices==0)
+		return()
+
+	starts = seq(1,numIndices,by=batchSize)
+	reduce(clusterApply(cl,1:length(starts), function(jobId){
+		start = starts[jobId]
+		end = min(start+batchSize-1,numIndices)
+	   indexProcessor(allIndices[start:end],jobId)
+	}))
+
+}
 #this does not guarentee a consistant ordering of the result
 selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 	#print(paste("all indexes: ",paste(allIndices,collapse=", ")))

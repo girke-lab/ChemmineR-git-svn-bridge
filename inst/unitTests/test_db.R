@@ -130,49 +130,8 @@ test_da.getCompounds<-function(){
 	dbDisconnect(conn)
 
 }
-#Ktest_fa.mergeDatabases<-function() {
-#K
-#K	checkException(mergeDatabases(initDb("test1.db"),initDb("test2.db")))
-#K
-#K	#no features, no descriptors
-#K	conn1 = initDb("part1.db")
-#K	conn2 = initDb("part2.db")
-#K
-#K	loadSdf(conn1,sdfsample[1:50])
-#K	loadSdf(conn2,sdfsample[51:100])
-#K	mergeDatabases(c(conn2),conn1)
-#K
-#K	checkNumCompounds(conn1,length(cid(sdfsample)))
-#K
-#K	dbDisconnect(conn1)
-#K	dbDisconnect(conn2)
-#K
-#K	unlink(c("part1.db","part2.db"))
-#K
-#K	#with features and descriptors
-#K	conn1 = initDb("part1.db")
-#K	conn2 = initDb("part2.db")
-#K
-#K
-#K	fct = function(sdfset) data.frame(MW=MW(sdfset),sdfid=sdfid(sdfset))
-#K   descriptorFn=function(sdfset) 
-#K				data.frame(descriptor_type="ap",descriptor=unlist(lapply(ap(sdf2ap(sdfset)),
-#K														function(ap) paste(ap,collapse=", "))))
-#K	loadSdf(conn1,sdfsample[1:50],fct=fct,descriptors=descriptorFn)
-#K	loadSdf(conn2,sdfsample[51:100],fct=fct,descriptors=descriptorFn)
-#K	mergeDatabases(c(conn2),conn1)
-#K
-#K	checkNumCompounds(conn1,length(cid(sdfsample)))
-#K
-#K	dbDisconnect(conn1)
-#K	dbDisconnect(conn2)
-#K}
-#K
-#KcheckNumCompounds <- function(conn,count){
-#K	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
-#K										compounds WHERE format!='junk'")[1][[1]]
-#K	checkEquals(compoundCount ,count)
-#K}
+
+
 
 test_ea.comparison <- function()
 {
@@ -232,6 +191,35 @@ test_ea.comparison <- function()
 	print(system.time(dbTest()))
 #	Rprof(NULL)
 #	summaryRprof("Rprof.out")
+
+}
+
+test_fa.parBatchByIndex <- function(){
+	require(snow)
+	cl = makeSOCKcluster(3)
+	conn = initDb("test2.db")
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk'")$compound_id
+	print(str(ids))
+	outfile="parBatch.out"
+
+	unlink(outfile)
+	unlink("parBench-*")
+	parBatchByIndex(ids,batchSize = 10,cl=cl,
+			   indexProcessor = function(indexSet,jobId){
+					filename = paste("parBench-sub",jobId,sep="-")
+					cat(indexSet,"\n", sep=" ",file=filename)
+					filename
+				},
+				reduce =function(results) {
+
+					print(paste("results: ",paste(results,collapse=",")))
+					for(filename in results)
+						cat(scan(filename,quiet=TRUE),sep="\n",file=outfile,append=TRUE)
+				})
+	resultIds = scan(outfile,quiet=TRUE)
+	checkEquals(ids,resultIds)
+
+
 
 }
 
