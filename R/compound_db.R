@@ -215,12 +215,36 @@ parBatchByIndex <- function(allIndices,indexProcessor,reduce,cl,batchSize=100000
 		return()
 
 	starts = seq(1,numIndices,by=batchSize)
-	reduce(clusterApply(cl,1:length(starts), function(jobId){
-		start = starts[jobId]
-		end = min(start+batchSize-1,numIndices)
-	   indexProcessor(allIndices[start:end],jobId)
-	}))
+	f = function(jobId){
+		tryCatch({
+				start = starts[jobId]
+				end = min(start+batchSize-1,numIndices)
+				ids=allIndices[start:end]
+				indexProcessor(ids,jobId)
+			},
+			error=function(e){
+				#write the error to a file to ensure it doesn't get lost
+				cat(as.character(e),"\n",file=paste("error-",jobId,".out",sep=""))
+				stop(e)
+			}
+		)
+	}
 
+	#copy this to all nodes once so it is not copied for each iteration
+	#of clusterApply
+	clusterExport(cl,"allIndices",envir=environment())
+
+	#we explicitly create an environment for f with just what it needs
+	# so that serialization does not pull in un-nessacary things
+	fEnv = new.env(parent=globalenv())
+	fEnv$numIndices = numIndices
+	fEnv$starts = starts
+	fEnv$indexProcessor = indexProcessor
+	fEnv$batchSize = batchSize
+
+	environment(f) <- fEnv
+
+	reduce(clusterApplyLB(cl,1:length(starts),f ))
 }
 #this does not guarentee a consistant ordering of the result
 selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
