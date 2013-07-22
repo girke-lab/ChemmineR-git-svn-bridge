@@ -49,7 +49,6 @@ dbTransaction <- function(conn,expr){
 		ret
 	},error=function(e){
 		dbRollback(conn)
-		traceback()
 		stop(paste("db error inside transaction: ",e$message))
 	})
 }
@@ -291,99 +290,99 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		names = unlist(Map(function(x) x[1],sdfstrList))
 		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
 		processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName)
-	}
-	compoundIds=c()
-	## Define loop parameters 
-	stop <- FALSE 
-	f <- file(sdfFile, "r")
-	n <- Nlines
-	offset <- 0
-	## For restarting sdfStream at specific line assigned to startline argument. If assigned
-        ## startline value does not match the first line of a molecule in the SD file then it 
-        ## will be reset to the start position of the next molecule in the SD file.
-	if(startline!=1) { 
-		fmap <- file(sdfFile, "r")
-		shiftback <- 2
-		chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
-		startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
-		if(is.na(startline)) stop("Invalid value assigned to startline.")
-		dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
-		close(fmap)
-		offset <- startline - 1 # Maintains abolut line positions in index
-	}
-	counter <- 0
-	cmpid <- 1
-	partial <- NULL
-
-	dbTransaction(conn,{
-		while(!stop) {
-			counter <- counter + 1
-			chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
-			if(length(chunk) > 0) {
-				if(length(partial) > 0) {
-					chunk <- c(partial, chunk)
-				}
-				## Assure that lines of least 2 complete molecules are stored in chunk if available
-				inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-				while(inner) {
-					chunklength <- length(chunk)
-					chunk <- c(chunk, readLines(f, n = n))
-					if(chunklength == length(chunk)) { 
-						inner <- FALSE 
-					} else {
-						#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-						inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
-					}
-				}
-				y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
-				index <- which(y!=-1)
-				indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
-				complete <- chunk[1:index[length(index)]]
-				if((index[length(index)]+1) <= length(chunk)) {
-					partial <- chunk[(index[length(index)]+1):length(chunk)]
-				} else {
-					partial <- NULL
-				}
-
-				sdfset <- read.SDFset(read.SDFstr(complete))
-				valid = validSDF(sdfset)
-				sdfset=sdfset[valid]
-
-
-
-				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
-				names = complete[indexDF[,1]][valid]
-				cmdIds = processAndLoad(conn,defs,names,sdfset,fct,descriptors,updateByName)
-
-				#systemFields=data.frame(name=names,definition=defs,format="sdf")
-
-				#allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-				#checksums=loadDb(conn,allFields,fct)
-
-				#descriptor_data = descriptors(sdfset)
-				#if(length(descriptor_data) != 0)
-					#loadDescriptors(conn,cbind(checksums,descriptor_data))
-
-				#cmdIds = findCompoundsByChecksum(conn,checksums)
-				#if(nrow(checksums) != length(cmdIds)){
-					#stop("failed to insert all compounds. recieved ",nrow(checksums), 
-						  #" but only inserted ",length(cmdIds))
-				#}
-
-				compoundIds = c(compoundIds,cmdIds)
-				
-			}
-			if(length(chunk) == 0) {
-				stop <- TRUE
-				close(f)
-			}
+	}else{
+		compoundIds=c()
+		## Define loop parameters 
+		stop <- FALSE 
+		f <- file(sdfFile, "r")
+		n <- Nlines
+		offset <- 0
+		## For restarting sdfStream at specific line assigned to startline argument. If assigned
+			  ## startline value does not match the first line of a molecule in the SD file then it 
+			  ## will be reset to the start position of the next molecule in the SD file.
+		if(startline!=1) { 
+			fmap <- file(sdfFile, "r")
+			shiftback <- 2
+			chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+			startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
+			if(is.na(startline)) stop("Invalid value assigned to startline.")
+			dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+			close(fmap)
+			offset <- startline - 1 # Maintains abolut line positions in index
 		}
+		counter <- 0
+		cmpid <- 1
+		partial <- NULL
 
-		compoundIds
-	})
+		dbTransaction(conn,{
+			while(!stop) {
+				counter <- counter + 1
+				chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+				if(length(chunk) > 0) {
+					if(length(partial) > 0) {
+						chunk <- c(partial, chunk)
+					}
+					## Assure that lines of least 2 complete molecules are stored in chunk if available
+					inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+					while(inner) {
+						chunklength <- length(chunk)
+						chunk <- c(chunk, readLines(f, n = n))
+						if(chunklength == length(chunk)) { 
+							inner <- FALSE 
+						} else {
+							#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+							inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
+						}
+					}
+					y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+					index <- which(y!=-1)
+					indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+					complete <- chunk[1:index[length(index)]]
+					if((index[length(index)]+1) <= length(chunk)) {
+						partial <- chunk[(index[length(index)]+1):length(chunk)]
+					} else {
+						partial <- NULL
+					}
+
+					sdfset <- read.SDFset(read.SDFstr(complete))
+					valid = validSDF(sdfset)
+					sdfset=sdfset[valid]
+
+
+					defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
+					names = complete[indexDF[,1]][valid]
+					cmdIds = processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName,inTransaction=TRUE)
+
+					#systemFields=data.frame(name=names,definition=defs,format="sdf")
+
+					#allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+					#checksums=loadDb(conn,allFields,fct)
+
+					#descriptor_data = descriptors(sdfset)
+					#if(length(descriptor_data) != 0)
+						#loadDescriptors(conn,cbind(checksums,descriptor_data))
+
+					#cmdIds = findCompoundsByChecksum(conn,checksums)
+					#if(nrow(checksums) != length(cmdIds)){
+						#stop("failed to insert all compounds. recieved ",nrow(checksums), 
+							  #" but only inserted ",length(cmdIds))
+					#}
+
+					compoundIds = c(compoundIds,cmdIds)
+					
+				}
+				if(length(chunk) == 0) {
+					stop <- TRUE
+					close(f)
+				}
+			}
+
+			compoundIds
+		})
+	}
 }
 
-processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateByName ) {
+processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateByName,inTransaction=FALSE ) {
 	# - compute checksums on defs
 	# - if(updateByName)
 	#		query checksums for each name
@@ -442,32 +441,41 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 	}
 	if(debug) message("updating ids: ",paste(ids,collapse=","))
 
-	names = names[ids]
-	defs = defs[ids]
-	checksums = checksums[ids]
-	sdfset = sdfset[ids]
-	userFeatures = featureFn(sdfset)
+	tx = if(inTransaction) function(a,x) x  else dbTransaction
+	if(length(ids)==0){
+		tx(conn,deleteCompounds(deleteCompIds))
+		c() # no compound ids to return
+	}else{
 
+		names = names[ids]
+		defs = defs[ids]
+		checksums = checksums[ids]
+		sdfset = sdfset[ids]
+		userFeatures = featureFn(sdfset)
 
-	systemFields=data.frame(name=names,definition=defs,format="sdf",definition_checksum=checksums)
+		if(debug) message("Features: ",colnames(userFeatures))
+		if(debug) message("names: ",length(names)," defs: ",length(defs),", cksm: ",length(checksums),", features: ",length(userFeatures))
 
-	allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-	dbTransaction(conn,{
-		deleteCompounds(deleteCompIds)
-		loadedChecksums=loadDb(conn,allFields,fct)
+		systemFields=data.frame(name=names,definition=defs,format=rep("sdf",length(names)),definition_checksum=checksums)
 
-		#We assume descriptors are in the same order as compounds
-		descriptor_data = descriptors(sdfset)
-		if(length(descriptor_data) != 0)
-			loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
+		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+		tx(conn,{
+			deleteCompounds(deleteCompIds)
+			loadedChecksums=loadDb(conn,allFields,featureFn)
 
-		cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
-		if(nrow(loadedChecksums) != length(cmdIds)){
-			stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
-				  " but only inserted ",length(cmdIds))
-		}
-		cmdIds
-	})
+			#We assume descriptors are in the same order as compounds
+			descriptor_data = descriptors(sdfset)
+			if(length(descriptor_data) != 0)
+				loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
+
+			cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+			if(nrow(loadedChecksums) != length(cmdIds)){
+				stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
+					  " but only inserted ",length(cmdIds))
+			}
+			cmdIds
+		})
+	}
 }
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
@@ -513,7 +521,7 @@ findCompoundsByChecksum <- function(conn,checksums,keepOrder=FALSE,allowMissing=
 findCompoundsByName<- function(conn,names,keepOrder=FALSE,allowMissing=FALSE)
 	findCompoundsByX(conn,"name",names,keepOrder,allowMissing)
 
-findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=C()){
+findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=c()){
 	xf = if(length(extraFields)!=0) paste(",",paste(extraFields,collapse=",")) else ""
 	result = selectInBatches(conn,data,function(batch) 
 			paste("SELECT compound_id,",fieldName," ",xf,

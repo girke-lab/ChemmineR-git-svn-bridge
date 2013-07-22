@@ -21,9 +21,10 @@ test_ba.loadSdf<-function(){
 
 
 	conn = initDb("test1.db")
-	print("loading first half, no features, with exception")
-	checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
+#	print("loading first half, no features, with exception")
+#	checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
 	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
+	message("compIds: ",compIds)
 	checkEquals(length(compIds),3)
 	dbDisconnect(conn)
 
@@ -184,6 +185,7 @@ test_ea.comparison <- function() {
 }
 
 test_fa.parBatchByIndex <- function(){
+	message("starting parBatchByIndex")
 	require(snow)
 	cl = makeSOCKcluster(3)
 	conn = initDb("test2.db")
