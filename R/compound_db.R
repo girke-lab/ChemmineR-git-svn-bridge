@@ -1,6 +1,6 @@
 
-debug = FALSE
-#debug = TRUE
+#debug = FALSE
+debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -49,6 +49,7 @@ dbTransaction <- function(conn,expr){
 		ret
 	},error=function(e){
 		dbRollback(conn)
+		traceback()
 		stop(paste("db error inside transaction: ",e$message))
 	})
 }
@@ -84,7 +85,7 @@ loadDb <- function(conn,data,featureGenerator){
 	as.matrix(data["definition_checksum"],rownames.force=FALSE)
 }
 definitionChecksums <- function(defs) {
-	sapply(as.vector(defs),function(def),digest(def,serialize=FALSE))
+	sapply(as.vector(defs),function(def) digest(def,serialize=FALSE))
 }
 loadDescriptors <- function(conn,data){
 	#expects a data frame with "definition_checksum" and "descriptor"
@@ -289,7 +290,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		sdfstrList=as(as(sdfset,"SDFstr"),"list")
 		names = unlist(Map(function(x) x[1],sdfstrList))
 		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-		processAndLoad(names,defs,fct,sdfset,updateByName)
+		processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName)
 	}
 	compoundIds=c()
 	## Define loop parameters 
@@ -352,7 +353,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 
 				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
 				names = complete[indexDF[,1]][valid]
-				cmdIds = processAndLoad(defs,names,fct,sdfset,updateByName)
+				cmdIds = processAndLoad(conn,defs,names,sdfset,fct,descriptors,updateByName)
 
 				#systemFields=data.frame(name=names,definition=defs,format="sdf")
 
@@ -382,7 +383,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 	})
 }
 
-processAndLoad <- function(names,defs,featureFn,sdfset,updateByName ) {
+processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateByName ) {
 	# - compute checksums on defs
 	# - if(updateByName)
 	#		query checksums for each name
@@ -409,6 +410,7 @@ processAndLoad <- function(names,defs,featureFn,sdfset,updateByName ) {
 		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 		rownames(existingByName)=existingByName$name
+		if(debug) message("existing names: ",existingByName)
 
 		namesToLoad = Filter(function(name) {
 			#either the name is completely new, or it exists, but the checksum is different, so this is 
@@ -432,11 +434,13 @@ processAndLoad <- function(names,defs,featureFn,sdfset,updateByName ) {
 		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 
+		if(debug) message("existing checksums: ",existingByChecksum)
 		#select only those whose checksum does not already exist
 		checksumsToLoad = setdiff(checksums,existingByChecksum$definition_checksum)
 
 		ids = index[checksumsToLoad]
 	}
+	if(debug) message("updating ids: ",paste(ids,collapse=","))
 
 	names = names[ids]
 	defs = defs[ids]
@@ -510,9 +514,10 @@ findCompoundsByName<- function(conn,names,keepOrder=FALSE,allowMissing=FALSE)
 	findCompoundsByX(conn,"name",names,keepOrder,allowMissing)
 
 findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=C()){
+	xf = if(length(extraFields)!=0) paste(",",paste(extraFields,collapse=",")) else ""
 	result = selectInBatches(conn,data,function(batch) 
-			paste("SELECT compound_id,",fieldName," ",paste(extraFields,collapse=","),
-					," FROM compounds WHERE ",fieldName," IN
+			paste("SELECT compound_id,",fieldName," ",xf,
+					" FROM compounds WHERE ",fieldName," IN
 					('",paste(batch,collapse="','"),"')",sep=""),1000)
 	ids = result$compound_id
 	if(!allowMissing && length(ids)!=length(data))
@@ -521,7 +526,7 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 	if(keepOrder){
 		if(length(extraFields)!=0){
 			rownames(result)=result[[fieldName]]
-			result[data,c(compound_id,extraFields)]
+			result[data,c("compound_id",extraFields)]
 		}
 		else{
 			names(ids)=result[[fieldName]]
@@ -529,7 +534,7 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 		}
 	}else{
 		if(length(extraFields)!=0)
-			result[,c(compound_id,extraFields)]
+			result[,c("compound_id",extraFields)]
 		else
 			ids
 	}

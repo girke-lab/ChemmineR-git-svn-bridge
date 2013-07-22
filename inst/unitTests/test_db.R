@@ -209,3 +209,18 @@ test_fa.parBatchByIndex <- function(){
 	checkEquals(ids,resultIds)
 }
 
+test_ga.addDups <- function() {
+
+	data(sdfsample)
+	conn = initDb("test1.db")
+	print("loading duplications")
+	count1= getCompoundCount(conn)
+	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
+	count2= getCompoundCount(conn)
+	checkEquals(count1,count2)
+}
+getCompoundCount  <- function(conn){
+
+	dbGetQuery(conn,"SELECT count(*) FROM compounds WHERE format!='junk'")[1][[1]]
+}
+
