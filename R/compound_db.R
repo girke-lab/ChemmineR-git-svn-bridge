@@ -285,10 +285,11 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		if(debug) print("loading SDFset")
 		sdfset=sdfFile
 
+
 		sdfstrList=as(as(sdfset,"SDFstr"),"list")
 		names = unlist(Map(function(x) x[1],sdfstrList))
 		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-		processAndLoad(names,defs,updateByName)
+		processAndLoad(names,defs,fct,sdfset,updateByName)
 	}
 	compoundIds=c()
 	## Define loop parameters 
@@ -348,11 +349,10 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 				sdfset=sdfset[valid]
 
 
-				#userFeatures <- fct(sdfset)
 
 				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
 				names = complete[indexDF[,1]][valid]
-				cmdIds = processAndLoad(defs,names,updateByName)
+				cmdIds = processAndLoad(defs,names,fct,sdfset,updateByName)
 
 				#systemFields=data.frame(name=names,definition=defs,format="sdf")
 
@@ -382,7 +382,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 	})
 }
 
-processAndLoad <- function(names,defs,updateByName ) {
+processAndLoad <- function(names,defs,featureFn,sdfset,updateByName ) {
 	# - compute checksums on defs
 	# - if(updateByName)
 	#		query checksums for each name
@@ -397,44 +397,69 @@ processAndLoad <- function(names,defs,updateByName ) {
 	# - compute and insert/update descriptors for new/updated compounds
 
 	checksums = definitionChecksums(defs)
+	index=1:length(names)
+	deleteCompIds=c()
 
 	if(updateByName){
 		#we assume compounds are unique by name and so changes in checksum
 		# indicate updates to the same compounds
 
+		names(index)=names
+
 		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
-		rownames(existingByName)=existingByName$definition_checksum
-		newNames = setdiff(names,existingByName$name)
-		missingNames = setdiff(existingByName$name,names)
-		modifiedChecksums = setdiff(checksums, existingByName$definition_checksum)
-		modifiedNames = existingByName[modifiedChecksums,]
-		
+		rownames(existingByName)=existingByName$name
 
+		namesToLoad = Filter(function(name) {
+			#either the name is completely new, or it exists, but the checksum is different, so this is 
+			# an update
+			(! name %in% existingByName$name) || (! checksums[name] %in% existingByName$definition_checksum)
+		},names)
+
+		namesToDelete = Filter(function(name) {
+			#delete those needing an update, so name exists and checksum is different
+			( name %in% existingByName$name) && (! checksums[name] %in% existingByName$definition_checksum)
+		},names)
+		
+		#delete modified and missing compounds, will cascade to all descriptors
+		deleteCompIds = existingByName[namesToDelete,]$compound_id
+
+		ids = index[namesToLoad]
 	}else{
 		#we do not assume names are unique, therefore if a checksum does not
 		#exist, then it is added as if it where a new compound
+		names(index)=checksums
+		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
+														 extraFields = c("definition_checksum","name"))
 
+		#select only those whose checksum does not already exist
+		checksumsToLoad = setdiff(checksums,existingByChecksum$definition_checksum)
+
+		ids = index[checksumsToLoad]
 	}
 
-	existingChecksums = findCompoundsByChecksum(checksums,allowMissing=TRUE)
+	names = names[ids]
+	defs = defs[ids]
+	checksums = checksums[ids]
+	sdfset = sdfset[ids]
+	userFeatures = featureFn(sdfset)
 
 
 	systemFields=data.frame(name=names,definition=defs,format="sdf",definition_checksum=checksums)
 
-	userFeatures <- fct(sdfset)
 	allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
 	dbTransaction(conn,{
-		checksums=loadDb(conn,allFields,fct)
+		deleteCompounds(deleteCompIds)
+		loadedChecksums=loadDb(conn,allFields,fct)
 
 		#We assume descriptors are in the same order as compounds
 		descriptor_data = descriptors(sdfset)
 		if(length(descriptor_data) != 0)
-			loadDescriptors(conn,cbind(checksums,descriptor_data))
+			loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
 
-		cmdIds=findCompoundsByChecksum(conn,checksums)
-		if(nrow(checksums) != length(cmdIds)){
-			stop("failed to insert all compounds. recieved ",nrow(checksums), 
+		cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+		if(nrow(loadedChecksums) != length(cmdIds)){
+			stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
 				  " but only inserted ",length(cmdIds))
 		}
 		cmdIds
@@ -448,6 +473,10 @@ smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
 }
 
 
+deleteCompounds <- function(conn,compoundIds) {
+
+#TODO:  implement me!
+}
 
 #TODO: document feature names must be lower case in the tests clause
 findCompounds <- function(conn,featureNames,tests){

@@ -78,7 +78,6 @@ test_ba.loadSdf<-function(){
 	checkEquals(descriptorCount,50)
 	typeCount= dbGetQuery(conn,"SELECT count(*) FROM descriptor_types WHERE descriptor_type = 'ap' ")[1][[1]]
 	checkEquals(typeCount,1)
-					
 }
 test_bn.addNewFeatures<-function(){
 
@@ -91,11 +90,9 @@ test_bn.addNewFeatures<-function(){
 	#tables = dbListTables(conn)
 	#checkTrue("feature_new" %in% tables)
 	#checkTrue("feature_new2" %in% tables)
-
 }
 
 test_ca.findCompounds<-function(){
-
 	#DEACTIVATED("temp")
 	conn = initDb("test2.db")
 
@@ -110,11 +107,9 @@ test_ca.findCompounds<-function(){
 	checkEquals(length(indexes),20)
 
 	dbDisconnect(conn)
-
 }
 
 test_da.getCompounds<-function(){
-
 	#DEACTIVATED("temp")
 	conn = initDb("test2.db")
 
@@ -128,14 +123,11 @@ test_da.getCompounds<-function(){
 	sdfFromFile = read.SDFset("test.sdf")
 	checkEquals(length(cid(sdfFromFile)),70)
 	dbDisconnect(conn)
-
 }
 
 
 
-test_ea.comparison <- function()
-{
-
+test_ea.comparison <- function() {
 	DEACTIVATED("local test")
 	#filename = "~/runs/kinase/kinase.sdf"
 	filename = "~/runs/protein/proteins.sdf"
@@ -189,9 +181,6 @@ test_ea.comparison <- function()
 	print("db:")
 #	Rprof()
 	print(system.time(dbTest()))
-#	Rprof(NULL)
-#	summaryRprof("Rprof.out")
-
 }
 
 test_fa.parBatchByIndex <- function(){
@@ -218,8 +207,5 @@ test_fa.parBatchByIndex <- function(){
 				})
 	resultIds = scan(outfile,quiet=TRUE)
 	checkEquals(ids,resultIds)
-
-
-
 }
 
