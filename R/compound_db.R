@@ -64,8 +64,8 @@ loadDb <- function(conn,data,featureGenerator){
 	names(data)=tolower(names(data))
 	if(debug) print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
 
-	data=cbind(data,definition_checksum=sapply(as.vector(data[,"definition"]),
-													  function(def) digest(def,serialize=FALSE) ))
+	if( ! ("definition_checksum" %in% colnames(data) ))
+		data=cbind(data,definition_checksum=definitionChecksums(data[,"definition"]) )
 
 	numCompounds = dim(data)[1]
 	dups=0
@@ -82,6 +82,9 @@ loadDb <- function(conn,data,featureGenerator){
 
 	insertUserFeatures(conn,data)
 	as.matrix(data["definition_checksum"],rownames.force=FALSE)
+}
+definitionChecksums <- function(defs) {
+	sapply(as.vector(defs),function(def),digest(def,serialize=FALSE))
 }
 loadDescriptors <- function(conn,data){
 	#expects a data frame with "definition_checksum" and "descriptor"
@@ -276,7 +279,7 @@ loadSmiles <- function(conn, smileFile,...){
 }
 loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
-						  Nlines=10000, startline=1, restartNlines=100000){
+						  Nlines=10000, startline=1, restartNlines=100000,updateByName=FALSE){
 
 	if(inherits(sdfFile,"SDFset")){
 		if(debug) print("loading SDFset")
@@ -285,27 +288,7 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		sdfstrList=as(as(sdfset,"SDFstr"),"list")
 		names = unlist(Map(function(x) x[1],sdfstrList))
 		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-
-		systemFields=data.frame(name=names,definition=defs,format="sdf")
-
-		userFeatures <- fct(sdfset)
-		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-		cmdIds=dbTransaction(conn,{
-			checksums=loadDb(conn,allFields,fct)
-
-			#We assume descriptors are in the same order as compounds
-			descriptor_data = descriptors(sdfset)
-			if(length(descriptor_data) != 0)
-				loadDescriptors(conn,cbind(checksums,descriptor_data))
-
-			cmdIds=findCompoundsByChecksum(conn,checksums)
-			if(nrow(checksums) != length(cmdIds)){
-				stop("failed to insert all compounds. recieved ",nrow(checksums), 
-					  " but only inserted ",length(cmdIds))
-			}
-			cmdIds
-	   })
-		return(cmdIds)
+		processAndLoad(names,defs,updateByName)
 	}
 	compoundIds=c()
 	## Define loop parameters 
@@ -365,28 +348,26 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 				sdfset=sdfset[valid]
 
 
-				userFeatures <- fct(sdfset)
+				#userFeatures <- fct(sdfset)
 
-		#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
-		#		names = unlist(Map(function(x) x[1],sdfstrList))
-		#		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
+				names = complete[indexDF[,1]][valid]
+				cmdIds = processAndLoad(defs,names,updateByName)
 
-				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
-				names = complete[indexDF[,1]]
-				systemFields=data.frame(name=names[valid],definition=defs[valid],format="sdf")
+				#systemFields=data.frame(name=names,definition=defs,format="sdf")
 
-				allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-				checksums=loadDb(conn,allFields,fct)
+				#allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+				#checksums=loadDb(conn,allFields,fct)
 
-				descriptor_data = descriptors(sdfset)
-				if(length(descriptor_data) != 0)
-					loadDescriptors(conn,cbind(checksums,descriptor_data))
+				#descriptor_data = descriptors(sdfset)
+				#if(length(descriptor_data) != 0)
+					#loadDescriptors(conn,cbind(checksums,descriptor_data))
 
-				cmdIds = findCompoundsByChecksum(conn,checksums)
-				if(nrow(checksums) != length(cmdIds)){
-					stop("failed to insert all compounds. recieved ",nrow(checksums), 
-						  " but only inserted ",length(cmdIds))
-				}
+				#cmdIds = findCompoundsByChecksum(conn,checksums)
+				#if(nrow(checksums) != length(cmdIds)){
+					#stop("failed to insert all compounds. recieved ",nrow(checksums), 
+						  #" but only inserted ",length(cmdIds))
+				#}
 
 				compoundIds = c(compoundIds,cmdIds)
 				
@@ -401,6 +382,64 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 	})
 }
 
+processAndLoad <- function(names,defs,updateByName ) {
+	# - compute checksums on defs
+	# - if(updateByName)
+	#		query checksums for each name
+	#		exclude those that match our checksum
+	#		updates <- those with different checksum
+	#		new compounds <- everything else
+	#	else
+	#		exclude existing checksums
+	#		insert the rest	
+	# - include checksums in systemFields
+	#		- have loadDb check for the existance of checksums and don't re-compute
+	# - compute and insert/update descriptors for new/updated compounds
+
+	checksums = definitionChecksums(defs)
+
+	if(updateByName){
+		#we assume compounds are unique by name and so changes in checksum
+		# indicate updates to the same compounds
+
+		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
+														 extraFields = c("definition_checksum","name"))
+		rownames(existingByName)=existingByName$definition_checksum
+		newNames = setdiff(names,existingByName$name)
+		missingNames = setdiff(existingByName$name,names)
+		modifiedChecksums = setdiff(checksums, existingByName$definition_checksum)
+		modifiedNames = existingByName[modifiedChecksums,]
+		
+
+	}else{
+		#we do not assume names are unique, therefore if a checksum does not
+		#exist, then it is added as if it where a new compound
+
+	}
+
+	existingChecksums = findCompoundsByChecksum(checksums,allowMissing=TRUE)
+
+
+	systemFields=data.frame(name=names,definition=defs,format="sdf",definition_checksum=checksums)
+
+	userFeatures <- fct(sdfset)
+	allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
+	dbTransaction(conn,{
+		checksums=loadDb(conn,allFields,fct)
+
+		#We assume descriptors are in the same order as compounds
+		descriptor_data = descriptors(sdfset)
+		if(length(descriptor_data) != 0)
+			loadDescriptors(conn,cbind(checksums,descriptor_data))
+
+		cmdIds=findCompoundsByChecksum(conn,checksums)
+		if(nrow(checksums) != length(cmdIds)){
+			stop("failed to insert all compounds. recieved ",nrow(checksums), 
+				  " but only inserted ",length(cmdIds))
+		}
+		cmdIds
+	})
+}
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
 	.ensureOB("smile format only suppported with ChemmineOB package")
@@ -441,9 +480,9 @@ findCompoundsByChecksum <- function(conn,checksums,keepOrder=FALSE,allowMissing=
 findCompoundsByName<- function(conn,names,keepOrder=FALSE,allowMissing=FALSE)
 	findCompoundsByX(conn,"name",names,keepOrder,allowMissing)
 
-findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE){
+findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=C()){
 	result = selectInBatches(conn,data,function(batch) 
-			paste("SELECT compound_id,",fieldName
+			paste("SELECT compound_id,",fieldName," ",paste(extraFields,collapse=","),
 					," FROM compounds WHERE ",fieldName," IN
 					('",paste(batch,collapse="','"),"')",sep=""),1000)
 	ids = result$compound_id
@@ -451,10 +490,19 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 		stop(paste("found only",length(ids),"out of",length(data),
 					  "queries given"))
 	if(keepOrder){
-		names(ids)=result[[fieldName]]
-		ids[data]
+		if(length(extraFields)!=0){
+			rownames(result)=result[[fieldName]]
+			result[data,c(compound_id,extraFields)]
+		}
+		else{
+			names(ids)=result[[fieldName]]
+			ids[data]
+		}
 	}else{
-		ids
+		if(length(extraFields)!=0)
+			result[,c(compound_id,extraFields)]
+		else
+			ids
 	}
 }
 getCompounds <- function(conn,compoundIds,filename=NA){
