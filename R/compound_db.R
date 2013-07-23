@@ -1,6 +1,6 @@
 
-#debug = FALSE
-debug = TRUE
+debug = FALSE
+#debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -84,7 +84,7 @@ loadDb <- function(conn,data,featureGenerator){
 	as.matrix(data["definition_checksum"],rownames.force=FALSE)
 }
 definitionChecksums <- function(defs) {
-	sapply(as.vector(defs),function(def) digest(def,serialize=FALSE))
+	sapply(as.vector(defs),function(def) digest(def,serialize=FALSE),USE.NAMES=FALSE)
 }
 loadDescriptors <- function(conn,data){
 	#expects a data frame with "definition_checksum" and "descriptor"
@@ -348,25 +348,9 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 					valid = validSDF(sdfset)
 					sdfset=sdfset[valid]
 
-
 					defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
 					names = complete[indexDF[,1]][valid]
 					cmdIds = processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName,inTransaction=TRUE)
-
-					#systemFields=data.frame(name=names,definition=defs,format="sdf")
-
-					#allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-					#checksums=loadDb(conn,allFields,fct)
-
-					#descriptor_data = descriptors(sdfset)
-					#if(length(descriptor_data) != 0)
-						#loadDescriptors(conn,cbind(checksums,descriptor_data))
-
-					#cmdIds = findCompoundsByChecksum(conn,checksums)
-					#if(nrow(checksums) != length(cmdIds)){
-						#stop("failed to insert all compounds. recieved ",nrow(checksums), 
-							  #" but only inserted ",length(cmdIds))
-					#}
 
 					compoundIds = c(compoundIds,cmdIds)
 					
@@ -409,23 +393,23 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 		rownames(existingByName)=existingByName$name
-		if(debug) message("existing names: ",existingByName)
+		if(debug) message("existing names: ",paste(existingByName,collapse=","))
 
 		namesToLoad = Filter(function(name) {
 			#either the name is completely new, or it exists, but the checksum is different, so this is 
 			# an update
-			(! name %in% existingByName$name) || (! checksums[name] %in% existingByName$definition_checksum)
+			(! name %in% existingByName$name) || (! checksums[index[name]] %in% existingByName$definition_checksum)
 		},names)
 
 		namesToDelete = Filter(function(name) {
 			#delete those needing an update, so name exists and checksum is different
-			( name %in% existingByName$name) && (! checksums[name] %in% existingByName$definition_checksum)
+			( name %in% existingByName$name) && (! checksums[index[name]] %in% existingByName$definition_checksum)
 		},names)
-		
+
 		#delete modified and missing compounds, will cascade to all descriptors
 		deleteCompIds = existingByName[namesToDelete,]$compound_id
-
 		ids = index[namesToLoad]
+		message("loading ",length(ids)," new compounds, updating ",length(deleteCompIds)," compounds")
 	}else{
 		#we do not assume names are unique, therefore if a checksum does not
 		#exist, then it is added as if it where a new compound
@@ -438,12 +422,13 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		checksumsToLoad = setdiff(checksums,existingByChecksum$definition_checksum)
 
 		ids = index[checksumsToLoad]
+		message("loading ",length(ids)," new compounds")
 	}
 	if(debug) message("updating ids: ",paste(ids,collapse=","))
 
 	tx = if(inTransaction) function(a,x) x  else dbTransaction
 	if(length(ids)==0){
-		tx(conn,deleteCompounds(deleteCompIds))
+		tx(conn,deleteCompounds(conn,deleteCompIds))
 		c() # no compound ids to return
 	}else{
 
@@ -460,7 +445,7 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 
 		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
 		tx(conn,{
-			deleteCompounds(deleteCompIds)
+			deleteCompounds(conn,deleteCompIds)
 			loadedChecksums=loadDb(conn,allFields,featureFn)
 
 			#We assume descriptors are in the same order as compounds
@@ -486,8 +471,9 @@ smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
 
 
 deleteCompounds <- function(conn,compoundIds) {
-
-#TODO:  implement me!
+	if(length(compoundIds)!=0)
+		dbSendQuery(conn,paste("DELETE FROM compounds WHERE compound_id IN (",
+							paste(compoundIds,collapse=","),")"))
 }
 
 #TODO: document feature names must be lower case in the tests clause
@@ -522,12 +508,21 @@ findCompoundsByName<- function(conn,names,keepOrder=FALSE,allowMissing=FALSE)
 	findCompoundsByX(conn,"name",names,keepOrder,allowMissing)
 
 findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=c()){
+
+
 	xf = if(length(extraFields)!=0) paste(",",paste(extraFields,collapse=",")) else ""
 	result = selectInBatches(conn,data,function(batch) 
 			paste("SELECT compound_id,",fieldName," ",xf,
 					" FROM compounds WHERE ",fieldName," IN
 					('",paste(batch,collapse="','"),"')",sep=""),1000)
+
+	#no column names preserved for empty dataframes, so we can't just
+	# handle it the same way, we need a special case :(
+	if(length(result)==0)
+		return(result)
+
 	ids = result$compound_id
+
 	if(!allowMissing && length(ids)!=length(data))
 		stop(paste("found only",length(ids),"out of",length(data),
 					  "queries given"))
