@@ -22,6 +22,8 @@ initDb <- function(handle){
 	}else{
 		stop("handle must be a SQLite database name or a DBIConnection")
 	}
+	
+	enableForeignKeys(conn)
 
 	tableList=dbListTables(conn)
 
@@ -40,9 +42,18 @@ initDb <- function(handle){
 	}
 	conn
 }
+enableForeignKeys <- function(conn){
+	#SQLite needs this to enable foreign key constrains, which are off by default
+	if(inherits(conn,"SQLiteConnection"))
+		dbSendQuery(conn,"PRAGMA foreign_keys = ON")
+}
 
 dbTransaction <- function(conn,expr){
 	tryCatch({
+
+		# be paranoid about setting this as bad things will happen if its not set
+		enableForeignKeys(conn)
+
 		dbGetQuery(conn,"BEGIN TRANSACTION")
 		ret=expr
 		dbCommit(conn)
@@ -87,11 +98,12 @@ definitionChecksums <- function(defs) {
 	sapply(as.vector(defs),function(def) digest(def,serialize=FALSE),USE.NAMES=FALSE)
 }
 loadDescriptors <- function(conn,data){
-	#expects a data frame with "definition_checksum" and "descriptor"
+	#expects a data frame with  req_columns
 
 	req_columns=c("definition_checksum","descriptor","descriptor_type")
 	if(!all(req_columns %in% colnames(data)))
-		stop(paste("missing some names, found",paste(colnames(data),collapse=","),"need",paste(req_columns,collapse=",")))
+		stop(paste("descriptor function is missing some fields, found",paste(colnames(data),collapse=","),
+					  "need",paste(req_columns,collapse=",")))
 
 	#ensure the needed descriptor types are available for the insertDescriptor function to use
 	unique_types = unique(data[["descriptor_type"]])
@@ -408,6 +420,7 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 
 		#delete modified and missing compounds, will cascade to all descriptors
 		deleteCompIds = existingByName[namesToDelete,]$compound_id
+		names(deleteCompIds) = checksums[index[namesToDelete]]
 		ids = index[namesToLoad]
 		message("loading ",length(ids)," new compounds, updating ",length(deleteCompIds)," compounds")
 	}else{
@@ -453,12 +466,34 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 			if(length(descriptor_data) != 0)
 				loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
 
+
+			#print("original deleted comp ids")
+			#print(deleteCompIds)
+			#cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+			#print("new comp ids: ")
+			#print(cmdIds)
+
+			# to keep stable compound id numbers, we reset the compound id of those
+			# compounds that were merely modified.
+			for(i in seq(along=deleteCompIds)){
+				cksum=names(deleteCompIds)[i]
+				id = deleteCompIds[i]
+				dbSendQuery(conn,paste("UPDATE compounds SET compound_id = ",id,
+											  " WHERE definition_checksum = '",cksum,"'",sep=""))
+			}
+
+
 			cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
 			if(nrow(loadedChecksums) != length(cmdIds)){
 				stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
 					  " but only inserted ",length(cmdIds))
 			}
-			cmdIds
+			#print("updated comp ids:")
+			#print(cmdIds)
+		
+			#those in deleteCompIds were not really added, just modified. so remove them here.
+			#return newly added compound ids.
+			setdiff(cmdIds,deleteCompIds)
 		})
 	}
 }
@@ -665,7 +700,7 @@ createFeature <- function(conn,name, isNumeric){
 
 	dbGetQueryChecked(conn,
 		paste("CREATE TABLE feature_",name," (
-			compound_id INTEGER PRIMARY KEY REFERENCES compounds(compound_id) ON DELETE CASCADE, ",
+			compound_id INTEGER PRIMARY KEY REFERENCES compounds(compound_id) ON DELETE CASCADE ON UPDATE CASCADE, ",
 			"",name," ",sqlType," )",sep=""))
 
 	#print("made table")

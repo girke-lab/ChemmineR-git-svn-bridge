@@ -24,7 +24,6 @@ test_ba.loadSdf<-function(){
 #	print("loading first half, no features, with exception")
 #	checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
 	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
-	message("compIds: ",compIds)
 	checkEquals(length(compIds),3)
 	dbDisconnect(conn)
 
@@ -217,17 +216,20 @@ test_ga.addDups <- function() {
 	conn = initDb("test1.db")
 	print("loading duplications")
 
+	descFn = function(sdfset) data.frame(descriptor = paste("descriptor for ",sdfid(sdfset)),
+													 descriptor_type = "testing")
+
 
 	#add 3 dups by checksum
 	count1= getCompoundCount(conn)
-	loadSdf(conn,sdfsample[c(1,2,3)])
+	loadSdf(conn,sdfsample[c(1,2,3)],descriptors=descFn)
 	count2= getCompoundCount(conn)
 	checkEquals(count1,count2)
 
 
 	# add two dups and one update by checksum
 	atomblock(sdfsample)[[1]][,]=8
-	loadSdf(conn,sdfsample[c(1,2,3)])
+	loadSdf(conn,sdfsample[c(1,2,3)],descriptors=descFn)
 	count2= getCompoundCount(conn)
 	checkEquals(count1+1,count2)
 	compIds = findCompoundsByName(conn,sdfid(sdfsample[1]),allowMissing=TRUE)
@@ -236,7 +238,7 @@ test_ga.addDups <- function() {
 
 	# add one dup and update by name
 	atomblock(sdfsample)[[2]][,]=8
-	loadSdf(conn,sdfsample[c(2,3)],updateByName=TRUE)
+	loadSdf(conn,sdfsample[c(2,3)],descriptors=descFn, updateByName=TRUE)
 	count2= getCompoundCount(conn)
 	checkEquals(count1+1,count2)
 }
