@@ -115,8 +115,11 @@ test_da.getCompounds<-function(){
 
 	indexes = findCompounds(conn,"MW","mw < 400")
 
-	sdfset = getCompounds(conn,indexes)
+	sdfset = getCompounds(conn,indexes,keepOrder=TRUE)
 	checkEquals(length(cid(sdfset)),70)
+	ids2=findCompoundsByName(conn,sdfid(sdfset),keepOrder=TRUE)
+	names(ids2)=c()
+	checkEquals(indexes,ids2)
 	
 	getCompounds(conn,indexes,file="test.sdf")
 	checkTrue(file.exists("test.sdf"))

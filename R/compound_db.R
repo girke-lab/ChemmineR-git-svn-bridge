@@ -577,7 +577,7 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 			ids
 	}
 }
-getCompounds <- function(conn,compoundIds,filename=NA){
+getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissing=FALSE){
 	
 	processedCount=0
 	if(!is.na(filename)){
@@ -603,13 +603,22 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		rs = dbSendQuery(conn,
 							  paste("SELECT compound_id,definition FROM compounds where compound_id in (",
 									  paste(compoundIdSet,collapse=","),")"))
-		bufferResultSet(rs, resultProcessor,1000)
+		f=if(keepOrder)
+			function(rows){
+				rownames(rows) = rows$compound_id
+				orderedIds = intersect(compoundIdSet,rows$compound_id)
+				resultProcessor(rows[as.character(orderedIds),])
+			}
+		else
+			f=resultProcessor
+
+		bufferResultSet(rs,f,1000)
 		dbClearResult(rs)
 	})
 
-	if(length(compoundIds) != processedCount) {
+	if(!allowMissing && length(compoundIds) != processedCount) {
 		if(debug) print(str(sdfset))
-		warning(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
+		stop(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
 	}
 
 	if(!is.na(filename)){
@@ -618,17 +627,22 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		return(as(sdfset,"SDFset"))
 	}
 }
-getCompoundNames <- function(conn, compoundIds){
+getCompoundNames <- function(conn, compoundIds,keepOrder=FALSE,allowMissing=FALSE){
 
 	result = selectInBatches(conn,compoundIds,function(ids)
 					  paste("SELECT compound_id, name FROM compounds where compound_id in (",
 									  paste(ids,collapse=","),")"))
 
+	if(!allowMissing)
+		if(nrow(result) != length(compoundIds))
+			stop(paste("found only",nrow(result),"out of",length(compoundIds), "ids given"))
+
 	n=result$name
-	names(n)=result$compound_id
-	#print(n[as.character(compoundIds)])
-	n[as.character(compoundIds)]
-	#as.matrix(merge(data.frame(compound_id=compoundIds),result,sort=FALSE)[[2]])
+	if(keepOrder){
+		names(n)=result$compound_id
+		n[as.character(compoundIds)]
+	}else
+		n
 }
 indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
 
