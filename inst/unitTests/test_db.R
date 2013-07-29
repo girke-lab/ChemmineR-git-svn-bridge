@@ -226,6 +226,9 @@ test_ga.addDups <- function() {
 	count2= getCompoundCount(conn)
 	checkEquals(count1,count2)
 
+	compIds = findCompoundsByName(conn,sdfid(sdfsample[1:3]),keepOrder=TRUE,allowMissing=TRUE)
+	checkEquals(length(compIds),3)
+
 
 	# add two dups and one update by checksum
 	atomblock(sdfsample)[[1]][,]=8
@@ -233,7 +236,6 @@ test_ga.addDups <- function() {
 	count2= getCompoundCount(conn)
 	checkEquals(count1+1,count2)
 	compIds = findCompoundsByName(conn,sdfid(sdfsample[1]),allowMissing=TRUE)
-	print(paste("compIds: ",paste(compIds,collapse=",")))
 	checkEquals(length(compIds),2)
 
 	# add one dup and update by name

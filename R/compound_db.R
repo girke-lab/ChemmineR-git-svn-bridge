@@ -564,11 +564,11 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 	if(keepOrder){
 		if(length(extraFields)!=0){
 			rownames(result)=result[[fieldName]]
-			result[data,c("compound_id",extraFields)]
+			result[as.character(data),c("compound_id",extraFields)]
 		}
 		else{
 			names(ids)=result[[fieldName]]
-			ids[data]
+			ids[as.character(data)]
 		}
 	}else{
 		if(length(extraFields)!=0)
