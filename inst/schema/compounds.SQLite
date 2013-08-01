@@ -6,6 +6,7 @@ CREATE TABLE compounds(
 	definition_checksum TEXT NOT NULL UNIQUE,
 	format TEXT NOT NULL 
 );
+CREATE INDEX compounds_name ON compounds(name);
 INSERT INTO compounds(compound_id,format,definition,definition_checksum)
 	VALUES(200,'junk','this is to shift the id numbers to ferret out index bugs','junk');
 
