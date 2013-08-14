@@ -79,7 +79,7 @@ export(
 	"genAPDescriptors",
 
 	## large file/query utilites
-	"bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches"
+	"bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
 
 )
 
