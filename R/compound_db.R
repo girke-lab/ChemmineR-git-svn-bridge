@@ -291,7 +291,7 @@ loadSmiles <- function(conn, smileFile,...){
 }
 loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
-						  Nlines=10000, startline=1, restartNlines=100000,updateByName=FALSE){
+						  Nlines=50000, startline=1, restartNlines=100000,updateByName=FALSE){
 
 	if(inherits(sdfFile,"SDFset")){
 		if(debug) print("loading SDFset")
@@ -396,31 +396,61 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 	index=1:length(names)
 	deleteCompIds=c()
 
+
 	if(updateByName){
 		#we assume compounds are unique by name and so changes in checksum
 		# indicate updates to the same compounds
 
+		if(debug) message("given names: ",paste(names,collapse=","))
 		names(index)=names
+		index=rev(index) # so last matches win
+
 
 		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
-		rownames(existingByName)=existingByName$name
-		if(debug) message("existing names: ",paste(existingByName,collapse=","))
+		if(debug) {message("existing names: "); print(existingByName); }
 
-		namesToLoad = Filter(function(name) {
+#		idsToLoad = Filter(function(i) {
+#			#either the name is completely new, or it exists, but the checksum is different, so this is 
+#			# an update
+#			(! names[i] %in% existingByName$name) || (! checksums[i] %in% existingByName$definition_checksum)
+#
+#		},index)
+
+
+		namesToLoad = unique(Filter(function(name) {
 			#either the name is completely new, or it exists, but the checksum is different, so this is 
 			# an update
 			(! name %in% existingByName$name) || (! checksums[index[name]] %in% existingByName$definition_checksum)
-		},names)
+		},names))
+		if(debug) message("names to load: ",paste(namesToLoad,collapse=","))
 
-		namesToDelete = Filter(function(name) {
+		namesToDelete = unique(Filter(function(name) {
 			#delete those needing an update, so name exists and checksum is different
 			( name %in% existingByName$name) && (! checksums[index[name]] %in% existingByName$definition_checksum)
-		},names)
+		},names))
+		if(debug) message("names to delete: ",paste(namesToDelete,collapse=","))
 
 		#delete modified and missing compounds, will cascade to all descriptors
-		deleteCompIds = existingByName[namesToDelete,]$compound_id
-		names(deleteCompIds) = checksums[index[namesToDelete]]
+
+		deleteCompIds = c()
+		for(name in namesToDelete){
+			i = Position(function(x) x==name,existingByName$name,right=TRUE)
+			deleteCompIds[checksums[index[name]]] = existingByName$compound_id[i]
+		}
+
+
+		#existingNameToCompId = existingByName$compound_id
+		#names(existingNameToCompId) = existingByName$name
+		#existingNameToCompId = rev(existingNameToCompId)
+		#deleteCompIds = existingNameToCompId[namesToDelete]
+		#rownames(existingByName)=existingByName$compound_id
+
+		#rownames(existingByName)=existingByName$name
+		#deleteCompIds = existingByName[namesToDelete,]$compound_id
+
+		#if(length(namesToDelete) != 0)
+			#names(deleteCompIds) = checksums[index[namesToDelete]]
 		ids = index[namesToLoad]
 		message("loading ",length(ids)," new compounds, updating ",length(deleteCompIds)," compounds")
 	}else{
@@ -430,9 +460,11 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 
-		if(debug) message("existing checksums: ",existingByChecksum)
+		if(debug){ message("existing checksums: "); print(existingByChecksum); }
 		#select only those whose checksum does not already exist
+		#setdiff also makes its result unique
 		checksumsToLoad = setdiff(checksums,existingByChecksum$definition_checksum)
+		if(debug) message("checksumsToLoad: ",paste(checksumsToLoad,collapse=","))
 
 		ids = index[checksumsToLoad]
 		message("loading ",length(ids)," new compounds")
