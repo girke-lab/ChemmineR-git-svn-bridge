@@ -15,63 +15,41 @@ batchByIndex(allIndices, indexProcessor, batchSize = 1e+05)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{allIndices}{
-%%     ~~Describe \code{allIndices} here~~
-}
+		A vector of values that will be broken into batches and passed as an argument to the
+		\code{indexProcessor} function.
+	}
   \item{indexProcessor}{
-%%     ~~Describe \code{indexProcessor} here~~
-}
+  		A function that takes one batch if indices. It is called once for each batch.
+		The return value from this function is ignored. To accumulate results you can	
+		write to a global variable using the "<<-" operator. 
+	}
   \item{batchSize}{
-%%     ~~Describe \code{batchSize} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
+		The size of each batch. The last batch may be smaller than this value.
+	}
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
+	No value is returned.
 }
 \author{
-%%  ~~who you are~~
+	Kevin Horan
 }
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{parBatchByIndex}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+	
+	\dontrun{
+		result=NA
+		indices = 1:10000
+		
+		#run a query on each batch of indexes, appending each result to
+		# "result" as we go.
+		batchByIndex(indices, function(indexBatch){
+				df = dbGetQuery(dbConnection, generateQuery(indexBatch))
+				result <<- if(is.na(result)) df else  rbind(result,df)
+		},1000)
+	}
 
-## The function is currently defined as
-function (allIndices, indexProcessor, batchSize = 1e+05) 
-{
-    numIndices = length(allIndices)
-    if (numIndices == 0) 
-        return()
-    start = 1
-    for (end in seq(1, numIndices, by = batchSize) + batchSize) {
-        end = min(end, numIndices)
-        if (debug) 
-            print(paste(start, end))
-        indexSet = allIndices[start:end]
-        start = end + 1
-        indexProcessor(indexSet)
-    }
-  }
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

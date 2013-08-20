@@ -1,6 +1,8 @@
 
 ErrorClass <- "try-error" 
 
+require(RPostgreSQL)
+
 postgresqlWriteTable <- function(con, name, value, field.types, row.names = TRUE,
                                  overwrite = FALSE, append = FALSE, ..., allow.keywords = FALSE) {
     if(overwrite && append)

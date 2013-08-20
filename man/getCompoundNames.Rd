@@ -7,7 +7,7 @@
 	Fetch the names of the given compound ids, if they exist
 }
 \usage{
-getCompoundNames(conn, compoundIds)
+getCompoundNames(conn, compoundIds, keepOrder = FALSE, allowMissing = FALSE)
 }
 \arguments{
   \item{conn}{
@@ -16,6 +16,16 @@ getCompoundNames(conn, compoundIds)
   \item{compoundIds}{
      A vector of compound ids.
    }
+  \item{keepOrder}{
+     If true, the order of the output compound ids will be the same as the 
+     input names. This imposes a performance hit that can be significant for
+     large datasets, thus it should be left FALSE unless needed.
+   }
+	\item{allowMissing}{
+		When this is false an error will be raised when compound ids queried were not found in the database. 
+		If true, just those that are found will be returned with no error or warning.
+	}
+
 }
 \value{
    Returns a vector of compound names.The rownames will be the compound ids. Compound ids

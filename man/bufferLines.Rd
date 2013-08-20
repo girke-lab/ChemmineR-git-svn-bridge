@@ -13,57 +13,28 @@ bufferLines(fh, batchSize, lineProcessor)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{fh}{
-%%     ~~Describe \code{fh} here~~
-}
+	  file handle
+	}
   \item{batchSize}{
-%%     ~~Describe \code{batchSize} here~~
-}
+		How many lines to read in each batch
+	}
   \item{lineProcessor}{
-%%     ~~Describe \code{lineProcessor} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
+		Each batch of lines will be passed to this function for processing
+	}
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
+	No return value
 }
 \author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
+	Kevin Horan
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (fh, batchSize, lineProcessor) 
-{
-    while (TRUE) {
-        lines = readLines(fh, n = batchSize)
-        if (length(lines) > 0) 
-            lineProcessor(lines)
-        else break
-    }
-  }
+	\dontrun{
+		fh = file("filename")
+		bufferLines(fh,100,function(lines) {
+			message("found ",length(lines)," lines")
+		})
+	}
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
