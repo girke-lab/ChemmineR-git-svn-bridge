@@ -1,2 +1,2 @@
-PKG_CXXFLAGS=  -DNO_MAIN -D NO_HAS_OPENBABEL  -I/usr/include/openbabel-2.0 -ggdb
+PKG_CXXFLAGS=  -DNO_MAIN -DHAS_OPENBABEL  -I/usr/include/openbabel-2.0 -ggdb
 PKG_LIBS = -lopenbabel

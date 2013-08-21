@@ -282,7 +282,6 @@ new_mol_from_sdf(const char* sdf)
 {
 	Molecule *mol = new Molecule;
 #ifdef HAS_OPENBABEL
-   OpenBabel::obErrorLog.SetOutputLevel(OpenBabel::obDebug);
 
 	
 	OpenBabel::OBConversion conv;

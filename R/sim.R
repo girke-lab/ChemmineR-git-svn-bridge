@@ -1,5 +1,10 @@
 .onLoad <- function(libname, pkgname) 
 {
+
+	#dyn.load("/usr/lib/openbabel/2.2.3/mdlformat.so")
+	pkgLib = file.path(libname,pkgname,"libs",paste(pkgname,"so",sep="."))
+	dyn.load(pkgLib)
+
 #    if (!is.null(getOption('disable.chemminer.performance.pack'))
 #            && getOption('disable.chemminer.performance.pack') == 1) {
 #        packageStartupMessage("ChemmineR Performance Pack is explicitly disabled.\n")
