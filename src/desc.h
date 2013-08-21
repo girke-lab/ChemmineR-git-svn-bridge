@@ -4,6 +4,7 @@
 #include <openbabel/obconversion.h>
 #include <openbabel/mol.h>
 #include <openbabel/obiter.h>
+#include <openbabel/oberror.h>
 typedef OpenBabel::OBAtom Atom; 
 typedef OpenBabel::OBBond Bond;
 typedef OpenBabel::OBMol Molecule;

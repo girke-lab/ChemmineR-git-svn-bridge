@@ -258,6 +258,7 @@ new_mol_from_sdfile(const char* sdfile)
 {
 	Molecule *mol = new Molecule;
 #ifdef HAS_OPENBABEL
+
 	mol->Clear();
 	OpenBabel::OBConversion conv;
     conv.SetInAndOutFormats("SDF", "SDF");
@@ -281,10 +282,33 @@ new_mol_from_sdf(const char* sdf)
 {
 	Molecule *mol = new Molecule;
 #ifdef HAS_OPENBABEL
+   OpenBabel::obErrorLog.SetOutputLevel(OpenBabel::obDebug);
+
+	
+	OpenBabel::OBConversion conv;
+   conv.SetInAndOutFormats("SDF", "SDF");
+//	OpenBabel::OBMol *mol = new OpenBabel::OBMol;
+	mol->Clear();
+
+
+	bool ret = conv.ReadFile(mol, "/home/khoran/ChemmineR/test.sdf");
+
+
+
+
+
+/*
 	mol->Clear();
 	OpenBabel::OBConversion conv;
-    conv.SetInAndOutFormats("SDF", "SDF");
-	conv.ReadString(mol, std::string(sdf));
+   conv.SetInAndOutFormats("SDF", "SDF");
+//	std::string _sdf(sdf);
+//	std::istringstream ifs(_sdf);
+	//conv.ReadString(mol, _sdf);
+	//conv.Read(mol, &ifs);
+	bool ret=conv.ReadFile(mol, "tst.sdf");
+   */
+   std::cout<<"ret: "<<ret<<std::endl;
+  std::cout<<"NumAtoms2: "<<mol->NumAtoms()<<std::endl;
 #else
 	std::string _sdf(sdf);
 	std::istringstream ifs(_sdf);
