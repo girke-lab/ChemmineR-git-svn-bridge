@@ -332,6 +332,9 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 }
 
 
+smile2sdf <- function(smileFile){
+
+}
 
 loadSmiles <- function(conn, smileFile,batchSize=10000){
 
