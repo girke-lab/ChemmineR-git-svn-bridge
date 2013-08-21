@@ -215,6 +215,9 @@ definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
 
+loadSmiles <- function(conn, smileFile,...){
+	loadSdf(conn,smile2sdf(smileFile),...)
+}
 loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
 						  Nlines=10000, startline=1, restartNlines=100000){
@@ -332,20 +335,24 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 }
 
 
-smile2sdf <- function(smileFile){
-
+smile2sdf <- function(smileFile,sdfFile=tempfile()){
+	.Call("smile2sdf_file",as.character(smileFile),as.character(sdfFile))
+	#.Call("smile2sdf_string",as.character(smileFile))
+	sdfFile
 }
 
-loadSmiles <- function(conn, smileFile,batchSize=10000){
 
-	f = file(smileFile,"r")
-	compoundIds = c()
-	bufferLines(f,batchSize=batchSize,function(lines) 
-					compoundIds <<- c(compoundIds,
-											findCompoundsByChecksum(conn,loadDb(conn,data.frame(definition=lines,format="smile")))))
-	close(f)
-	compoundIds
-}
+
+#loadSmiles <- function(conn, smileFile,batchSize=10000){
+#
+#	f = file(smileFile,"r")
+#	compoundIds = c()
+#	bufferLines(f,batchSize=batchSize,function(lines) 
+#					compoundIds <<- c(compoundIds,
+#											findCompoundsByChecksum(conn,loadDb(conn,data.frame(definition=lines,format="smile")))))
+#	close(f)
+#	compoundIds
+#}
 
 findCompounds <- function(conn,featureNames,tests){
 
