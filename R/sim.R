@@ -2,8 +2,9 @@
 {
 
 	#dyn.load("/usr/lib/openbabel/2.2.3/mdlformat.so")
-	pkgLib = file.path(libname,pkgname,"libs",paste(pkgname,"so",sep="."))
-	dyn.load(pkgLib)
+	#pkgLib = file.path(libname,pkgname,"libs",paste(pkgname,"so",sep="."))
+	#dyn.load(pkgLib,now=FALSE)
+	#dyn.load("/home/khoran/raw_src/openbabel-2.3.2/build/lib/mdlformat.so")
 
 #    if (!is.null(getOption('disable.chemminer.performance.pack'))
 #            && getOption('disable.chemminer.performance.pack') == 1) {

@@ -1,7 +1,7 @@
 ## IMPORTS
 import(methods, graphics, stats, RCurl,DBI,digest)
 
-#useDynLib(ChemmineR)
+useDynLib(ChemmineR)
 
 ## EXPORTS
 ## S4 Classes

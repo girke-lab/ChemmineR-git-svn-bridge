@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <sstream>
 
+using namespace std;
+
 #define MAX_LINE_LENGTH 100000
 
 #ifndef HAS_OPENBABEL
@@ -284,29 +286,31 @@ new_mol_from_sdf(const char* sdf)
 #ifdef HAS_OPENBABEL
 
 	
-	OpenBabel::OBConversion conv;
-   conv.SetInAndOutFormats("SDF", "SDF");
+//	OpenBabel::OBConversion conv;
+ //  conv.SetInAndOutFormats("SDF", "SDF");
 //	OpenBabel::OBMol *mol = new OpenBabel::OBMol;
-	mol->Clear();
 
 
-	bool ret = conv.ReadFile(mol, "/home/khoran/ChemmineR/test.sdf");
-
-
+//	bool ret = conv.ReadFile(mol, "/home/khoran/ChemmineR/test.sdf");
+ //  std::cout<<"ret: "<<ret<<std::endl;
 
 
 
-/*
 	mol->Clear();
 	OpenBabel::OBConversion conv;
    conv.SetInAndOutFormats("SDF", "SDF");
-//	std::string _sdf(sdf);
-//	std::istringstream ifs(_sdf);
-	//conv.ReadString(mol, _sdf);
+
+   //conv.ReadFile(mol, "/home/khoran/ChemmineR/test.sdf");
+   //std::cout<<"NumAtoms: "<<mol->NumAtoms()<<std::endl;
+   //mol->Clear();
+
+
+
+	std::string _sdf(sdf);
+	std::istringstream ifs(_sdf);
+	conv.ReadString(mol, _sdf);
 	//conv.Read(mol, &ifs);
-	bool ret=conv.ReadFile(mol, "tst.sdf");
-   */
-   std::cout<<"ret: "<<ret<<std::endl;
+   
   std::cout<<"NumAtoms2: "<<mol->NumAtoms()<<std::endl;
 #else
 	std::string _sdf(sdf);
