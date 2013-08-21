@@ -4,6 +4,12 @@
 #include <algorithm>
 #include <iterator>
 #include "desc.h"
+#include <string.h>
+#include <stdlib.h>
+
+#include <R.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
 
 static void check_bonds(Atom * atom, char & degree, char & pi_electrons)
 {
@@ -153,3 +159,103 @@ unsigned int calc_desc(Molecule & mol, std::multiset<unsigned int> & descriptors
 	std::copy(descs.begin(), descs.end(), std::inserter(descriptors, descriptors.begin()));
 	return ret;
 }
+
+int getElemIndex(char* elem)
+{
+	for(int i=0; i< 112; i++)
+		if(strcmp(elem,elements[i])==0)
+			return i;
+	return -1;
+}
+extern "C" {
+
+	SEXP genAPDescriptor(SEXP sdf);
+}
+SEXP genAPDescriptor(SEXP sdf)
+{
+	SimpleMolecule *mol = new SimpleMolecule();
+
+	SEXP atomblock = getAttrib(sdf,install("atomblock")); //named matrix
+	SEXP dimnames = getAttrib(atomblock,R_DimNamesSymbol);
+	int d = length(dimnames);
+	SEXP atomnames = VECTOR_ELT(dimnames,0);
+	int numAtoms = length(atomnames);
+	DEBUG_VAR(numAtoms);
+
+	for(int i=0; i < numAtoms; i++){
+		//DEBUG_VAR(i);
+
+		char* name = strdup(CHAR(STRING_ELT(atomnames,i)));
+		char* elem = strtok(name,"_");
+		if(elem==NULL){
+			error("bad compound name: %s\n",name);
+			return R_NilValue;
+		}
+		//DEBUG_VAR(elem);
+		char* idStr = strtok(NULL,"_");
+		if(idStr==NULL){
+			error("bad compound name: %s\n",name);
+			return R_NilValue;
+		}
+
+		//DEBUG_VAR(idStr);
+		int id = atoi(idStr);
+		int elemIndex = getElemIndex(elem);
+		if(elemIndex == -1){
+			error("element %s not found\n",elem);
+			return R_NilValue;
+		}
+		//DEBUG_VAR(elemIndex);
+		Atom a(i+1,elemIndex);
+		mol->add_atom(a);
+
+		free(name);
+	}
+	
+	SEXP bondblock = getAttrib(sdf,install("bondblock")); //named matrix
+	SEXP dims = getAttrib(bondblock,R_DimSymbol);
+	int nrows = INTEGER(dims)[0];
+	int ncols = INTEGER(dims)[1];
+	DEBUG_VAR(nrows);
+	DEBUG_VAR(ncols);
+
+
+	for(int row=0; row < nrows; row++)
+	{
+		//DEBUG_VAR(row);
+		int aid1,aid2,bondType;
+		aid1 = REAL(bondblock)[row] ; //should be 1 based
+		aid2 = REAL(bondblock)[nrows + row] ;
+		bondType = REAL(bondblock)[2 * nrows + row];
+
+		//DEBUG_VAR(aid1);
+		//DEBUG_VAR(aid2);
+		//DEBUG_VAR(bondType);
+
+		Atom *a1 = mol->GetAtom(aid1);
+		if(a1 == NULL){
+			error("could not find atom number %d",aid1);
+			return R_NilValue;
+		}
+		Atom *a2 = mol->GetAtom(aid2);
+		if(a2 == NULL){
+			error("could not find atom number %d",aid1);
+			return R_NilValue;
+		}
+		mol->add_bond(*a1,*a2,bondType);
+	}
+
+	std::vector<unsigned int> descs;
+	calc_desc(*mol,descs);
+
+	SEXP sDesc;
+	PROTECT(sDesc = allocVector(INTSXP,descs.size()));
+	for(int i=0; i < descs.size(); i++)
+		INTEGER(sDesc)[i]=descs[i];
+	UNPROTECT(1);
+
+	return sDesc;
+	
+
+}
+

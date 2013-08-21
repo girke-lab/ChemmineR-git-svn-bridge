@@ -11,121 +11,6 @@ using namespace std;
 #define MAX_LINE_LENGTH 100000
 
 #ifndef HAS_OPENBABEL
-static char elements[112][3] = {
-	    "R",
-	    "H",
-	    "He",
-	    "Li",
-	    "Be",
-	    "B",
-	    "C",
-	    "N",
-	    "O",
-	    "F",
-	    "Ne",
-	    "Na",
-	    "Mg",
-	    "Al",
-	    "Si",
-	    "P",
-	    "S",
-	    "Cl",
-	    "Ar",
-	    "K",
-	    "Ca",
-	    "Sc",
-	    "Ti",
-	    "V",
-	    "Cr",
-	    "Mn",
-	    "Fe",
-	    "Co",
-	    "Ni",
-	    "Cu",
-	    "Zn",
-	    "Ga",
-	    "Ge",
-	    "As",
-	    "Se",
-	    "Br",
-	    "Kr",
-	    "Rb",
-	    "Sr",
-	    "Y",
-	    "Zr",
-	    "Nb",
-	    "Mo",
-	    "Tc",
-	    "Ru",
-	    "Rh",
-	    "Pd",
-	    "Ag",
-	    "Cd",
-	    "In",
-	    "Sn",
-	    "Sb",
-	    "Te",
-	    "I",
-	    "Xe",
-	    "Cs",
-	    "Ba",
-	    "La",
-	    "Ce",
-	    "Pr",
-	    "Nd",
-	    "Pm",
-	    "Sm",
-	    "Eu",
-	    "Gd",
-	    "Tb",
-	    "Dy",
-	    "Ho",
-	    "Er",
-	    "Tm",
-	    "Yb",
-	    "Lu",
-	    "Hf",
-	    "Ta",
-	    "W",
-	    "Re",
-	    "Os",
-	    "Ir",
-	    "Pt",
-	    "Au",
-	    "Hg",
-	    "Tl",
-	    "Pb",
-	    "Bi",
-	    "Po",
-	    "At",
-	    "Rn",
-	    "Fr",
-	    "Ra",
-	    "Ac",
-	    "Th",
-	    "Pa",
-	    "U",
-	    "Np",
-	    "Pu",
-	    "Am",
-	    "Cm",
-	    "Bk",
-	    "Cf",
-	    "Es",
-	    "Fm",
-	    "Md",
-	    "No",
-	    "Lr",
-	    "Rf",
-	    "Db",
-	    "Sg",
-	    "Bh",
-	    "Hs",
-	    "Mt",
-	    "Ds",
-	    "Rg"	
-};
-
 
 void parse_line_4(const char* buf, int& n_atoms, int& n_bonds)
 {
@@ -263,6 +148,8 @@ new_mol_from_sdfile(const char* sdfile)
 
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SDF")==0)
+		return NULL;
     conv.SetInAndOutFormats("SDF", "SDF");
 	conv.ReadFile(mol, std::string(sdfile));
 #else
@@ -287,6 +174,8 @@ new_mol_from_sdf(const char* sdf)
 	
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SDF")==0)
+		return NULL;
    conv.SetInAndOutFormats("SDF", "SDF");
 
 	std::string _sdf(sdf);
@@ -315,6 +204,8 @@ new_mol_from_smiles(const char* smiles)
 	Molecule *mol = new Molecule;
 	mol->Clear();
 	OpenBabel::OBConversion conv;
+	if(conv.FindFormat("SMILES")==0)
+		return NULL;
 	conv.SetInAndOutFormats("SMILES", "SMILES");
 	conv.ReadString(mol, std::string(smiles));
 	return mol;

@@ -1,5 +1,6 @@
 
 debug = FALSE
+#debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -21,14 +22,19 @@ initDb <- function(handle){
 	}else{
 		stop("handle must be a SQLite database name or a DBIConnection")
 	}
+	
+	enableForeignKeys(conn)
 
 	tableList=dbListTables(conn)
 
 	if( ! all(c("compounds","descriptor_types","descriptors") %in% tableList)) {
 		print("createing db")
 
+		sqlFile = file.path("schema",if(inherits(conn,"SQLiteConnection")) "compounds.SQLite" 
+								  else if(inherits(conn,"PostgreSQLConnection")) "compounds.RPostgreSQL")
+																	
 		statements = unlist(strsplit(paste(
-							  readLines(system.file("schema/compounds.SQLite",package="ChemmineR",mustWork=TRUE)),
+							  readLines(system.file(sqlFile,package="ChemmineR",mustWork=TRUE)),
 							  collapse=""),";",fixed=TRUE))
 		#print(statements)
 
@@ -36,24 +42,42 @@ initDb <- function(handle){
 	}
 	conn
 }
+enableForeignKeys <- function(conn){
+	#SQLite needs this to enable foreign key constrains, which are off by default
+	if(inherits(conn,"SQLiteConnection"))
+		dbSendQuery(conn,"PRAGMA foreign_keys = ON")
+}
 
 dbTransaction <- function(conn,expr){
 	tryCatch({
+
+		# be paranoid about setting this as bad things will happen if its not set
+		enableForeignKeys(conn)
+
 		dbGetQuery(conn,"BEGIN TRANSACTION")
 		ret=expr
 		dbCommit(conn)
 		ret
 	},error=function(e){
 		dbRollback(conn)
+		print(sys.calls())
 		stop(paste("db error inside transaction: ",e$message))
 	})
 }
+dbGetQueryChecked <- function(conn,statement,...){
+	ret=dbGetQuery(conn,statement)
+	err=dbGetException(conn)
+	if(err$errorMsg[1] != "OK")
+		stop("error in dbGetQuery: ",err$errorMsg,"  ",traceback())
+	ret
+}
 loadDb <- function(conn,data,featureGenerator){
 
+	names(data)=tolower(names(data))
 	if(debug) print(paste("loading ",paste(dim(data),collapse=" "),"compounds"))
 
-	data=cbind(data,definition_checksum=sapply(as.vector(data[,"definition"]),
-													  function(def) digest(def,serialize=FALSE) ))
+	if( ! ("definition_checksum" %in% colnames(data) ))
+		data=cbind(data,definition_checksum=definitionChecksums(data[,"definition"]) )
 
 	numCompounds = dim(data)[1]
 	dups=0
@@ -71,17 +95,27 @@ loadDb <- function(conn,data,featureGenerator){
 	insertUserFeatures(conn,data)
 	as.matrix(data["definition_checksum"],rownames.force=FALSE)
 }
+definitionChecksums <- function(defs) {
+	sapply(as.vector(defs),function(def) digest(def,serialize=FALSE),USE.NAMES=FALSE)
+}
 loadDescriptors <- function(conn,data){
-	#expects a data frame with "definition_checksum" and "descriptor"
+	#expects a data frame with  req_columns
 
 	req_columns=c("definition_checksum","descriptor","descriptor_type")
 	if(!all(req_columns %in% colnames(data)))
-		stop(paste("missing some names, found",paste(colnames(data),collapse=","),"need",paste(req_columns,collapse=",")))
+		stop(paste("descriptor function is missing some fields, found",paste(colnames(data),collapse=","),
+					  "need",paste(req_columns,collapse=",")))
 
 	#ensure the needed descriptor types are available for the insertDescriptor function to use
 	unique_types = unique(data[["descriptor_type"]])
-	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")[[1]]
-	newTypes = setdiff(unique_types,all_descriptor_types)
+	all_descriptor_types=dbGetQuery(conn,"SELECT distinct descriptor_type FROM descriptor_types")
+
+	newTypes = if(nrow(all_descriptor_types)==0) unique_types 
+				  else setdiff(unique_types,all_descriptor_types$descriptor_type)
+
+	if(debug)
+		print(paste("existing desc types:",paste(all_descriptor_types,collapse=","),"needed right now: ",
+				paste(unique_types,collapse=",")," to be added: ",paste(newTypes,collapse=",")))
 	if(length(newTypes) > 0)
 		insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
 
@@ -115,8 +149,7 @@ featureDiff <- function(conn,data) {
 		compoundFields = dbListFields(conn,"compounds")
 		userFieldNames = setdiff(colnames(data),compoundFields)
 
-		tableList=dbListTables(conn)
-		existingFeatures = sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+		existingFeatures = listFeatures(conn)
 
 		missingFeatures = setdiff(existingFeatures,userFieldNames)
 		newFeatures = setdiff(userFieldNames,existingFeatures)
@@ -148,7 +181,7 @@ insertUserFeatures<- function(conn,data){
 	#fetch newly inserted compounds
 	
 	df = dbGetQuery(conn,paste("SELECT compound_id,definition_checksum FROM compounds LEFT JOIN feature_",
-								 userFieldNames[1]," as f USING(compound_id)  WHERE f.compound_id IS
+								 tolower(userFieldNames[1])," as f USING(compound_id)  WHERE f.compound_id IS
 								 NULL",sep=""))
 	data= merge(data,df)
 	sapply(userFieldNames,function(name) insertFeature(conn,name,data))
@@ -190,6 +223,46 @@ batchByIndex <- function(allIndices,indexProcessor, batchSize=100000){
 
 	}
 }
+parBatchByIndex <- function(allIndices,indexProcessor,reduce,cl,batchSize=100000){
+
+	numIndices=length(allIndices)
+
+	if(numIndices==0)
+		return()
+
+	starts = seq(1,numIndices,by=batchSize)
+	f = function(jobId){
+		tryCatch({
+				start = starts[jobId]
+				end = min(start+batchSize-1,numIndices)
+				ids=allIndices[start:end]
+				indexProcessor(ids,jobId)
+			},
+			error=function(e){
+				#write the error to a file to ensure it doesn't get lost
+				cat(as.character(e),"\n",file=paste("error-",jobId,".out",sep=""))
+				stop(e)
+			}
+		)
+	}
+
+	require(snow)
+	#copy this to all nodes once so it is not copied for each iteration
+	#of clusterApply
+	clusterExport(cl,"allIndices",envir=environment())
+
+	#we explicitly create an environment for f with just what it needs
+	# so that serialization does not pull in un-nessacary things
+	fEnv = new.env(parent=globalenv())
+	fEnv$numIndices = numIndices
+	fEnv$starts = starts
+	fEnv$indexProcessor = indexProcessor
+	fEnv$batchSize = batchSize
+
+	environment(f) <- fEnv
+
+	reduce(clusterApplyLB(cl,1:length(starts),f ))
+}
 #this does not guarentee a consistant ordering of the result
 selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 	#print(paste("all indexes: ",paste(allIndices,collapse=", ")))
@@ -216,155 +289,277 @@ definition2SDFset <- function(defs){
 }
 
 loadSmiles <- function(conn, smileFile,...){
-	loadSdf(conn,smile2sdf(smileFile),...)
+	loadSdf(conn,smile2sdfFile(smileFile),...)
 }
 loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 						  descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()), 
-						  Nlines=10000, startline=1, restartNlines=100000){
+						  Nlines=50000, startline=1, restartNlines=100000,updateByName=FALSE){
 
 	if(inherits(sdfFile,"SDFset")){
 		if(debug) print("loading SDFset")
 		sdfset=sdfFile
 
+
 		sdfstrList=as(as(sdfset,"SDFstr"),"list")
 		names = unlist(Map(function(x) x[1],sdfstrList))
 		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+		processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName)
+	}else{
+		compoundIds=c()
+		## Define loop parameters 
+		stop <- FALSE 
+		f <- file(sdfFile, "r")
+		n <- Nlines
+		offset <- 0
+		## For restarting sdfStream at specific line assigned to startline argument. If assigned
+			  ## startline value does not match the first line of a molecule in the SD file then it 
+			  ## will be reset to the start position of the next molecule in the SD file.
+		if(startline!=1) { 
+			fmap <- file(sdfFile, "r")
+			shiftback <- 2
+			chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+			startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
+			if(is.na(startline)) stop("Invalid value assigned to startline.")
+			dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
+			close(fmap)
+			offset <- startline - 1 # Maintains abolut line positions in index
+		}
+		counter <- 0
+		cmpid <- 1
+		partial <- NULL
 
-		systemFields=data.frame(name=names,definition=defs,format="sdf")
+		dbTransaction(conn,{
+			while(!stop) {
+				counter <- counter + 1
+				chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+				if(length(chunk) > 0) {
+					if(length(partial) > 0) {
+						chunk <- c(partial, chunk)
+					}
+					## Assure that lines of least 2 complete molecules are stored in chunk if available
+					inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+					while(inner) {
+						chunklength <- length(chunk)
+						chunk <- c(chunk, readLines(f, n = n))
+						if(chunklength == length(chunk)) { 
+							inner <- FALSE 
+						} else {
+							#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+							inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
+						}
+					}
+					y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+					index <- which(y!=-1)
+					indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+					complete <- chunk[1:index[length(index)]]
+					if((index[length(index)]+1) <= length(chunk)) {
+						partial <- chunk[(index[length(index)]+1):length(chunk)]
+					} else {
+						partial <- NULL
+					}
 
-		userFeatures <- fct(sdfset)
+					sdfset <- read.SDFset(read.SDFstr(complete))
+					valid = validSDF(sdfset)
+					sdfset=sdfset[valid]
+
+					defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
+					names = complete[indexDF[,1]][valid]
+					cmdIds = processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName,inTransaction=TRUE)
+
+					compoundIds = c(compoundIds,cmdIds)
+					
+				}
+				if(length(chunk) == 0) {
+					stop <- TRUE
+					close(f)
+				}
+			}
+
+			compoundIds
+		})
+	}
+}
+
+processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateByName,inTransaction=FALSE ) {
+	# - compute checksums on defs
+	# - if(updateByName)
+	#		query checksums for each name
+	#		exclude those that match our checksum
+	#		updates <- those with different checksum
+	#		new compounds <- everything else
+	#	else
+	#		exclude existing checksums
+	#		insert the rest	
+	# - include checksums in systemFields
+	#		- have loadDb check for the existance of checksums and don't re-compute
+	# - compute and insert/update descriptors for new/updated compounds
+
+	checksums = definitionChecksums(defs)
+	index=1:length(names)
+	deleteCompIds=c()
+
+
+	if(updateByName){
+		#we assume compounds are unique by name and so changes in checksum
+		# indicate updates to the same compounds
+
+		if(debug) message("given names: ",paste(names,collapse=","))
+		names(index)=names
+		index=rev(index) # so last matches win
+
+
+		existingByName = findCompoundsByX(conn,"name",names,allowMissing=TRUE,
+														 extraFields = c("definition_checksum","name"))
+		if(debug) {message("existing names: "); print(existingByName); }
+
+#		idsToLoad = Filter(function(i) {
+#			#either the name is completely new, or it exists, but the checksum is different, so this is 
+#			# an update
+#			(! names[i] %in% existingByName$name) || (! checksums[i] %in% existingByName$definition_checksum)
+#
+#		},index)
+
+
+		namesToLoad = unique(Filter(function(name) {
+			#either the name is completely new, or it exists, but the checksum is different, so this is 
+			# an update
+			(! name %in% existingByName$name) || (! checksums[index[name]] %in% existingByName$definition_checksum)
+		},names))
+		if(debug) message("names to load: ",paste(namesToLoad,collapse=","))
+
+		namesToDelete = unique(Filter(function(name) {
+			#delete those needing an update, so name exists and checksum is different
+			( name %in% existingByName$name) && (! checksums[index[name]] %in% existingByName$definition_checksum)
+		},names))
+		if(debug) message("names to delete: ",paste(namesToDelete,collapse=","))
+
+		#delete modified and missing compounds, will cascade to all descriptors
+
+		deleteCompIds = c()
+		for(name in namesToDelete){
+			i = Position(function(x) x==name,existingByName$name,right=TRUE)
+			deleteCompIds[checksums[index[name]]] = existingByName$compound_id[i]
+		}
+
+
+		#existingNameToCompId = existingByName$compound_id
+		#names(existingNameToCompId) = existingByName$name
+		#existingNameToCompId = rev(existingNameToCompId)
+		#deleteCompIds = existingNameToCompId[namesToDelete]
+		#rownames(existingByName)=existingByName$compound_id
+
+		#rownames(existingByName)=existingByName$name
+		#deleteCompIds = existingByName[namesToDelete,]$compound_id
+
+		#if(length(namesToDelete) != 0)
+			#names(deleteCompIds) = checksums[index[namesToDelete]]
+		ids = index[namesToLoad]
+		message("loading ",length(ids)," new compounds, updating ",length(deleteCompIds)," compounds")
+	}else{
+		#we do not assume names are unique, therefore if a checksum does not
+		#exist, then it is added as if it where a new compound
+		names(index)=checksums
+		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
+														 extraFields = c("definition_checksum","name"))
+
+		if(debug){ message("existing checksums: "); print(existingByChecksum); }
+		#select only those whose checksum does not already exist
+		#setdiff also makes its result unique
+		checksumsToLoad = setdiff(checksums,existingByChecksum$definition_checksum)
+		if(debug) message("checksumsToLoad: ",paste(checksumsToLoad,collapse=","))
+
+		ids = index[checksumsToLoad]
+		message("loading ",length(ids)," new compounds")
+	}
+	if(debug) message("updating ids: ",paste(ids,collapse=","))
+
+	tx = if(inTransaction) function(a,x) x  else dbTransaction
+	if(length(ids)==0){
+		tx(conn,deleteCompounds(conn,deleteCompIds))
+		c() # no compound ids to return
+	}else{
+
+		names = names[ids]
+		defs = defs[ids]
+		checksums = checksums[ids]
+		sdfset = sdfset[ids]
+		userFeatures = featureFn(sdfset)
+
+		if(debug) message("Features: ",colnames(userFeatures))
+		if(debug) message("names: ",length(names)," defs: ",length(defs),", cksm: ",length(checksums),", features: ",length(userFeatures))
+
+		systemFields=data.frame(name=names,definition=defs,format=rep("sdf",length(names)),definition_checksum=checksums)
+
 		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-		cmdIds=dbTransaction(conn,{
-			checksums=loadDb(conn,allFields,fct)
+		tx(conn,{
+			deleteCompounds(conn,deleteCompIds)
+			loadedChecksums=loadDb(conn,allFields,featureFn)
 
 			#We assume descriptors are in the same order as compounds
 			descriptor_data = descriptors(sdfset)
 			if(length(descriptor_data) != 0)
-				loadDescriptors(conn,cbind(checksums,descriptor_data))
-
-			findCompoundsByChecksum(conn,checksums)
-	   })
-		return(cmdIds)
-	}
-	compoundIds=c()
-	## Define loop parameters 
-	stop <- FALSE 
-	f <- file(sdfFile, "r")
-	n <- Nlines
-	offset <- 0
-	## For restarting sdfStream at specific line assigned to startline argument. If assigned
-        ## startline value does not match the first line of a molecule in the SD file then it 
-        ## will be reset to the start position of the next molecule in the SD file.
-	if(startline!=1) { 
-		fmap <- file(sdfFile, "r")
-		shiftback <- 2
-		chunkmap <- scan(fmap, skip=startline-shiftback, nlines=restartNlines, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
-		startline <- startline + (which(grepl("^\\${4,4}", chunkmap, perl=TRUE))[1] + 1 - shiftback)
-		if(is.na(startline)) stop("Invalid value assigned to startline.")
-		dummy <- scan(f, skip=startline-2, nlines=1, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n")
-		close(fmap)
-		offset <- startline - 1 # Maintains abolut line positions in index
-	}
-	counter <- 0
-	cmpid <- 1
-	partial <- NULL
-
-	dbTransaction(conn,{
-		while(!stop) {
-			counter <- counter + 1
-			chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
-			if(length(chunk) > 0) {
-				if(length(partial) > 0) {
-					chunk <- c(partial, chunk)
-				}
-				## Assure that lines of least 2 complete molecules are stored in chunk if available
-				inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-				while(inner) {
-					chunklength <- length(chunk)
-					chunk <- c(chunk, readLines(f, n = n))
-					if(chunklength == length(chunk)) { 
-						inner <- FALSE 
-					} else {
-						#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-						inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
-					}
-				}
-				y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
-				index <- which(y!=-1)
-				indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
-				complete <- chunk[1:index[length(index)]]
-				if((index[length(index)]+1) <= length(chunk)) {
-					partial <- chunk[(index[length(index)]+1):length(chunk)]
-				} else {
-					partial <- NULL
-				}
-
-				sdfset <- read.SDFset(read.SDFstr(complete))
-				valid = validSDF(sdfset)
-				sdfset=sdfset[valid]
+				loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
 
 
-				userFeatures <- fct(sdfset)
+			#print("original deleted comp ids")
+			#print(deleteCompIds)
+			#cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+			#print("new comp ids: ")
+			#print(cmdIds)
 
-		#		sdfstrList=as(as(sdfset,"SDFstr"),"list")
-		#		names = unlist(Map(function(x) x[1],sdfstrList))
-		#		defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-
-				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))
-				names = complete[indexDF[,1]]
-				systemFields=data.frame(name=names[valid],definition=defs[valid],format="sdf")
-
-				allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-				checksums=loadDb(conn,allFields,fct)
-
-				descriptor_data = descriptors(sdfset)
-				if(length(descriptor_data) != 0)
-					loadDescriptors(conn,cbind(checksums,descriptor_data))
-
-				compoundIds = c(compoundIds,findCompoundsByChecksum(conn,checksums))
-				
+			# to keep stable compound id numbers, we reset the compound id of those
+			# compounds that were merely modified.
+			for(i in seq(along=deleteCompIds)){
+				cksum=names(deleteCompIds)[i]
+				id = deleteCompIds[i]
+				dbSendQuery(conn,paste("UPDATE compounds SET compound_id = ",id,
+											  " WHERE definition_checksum = '",cksum,"'",sep=""))
 			}
-			if(length(chunk) == 0) {
-				stop <- TRUE
-				close(f)
-			}
-		}
 
-		compoundIds
-	})
+
+			cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+			if(nrow(loadedChecksums) != length(cmdIds)){
+				stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
+					  " but only inserted ",length(cmdIds))
+			}
+			#print("updated comp ids:")
+			#print(cmdIds)
+		
+			#those in deleteCompIds were not really added, just modified. so remove them here.
+			#return newly added compound ids.
+			setdiff(cmdIds,deleteCompIds)
+		})
+	}
 }
 
 
-smile2sdf <- function(smileFile,sdfFile=tempfile()){
-	.Call("smile2sdf_file",as.character(smileFile),as.character(sdfFile))
-	#.Call("smile2sdf_string",as.character(smileFile))
+smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
+	.ensureOB("smile format only suppported with ChemmineOB package")
+	convertFormatFile("SMI","SDF",smileFile,sdfFile)
 	sdfFile
 }
 
 
+deleteCompounds <- function(conn,compoundIds) {
+	if(length(compoundIds)!=0)
+		dbSendQuery(conn,paste("DELETE FROM compounds WHERE compound_id IN (",
+							paste(compoundIds,collapse=","),")"))
+}
 
-#loadSmiles <- function(conn, smileFile,batchSize=10000){
-#
-#	f = file(smileFile,"r")
-#	compoundIds = c()
-#	bufferLines(f,batchSize=batchSize,function(lines) 
-#					compoundIds <<- c(compoundIds,
-#											findCompoundsByChecksum(conn,loadDb(conn,data.frame(definition=lines,format="smile")))))
-#	close(f)
-#	compoundIds
-#}
-
+#TODO: document feature names must be lower case in the tests clause
 findCompounds <- function(conn,featureNames,tests){
 
 	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
 	# ... where test1 AND test2 AND ...
+	featureNames = tolower(featureNames)
+
 	featureTables = paste("feature_",featureNames,sep="")
 	tryCatch({
 		sql = paste("SELECT compound_id FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
 					" USING(compound_id) WHERE ",paste("(",paste(tests,collapse=") AND ("),")") ) 
 	
-		#print(paste("query sql:",sql))
-		result = dbGetQuery(conn,sql)
+		if(debug) print(paste("query sql:",sql))
+		result = dbGetQueryChecked(conn,sql)
 		result[1][[1]]
 	},error=function(e){
 		if(length(grep("no such column",e$message))!=0){
@@ -377,28 +572,47 @@ findCompounds <- function(conn,featureNames,tests){
 }
 
 #undefined ordering by default
-findCompoundsByChecksum <- function(conn,checksums,keepOrder=FALSE)
-	findCompoundsByX(conn,"definition_checksum",checksums,keepOrder)
-findCompoundsByName<- function(conn,names,keepOrder=FALSE)
-	findCompoundsByX(conn,"name",names,keepOrder)
+findCompoundsByChecksum <- function(conn,checksums,keepOrder=FALSE,allowMissing=FALSE)
+	findCompoundsByX(conn,"definition_checksum",checksums,keepOrder,allowMissing)
+findCompoundsByName<- function(conn,names,keepOrder=FALSE,allowMissing=FALSE)
+	findCompoundsByX(conn,"name",names,keepOrder,allowMissing)
 
-findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE){
+findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FALSE,extraFields=c()){
+
+
+	xf = if(length(extraFields)!=0) paste(",",paste(extraFields,collapse=",")) else ""
 	result = selectInBatches(conn,data,function(batch) 
-			paste("SELECT compound_id,",fieldName
-					," FROM compounds WHERE ",fieldName," IN
+			paste("SELECT compound_id,",fieldName," ",xf,
+					" FROM compounds WHERE ",fieldName," IN
 					('",paste(batch,collapse="','"),"')",sep=""),1000)
+
+	#no column names preserved for empty dataframes, so we can't just
+	# handle it the same way, we need a special case :(
+	if(length(result)==0)
+		return(result)
+
 	ids = result$compound_id
-	if(length(ids)!=length(data))
+
+	if(!allowMissing && length(ids)!=length(data))
 		stop(paste("found only",length(ids),"out of",length(data),
 					  "queries given"))
 	if(keepOrder){
-		names(ids)=result[[fieldName]]
-		ids[data]
+		if(length(extraFields)!=0){
+			rownames(result)=result[[fieldName]]
+			result[as.character(data),c("compound_id",extraFields)]
+		}
+		else{
+			names(ids)=result[[fieldName]]
+			ids[as.character(data)]
+		}
 	}else{
-		ids
+		if(length(extraFields)!=0)
+			result[,c("compound_id",extraFields)]
+		else
+			ids
 	}
 }
-getCompounds <- function(conn,compoundIds,filename=NA){
+getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissing=FALSE){
 	
 	processedCount=0
 	if(!is.na(filename)){
@@ -424,13 +638,22 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		rs = dbSendQuery(conn,
 							  paste("SELECT compound_id,definition FROM compounds where compound_id in (",
 									  paste(compoundIdSet,collapse=","),")"))
-		bufferResultSet(rs, resultProcessor,1000)
+		f=if(keepOrder)
+			function(rows){
+				rownames(rows) = rows$compound_id
+				orderedIds = intersect(compoundIdSet,rows$compound_id)
+				resultProcessor(rows[as.character(orderedIds),])
+			}
+		else
+			f=resultProcessor
+
+		bufferResultSet(rs,f,1000)
 		dbClearResult(rs)
 	})
 
-	if(length(compoundIds) != processedCount) {
+	if(!allowMissing && length(compoundIds) != processedCount) {
 		if(debug) print(str(sdfset))
-		warning(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
+		stop(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
 	}
 
 	if(!is.na(filename)){
@@ -439,83 +662,99 @@ getCompounds <- function(conn,compoundIds,filename=NA){
 		return(as(sdfset,"SDFset"))
 	}
 }
-getCompoundNames <- function(conn, compoundIds){
+getCompoundNames <- function(conn, compoundIds,keepOrder=FALSE,allowMissing=FALSE){
 
 	result = selectInBatches(conn,compoundIds,function(ids)
 					  paste("SELECT compound_id, name FROM compounds where compound_id in (",
 									  paste(ids,collapse=","),")"))
 
+	if(!allowMissing)
+		if(nrow(result) != length(compoundIds))
+			stop(paste("found only",nrow(result),"out of",length(compoundIds), "ids given"))
+
 	n=result$name
-	names(n)=result$compound_id
-	#print(n[as.character(compoundIds)])
-	n[as.character(compoundIds)]
-	#as.matrix(merge(data.frame(compound_id=compoundIds),result,sort=FALSE)[[2]])
+	if(keepOrder){
+		names(n)=result$compound_id
+		n[as.character(compoundIds)]
+	}else
+		n
 }
 indexExistingCompounds <- function(conn,newFeatures,featureGenerator){
 
 	# we have to batch by index because we need to execute an insert statment along
 	# the way and R DBI does not allow you to do two things at once.
-	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM
-									compounds WHERE format!='junk' ")[1][[1]],function(compoundIdSet){
-		tryCatch({
-				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
-								  paste(compoundIdSet,collapse=","),")"))
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")
+	if(length(ids) > 0)
+		batchByIndex(ids[1][[1]],function(compoundIdSet){
+			tryCatch({
+					rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
+									  paste(compoundIdSet,collapse=","),")"))
 
-				sdfset = definition2SDFset(rows[2][[1]])
-				userFeatures  = featureGenerator(sdfset)
-				lapply(newFeatures, function(name){
-						 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],userFeatures[name]))
-				})
-			},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
-		)
+					sdfset = definition2SDFset(rows[2][[1]])
+					userFeatures  = featureGenerator(sdfset)
+					names(userFeatures)=tolower(names(userFeatures))
+					lapply(newFeatures, function(name){
+							 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],userFeatures[name]))
+					})
+				},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
+			)
 
-	},1000)
+		},1000)
 }
 addNewFeatures <- function(conn,featureGenerator){
 
 	firstBatch = TRUE
 	newFeatures = c()
-	batchByIndex(dbGetQuery(conn,"SELECT compound_id FROM
-									compounds WHERE format!='junk' ")[1][[1]],function(compoundIdSet){
-		tryCatch({
-				rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
-								  paste(compoundIdSet,collapse=","),")"))
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")
+	if(length(ids) > 0)
+		batchByIndex(ids[1][[1]],function(compoundIdSet){
+			tryCatch({
+					rows=dbGetQuery(conn,paste("SELECT compound_id,definition FROM compounds WHERE compound_id in (",
+									  paste(compoundIdSet,collapse=","),")"))
 
-				sdfset = definition2SDFset(rows[2][[1]])
+					sdfset = definition2SDFset(rows[2][[1]])
 
-				data = featureGenerator(sdfset)
+					data = featureGenerator(sdfset)
+					names(data)=tolower(names(data))
 
-				if(firstBatch){
-					firstBatch<<-FALSE
-					features = featureDiff(conn,data)
-					newFeatures <<- features$new
-					for(name in features$new)
-						createFeature(conn,name,is.numeric(data[[name]]))
-				}
-				if(debug) print(paste("new features ",paste(newFeatures,collapse=",")))
-				lapply(newFeatures, function(name){
-						 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],data[name]))
-				})
-			},error=function(e) stop(paste("error in indexExistingCompounds:",e$message))
-		)
+					if(firstBatch){
+						firstBatch<<-FALSE
+						features = featureDiff(conn,data)
+						newFeatures <<- features$new
+						for(name in features$new)
+							createFeature(conn,name,is.numeric(data[[name]]))
+					}
+					if(debug) print(paste("new features ",paste(newFeatures,collapse=",")))
+					lapply(newFeatures, function(name){
+							 insertFeature(conn,name,cbind(compound_id=rows[1][[1]],data[name]))
+					})
+				},error=function(e) stop(paste("error in addNewFeature:",e$message))
+			)
 
-	},1000)
+		},1000)
 
 
 }
 
-createFeature <- function(conn,name, isNumeric){
+listFeatures <- function(conn){
+	
+	 tableList=dbListTables(conn)
+	 sub("^feature_","",tableList[grep("^feature_.*",tableList)])
+}
 
+createFeature <- function(conn,name, isNumeric){
 
 	sqlType = if(isNumeric) "NUMERIC" else "TEXT"
 	if(debug) print(paste("adding",name,", sql type: ",sqlType))
-	dbGetQuery(conn,
+
+	dbGetQueryChecked(conn,
 		paste("CREATE TABLE feature_",name," (
-			compound_id INTEGER PRIMARY KEY REFERENCES compound(compound_id) ON DELETE CASCADE, ",
-			name," ",sqlType," )",sep=""))
+			compound_id INTEGER PRIMARY KEY REFERENCES compounds(compound_id) ON DELETE CASCADE ON UPDATE CASCADE, ",
+			"",name," ",sqlType," )",sep=""))
+
 	#print("made table")
 	dbGetQuery(conn,paste("CREATE INDEX feature_",name,"_index ON
-								 feature_",name,"(",name,")",sep=""))
+								 feature_",name,"(\"",name,"\")",sep=""))
 	#print("made index")
 
 }
@@ -526,10 +765,14 @@ insertDef <- function(conn,data)  {
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(definition,definition_checksum,format) ",
 								 "VALUES(:definition,:definition_checksum,:format)",sep=""), bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		if(debug) print(data[,"definition_checksum"])
+		fields = c("definition","definition_checksum","format")
+		apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
+						 "INSERT INTO compounds(definition,definition_checksum,format) VALUES($1,$2,$3)",
+						 row)))
 	}else{
-		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
-						 paste("INSERT INTO compounds(definition,definition_checksum,format)
-																			  VALUES('",row[1],"','",row[2],"','",row[3],"')", sep=""))))
+		stop("database ",class(conn)," unsupported")
 	}
 }
 
@@ -538,10 +781,17 @@ insertNamedDef <- function(conn,data) {
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,paste("INSERT INTO compounds(name,definition,definition_checksum,format) ",
 								 "VALUES(:name,:definition,:definition_checksum,:format)",sep=""), bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		require(RPostgreSQL)
+		fields = c("name","definition","definition_checksum","format")
+		postgresqlWriteTable(conn,"compounds",data[,fields],append=TRUE,row.names=FALSE)
+
+
+		#apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
+						 #"INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)",
+						 #row)))
 	}else{
-		apply(data,1,function(row) dbOp(dbGetQuery(conn, 
-						 paste("INSERT INTO compounds(name,definition,definition_checksum,format) VALUES('",
-																	  row[1],"','",row[2],"','",row[3],"','",row[4],"')", sep=""))))
+		stop("database ",class(conn)," unsupported")
 	}
 }
 
@@ -550,11 +800,18 @@ insertFeature <- function(conn,name,values){
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn, paste("INSERT INTO feature_",name,"(compound_id,",name,") ",
 												 "VALUES(:compound_id,:",name,")",sep=""), bind.data=values)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		require(RPostgreSQL)
+		fields = c("compound_id",name)
+
+		postgresqlWriteTable(conn,paste("feature_",name,sep=""),values[,fields],append=TRUE,row.names=FALSE)
+
+
+	#	apply(values[,fields],1,function(row) 
+	#			dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,\"",name,"\") ",
+	#										 "VALUES($1,$2)",sep=""),row))
 	}else{
-		apply(data,1,function(row) 
-				dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,",name,")
-											 VALUES(",row[1],",", if(!is.numeric(row[2]))
-													  {paste("'",row[2],"'",sep="")} else {row[2]},")")))
+		stop("database ",class(conn)," unsupported")
 	}
 }
 insertDescriptor <- function(conn,data){
@@ -564,20 +821,25 @@ insertDescriptor <- function(conn,data){
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
 							(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
 							:descriptor )") ,bind.data=data)
-	}else{
-		apply(data,1,function(row) 
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		fields = c("definition_checksum","descriptor_type","descriptor")
+		apply(data[,fields],1,function(row) 
 			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
-				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = '",row["definition_checksum"] ,"'),
-					(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = '",row["descriptor_type"],"'), 
-						'",row["descriptor"],"' )" ) ))
+					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum =$1 ),
+								(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = $2 ), $3)"),
+							row))
+	}else{
+		stop("database ",class(conn)," unsupported")
 	}
 }
 insertDescriptorType <- function(conn,data){
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,"INSERT INTO descriptor_types(descriptor_type) VALUES(:descriptor_type)",
 								 bind.data=data)
-	}else{
+	}else if(inherits(conn,"PostgreSQLConnection")){
 		apply(data,1,function(row) 
-				dbGetQuery(conn,paste("INSERT INTO descriptor_types(descriptor_type) VALUES('",row[1],"')")))
+				dbGetQuery(conn,paste("INSERT INTO descriptor_types(descriptor_type) VALUES($1)"),row))
+	}else{
+		stop("database ",class(conn)," unsupported")
 	}
 }

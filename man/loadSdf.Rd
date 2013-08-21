@@ -1,17 +1,19 @@
 \name{loadSdf}
 \alias{loadSdf}
+\alias{loadSmiles}
 \title{
-	Load SDF Data
+	Load SDF and SMILES Data
 }
 \description{
-	Load an SDF formatted file or SDFSet objects into the database. This will also load arbitrary features 
+	Load an SDF or SMILES formatted file or SDFSet objects into the database. This will also load arbitrary features 
 	from the data as well as descriptor data. The \code{fct} parameter can be used to specify a function
 	which will compute features which will then be indexed and stored in the database. These features can later
 	be used to quickly search for compounds. Descriptors can also be computed and stored in another table. 
 }
 \usage{
-loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()),
-				Nlines = 10000, startline = 1, restartNlines = 1e+05)
+	loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) data.frame(descriptor=c(),descriptor_type=c()),
+				Nlines = 50000, startline = 1, restartNlines = 1e+05,updateByName=FALSE)
+	loadSmiles(conn, smileFile, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +22,12 @@ loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) d
 	}
   \item{sdfFile}{
 	  Either the filename of an SDF formated file, or and SDFSet object.
+	}
+  \item{smileFile}{
+	  The filename of an SMILES formated file.
+	}
+	\item{...}{
+		When calling loadSmiles, any of the arguments for loadSdf can be used and will be passed to loadSdf internally.
 	}
   \item{fct}{
 	  A function to extract features from the data. It will be handed an SDFSet generated from the data being loaded.
@@ -46,8 +54,23 @@ loadSdf(conn, sdfFile, fct = function(x) data.frame(), descriptors=function(x) d
 	  When reading data from a file and startline > 1, the number of lines to look forward to find the start of the
 	  next compound. See also \code{\link{sdfStream}}
   }
+ \item{updateByName}{
+	 If true we make the assumption that all compounds, both in the existing database and the
+	 given dataset, have unique names. This function will then avoid re-adding existing,
+	 identical compounds, and will update existing compounds with a new definition if a new
+	 compound definition with an existing name is given. 
+
+	 If false, we allow duplicate compound names to exist in the database, though not
+	 duplicate definitions. So identical compounds will not be re-added, but if a new version of
+	 an existing compound is added it will not update the existing one, it will add the modified one 
+	 as a completely new compound with a new compound id. 
+  }
+
 }
 \details{
+	Arguments to loadSmiles are the same as those to loadSdf. LoadSmiles will convert its input into an SDFSet 
+	and then call loadSdf. 
+
 	New features can also be added using this function. However, all compounds must have all features so if new
 	features are added to a new set of compounds, all existing features must be computable by the \code{fct} function 
 	given. If new features are detected, all existing compounds will be run through \code{fct} in order to compute

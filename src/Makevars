@@ -1,5 +1,1 @@
-#PKG_CXXFLAGS=  -DNO_MAIN -DHAS_OPENBABEL  -I/home/khoran/raw_src/openbabel-2.3.2/include -ggdb
-#PKG_LIBS = -L/home/khoran/raw_src/openbabel-2.3.2/build/lib -lopenbabel
-
-PKG_CXXFLAGS=  -DNO_MAIN -DHAS_OPENBABEL  -I/usr/include/openbabel-2.0 -ggdb
-PKG_LIBS = -lopenbabel
+PKG_CXXFLAGS +=  -DNO_MAIN -DNO_DEBUG

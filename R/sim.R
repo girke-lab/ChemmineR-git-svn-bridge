@@ -993,6 +993,29 @@ db.explain <- function(desc)
     .factor_to_vector(as.factor(desc))
 }
 
+.haveOB <- function()
+{
+	if(!is.null(getOption('.haveOB'))){
+		# may need to to reset this to null in onLoad, run "check" to see
+		if(getOption('.haveOB')==0)
+			return(FALSE)
+		else if(getOption('.haveOB')==1)
+			return(TRUE)
+	}else if(suppressWarnings(require('ChemmineOB', quietly=T))) {
+		message("Using ChemmineOB")
+      options(.haveOB = 1)
+		return(TRUE)
+    }else{
+      options(.haveOB = 0)
+		return(FALSE)
+	}
+
+}
+.ensureOB <- function(mesg = "ChemmineOB is required to meke use of this function")
+{
+	if(!.haveOB())
+		stop(mesg)
+}
 .has.pp <- function()
 {
 	TRUE
@@ -1187,32 +1210,67 @@ sdf2smiles <- function(sdf) {
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
-	sdf <- sdf2str(sdf[[1]])
-	sdf <- paste(sdf, collapse="\n")
-	response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- sub("\n$", "", response) # remove trailing newline
-	id <- sub(".*\t(.*)$", "\\1", response) # get id
-	response <- sub("\t.*$", "", response) # get smiles
-	names(response) <- id
-	return(response)
+
+	 if(.haveOB()){
+		 sdfstrList=as(as(sdf,"SDFstr"),"list")
+		 defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
+		 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
+															  "\n",fixed=TRUE)),
+					 "\t",fixed=TRUE))
+		 smiles = t[,1]
+		 names(smiles)= t[,2]
+		 smiles
+	 }else{
+		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
+		 sdf2smilesWeb(sdf)
+	 }
+}
+sdf2smilesWeb <- function(sdf){
+
+	 sdf <- sdf2str(sdf[[1]])
+	 sdf <- paste(sdf, collapse="\n")
+	 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
+	 if(grepl("^ERROR:", response)){
+	        stop(response)
+	 }
+	 response <- sub("\n$", "", response) # remove trailing newline
+	 id <- sub(".*\t(.*)$", "\\1", response) # get id
+	 response <- sub("\t.*$", "", response) # get smiles
+	 names(response) <- id
+	 return(response)
 }
 
-# perform smiles to sdf conversion through ChemMine Web Tools
 smiles2sdf <- function(smiles) {
     if(! class(smiles) == "character"){
         stop('reference compound must be a smiles string of class \"character\"')
     }
-    if(! is.null(names(smiles))){
-        smiles <- paste(smiles, names(smiles)[1], sep="\t")
-    }
-	response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- strsplit(response, "\n")
-	response <- as(as(response, "SDFstr"), "SDFset")
-	return(response)
+	 if(.haveOB())
+		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
+																		collapse="\n")))
+	 else{
+		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
+		 smiles2sdfWeb(smiles)
+	 }
 }
+# perform smiles to sdf conversion through ChemMine Web Tools
+smiles2sdfWeb <- function(smiles) {
+
+	 if(! is.null(names(smiles)))
+        smiles <- paste(smiles, names(smiles)[1], sep="\t")
+    
+	 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
+	 if(grepl("^ERROR:", response))
+        stop(response)
+    
+	 response <- strsplit(response, "\n")
+	 response <- as(as(response, "SDFstr"), "SDFset")
+	 return(response)
+
+}
+
+genAPDescriptors <- function(sdf){
+
+  .factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
+	
+}
+

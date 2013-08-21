@@ -1,7 +1,7 @@
 
 test_aaa.clean <- function(){
 
-	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db"))
+	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db","part1.db","part2.db"))
 	
 }
 
@@ -21,8 +21,8 @@ test_ba.loadSdf<-function(){
 
 
 	conn = initDb("test1.db")
-	print("loading first half, no features, with exception")
-	checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
+#	print("loading first half, no features, with exception")
+#	checkException(loadSdf(conn,sdfsample[c(1,2,1,3)]))
 	compIds=loadSdf(conn,sdfsample[c(1,2,3)])
 	checkEquals(length(compIds),3)
 	dbDisconnect(conn)
@@ -64,7 +64,7 @@ test_ba.loadSdf<-function(){
 	compoundCount = dbGetQuery(conn,"SELECT count(*) FROM
 										compounds WHERE format!='junk'")[1][[1]]
 	checkEquals(compoundCount ,length(cid(sdfsample)))
-	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_MW")[1][[1]]
+	featureCount= dbGetQuery(conn,"SELECT count(*) FROM feature_mw")[1][[1]]
 	checkEquals(featureCount ,length(cid(sdfsample)))
 	dbDisconnect(conn)
 
@@ -78,20 +78,21 @@ test_ba.loadSdf<-function(){
 	checkEquals(descriptorCount,50)
 	typeCount= dbGetQuery(conn,"SELECT count(*) FROM descriptor_types WHERE descriptor_type = 'ap' ")[1][[1]]
 	checkEquals(typeCount,1)
-					
 }
 test_bn.addNewFeatures<-function(){
 
 	conn = initDb("test2.db")
 	addNewFeatures(conn,function(sdfset) data.frame(new=cid(sdfset),new2=cid(sdfset)))
-	tables = dbListTables(conn)
-	checkTrue("feature_new" %in% tables)
-	checkTrue("feature_new2" %in% tables)
+	features = listFeatures(conn)
+	checkTrue("new" %in% features)
+	checkTrue("new2" %in% features)
 
+	#tables = dbListTables(conn)
+	#checkTrue("feature_new" %in% tables)
+	#checkTrue("feature_new2" %in% tables)
 }
 
 test_ca.findCompounds<-function(){
-
 	#DEACTIVATED("temp")
 	conn = initDb("test2.db")
 
@@ -99,38 +100,37 @@ test_ca.findCompounds<-function(){
 	print(paste("found",length(indexes)," compounds"))
 	checkEquals(length(indexes),70)
 
-	checkException(findCompounds(conn,"MW",c("MW < 400","RINGS > 3")))
+	checkException(findCompounds(conn,"MW",c("mw < 400","rings > 3")))
 
-	indexes=findCompounds(conn,c("MW","RINGS"),c("MW < 400","RINGS > 3"))
+	indexes=findCompounds(conn,c("MW","RINGS"),c("mw < 400","rings > 3"))
 	print(paste("found",length(indexes)," compounds"))
 	checkEquals(length(indexes),20)
 
 	dbDisconnect(conn)
-
 }
 
 test_da.getCompounds<-function(){
-
 	#DEACTIVATED("temp")
 	conn = initDb("test2.db")
 
-	indexes = findCompounds(conn,"MW","MW < 400")
+	indexes = findCompounds(conn,"MW","mw < 400")
 
-	sdfset = getCompounds(conn,indexes)
+	sdfset = getCompounds(conn,indexes,keepOrder=TRUE)
 	checkEquals(length(cid(sdfset)),70)
+	ids2=findCompoundsByName(conn,sdfid(sdfset),keepOrder=TRUE)
+	names(ids2)=c()
+	checkEquals(indexes,ids2)
 	
 	getCompounds(conn,indexes,file="test.sdf")
 	checkTrue(file.exists("test.sdf"))
 	sdfFromFile = read.SDFset("test.sdf")
 	checkEquals(length(cid(sdfFromFile)),70)
 	dbDisconnect(conn)
-
 }
 
 
-test_ea.comparison <- function()
-{
 
+test_ea.comparison <- function() {
 	DEACTIVATED("local test")
 	#filename = "~/runs/kinase/kinase.sdf"
 	filename = "~/runs/protein/proteins.sdf"
@@ -166,7 +166,7 @@ test_ea.comparison <- function()
 											  data.frame(descriptor_type=c(),descriptor=c())
 										  }
 										)))
-		print(system.time(indexes <<- findCompounds(conn,"MW","MW < 400")))
+		print(system.time(indexes <<- findCompounds(conn,"MW","mw < 400")))
 		print(system.time(getCompounds(conn, indexes,file="dbtest_result.sdf")))
 		print(system.time(sdfset<<-getCompounds(conn, indexes)))
 		print(length(sdfset))
@@ -184,8 +184,71 @@ test_ea.comparison <- function()
 	print("db:")
 #	Rprof()
 	print(system.time(dbTest()))
-#	Rprof(NULL)
-#	summaryRprof("Rprof.out")
+}
 
+test_fa.parBatchByIndex <- function(){
+	message("starting parBatchByIndex")
+	require(snow)
+	cl = makeSOCKcluster(3)
+	conn = initDb("test2.db")
+	ids = dbGetQuery(conn,"SELECT compound_id FROM compounds WHERE format!='junk'")$compound_id
+	print(str(ids))
+	outfile="parBatch.out"
+
+	unlink(outfile)
+	unlink("parBench-*")
+	parBatchByIndex(ids,batchSize = 10,cl=cl,
+			   indexProcessor = function(indexSet,jobId){
+					filename = paste("parBench-sub",jobId,sep="-")
+					cat(indexSet,"\n", sep=" ",file=filename)
+					filename
+				},
+				reduce =function(results) {
+
+					print(paste("results: ",paste(results,collapse=",")))
+					for(filename in results)
+						cat(scan(filename,quiet=TRUE),sep="\n",file=outfile,append=TRUE)
+				})
+	resultIds = scan(outfile,quiet=TRUE)
+	checkEquals(ids,resultIds)
+}
+
+test_ga.addDups <- function() {
+
+	data(sdfsample)
+	conn = initDb("test1.db")
+	print("loading duplications")
+
+	descFn = function(sdfset) data.frame(descriptor = paste("descriptor for ",sdfid(sdfset)),
+													 descriptor_type = "testing")
+
+
+	#add 3 dups by checksum
+	count1= getCompoundCount(conn)
+	loadSdf(conn,sdfsample[c(1,2,3)],descriptors=descFn)
+	count2= getCompoundCount(conn)
+	checkEquals(count1,count2)
+
+	compIds = findCompoundsByName(conn,sdfid(sdfsample[1:3]),keepOrder=TRUE,allowMissing=TRUE)
+	checkEquals(length(compIds),3)
+
+
+	# add two dups and one update by checksum
+	atomblock(sdfsample)[[1]][,]=8
+	loadSdf(conn,sdfsample[c(1,2,3)],descriptors=descFn)
+	count2= getCompoundCount(conn)
+	checkEquals(count1+1,count2)
+	compIds = findCompoundsByName(conn,sdfid(sdfsample[1]),allowMissing=TRUE)
+	checkEquals(length(compIds),2)
+
+	# add one dup and update by name
+	atomblock(sdfsample)[[2]][,]=8
+	loadSdf(conn,sdfsample[c(2,3)],descriptors=descFn, updateByName=TRUE)
+	count2= getCompoundCount(conn)
+	checkEquals(count1+1,count2)
+}
+getCompoundCount  <- function(conn){
+
+	dbGetQuery(conn,"SELECT count(*) FROM compounds WHERE format!='junk'")[1][[1]]
 }
 

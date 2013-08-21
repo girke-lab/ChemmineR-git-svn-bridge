@@ -7,7 +7,7 @@
 	Create SDF objects from the given set of compound ids. Id numbers can be found using the findCompounds function.
 }
 \usage{
-   getCompounds(conn,compoundIds,filename=NA)
+   getCompounds(conn,compoundIds,filename=NA, keepOrder = FALSE, allowMissing = FALSE)
 }
 \arguments{
   \item{conn}{
@@ -19,6 +19,16 @@
    \item{filename}{
       If given, writes the compounds directly to the file named.
    }
+  \item{keepOrder}{
+     If true, the order of the output compound ids will be the same as the 
+     input names. This imposes a performance hit that can be significant for
+     large datasets, thus it should be left FALSE unless needed.
+   }
+	\item{allowMissing}{
+		When this is false an error will be raised when compound ids queried were not found in the database. 
+		If true, just those that are found will be returned with no error or warning.
+	}
+
 }
 \value{
    An SDFset with the requested compounds or nothing if \code{filename} was specified. 

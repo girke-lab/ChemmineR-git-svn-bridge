@@ -7,7 +7,7 @@
 	Find the ids of compounds given the names.
 }
 \usage{
-findCompoundsByName(conn, names, keepOrder = FALSE)
+findCompoundsByName(conn, names, keepOrder = FALSE, allowMissing = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,10 @@ findCompoundsByName(conn, names, keepOrder = FALSE)
      input names. This imposes a performance hit that can be significant for
      large datasets, thus it should be left FALSE unless needed.
    }
+	\item{allowMissing}{
+		When this is false an error will be raised when names queried were not found in the database. 
+		If true, just those that are found will be returned with no error or warning.
+	}
 }
 \value{
    Returns the compound ids for compounds with the given name. The output
