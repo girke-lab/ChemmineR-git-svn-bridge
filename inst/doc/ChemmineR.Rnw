@@ -211,6 +211,14 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
 
 \pagebreak
 
+\section{OpenBabel Accelerated Functions}
+ChemmineR is now able to take advantage of accelerated funcationality implmented in the OpenBabel C++ library. This functionality
+can be enabled by installing the ChemmineOB package. ChemmineR will automatically detect it's presence and use the faster version of a
+function, or enable additinal functionality.  This section will be kept up to date with a list of things that take advantage of OpenBabel.
+
+Format conversions between SMILES and SDF formats can now be done quickly for multiple compounds. See Section \ref{sec:conversions} for details.
+
+
 \section{Overview of Classes and Functions}
 \markboth{Overview of Classes and Functions}{} % Only required to print section title in header field without numbering. 
 The following list gives an overview of the most important S4 classes, methods and functions available in the ChemmineR package. The help documents of the package provide much more detailed information on each utility. The standard R help documents for these utilities can be accessed with this syntax: \Rfunction{?function\_name} (\textit{e.g.} \Rfunction{?cid}) and \Rfunction{?class\_name-class} (\textit{e.g}. \Rfunction{?"SDFset-class"}).
@@ -1338,7 +1346,7 @@ compounds
 
 \pagebreak
 
-\section{Format Interconversions}
+\section{Format Interconversions}\label{sec:conversions}
 The \Rfunction{sdf2smiles} and \Rfunction{smiles2sdf} functions provide format
 interconversion between SMILES strings (Simplified Molecular Input Line Entry Specification)
 and \Rclass{SDFset} containers.\\
