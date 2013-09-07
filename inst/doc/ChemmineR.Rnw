@@ -32,7 +32,7 @@
 \fancyhead{}
 \fancyfoot{}
 \rhead{\nouppercase{\leftmark}}
-\lhead{\textit{ChemMineR Manual}}
+\lhead{\textit{ChemmineR Manual}}
 \rfoot{\thepage}
 
 <<echo=FALSE>>=
@@ -45,7 +45,7 @@ unlink( "test.db")
 
 \begin{document}
 \title{ChemmineR: Cheminformatics of Small Molecule Data}
-\author{Yiqun Cao, Tyler Backman, Yan Wang, Thomas Girke \\
+\author{Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke \\
  Email contact: thomas.girke@ucr.edu}
 \maketitle
 
@@ -69,8 +69,9 @@ unlink( "test.db")
 \markboth{Recently Added Features}{} % Only required to print section title in header field without numbering. 
 
 \begin{itemize}
+	\item Integration of a subset of Open Babel functionalities via new \Rpackage{ChemmineOB} add-on package
         \item Streaming functionality for processing millions of molecules on a laptop
-        \item Maximum common substructure (MCS) search algorithm
+        \item Mismatch tolerant maximum common substructure (MCS) search algorithm
         \item Fast and memory efficient fingerprint search support using atom pair or PubChem fingerprints
 \end{itemize}
 
@@ -211,12 +212,24 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
 
 \pagebreak
 
-\section{OpenBabel Accelerated Functions}
-ChemmineR is now able to take advantage of accelerated funcationality implmented in the OpenBabel C++ library. This functionality
-can be enabled by installing the ChemmineOB package. ChemmineR will automatically detect it's presence and use the faster version of a
-function, or enable additinal functionality.  This section will be kept up to date with a list of things that take advantage of OpenBabel.
+\section{Open Babel Functions}
+\Rpackage{ChemmineR} integrates now a subset of cheminformatics
+functionalities implemented in the Open Babel C++ library. These
+utilities can be enabled by installing the \Rpackage{ChemmineOB} package
+and the Open Babel software itself. \Rpackage{ChemmineR} will automatically
+detect the presence of \Rpackage{ChemmineOB} and make use of the additinal
+utilities. The following lists the functions and methods that make use
+of Open Babel. References are included to locate the sections in the manual
+where the utility and usage of these functions is described. \\ 
 
-Format conversions between SMILES and SDF formats can now be done quickly for multiple compounds. See Section \ref{sec:conversions} for details.
+\vspace{0.2cm}
+\noindent \textit{Structure format interconversions} (see Section \ref{sec:conversions})
+        \begin{itemize}
+            \item \Rfunction{smiles2sdf}: converts from SMILES to SDF object
+            \item \Rfunction{sdf2smiles}: converts from SDF to SMILES object
+            \item \Rfunction{convertFormat}: converts strings between two formats
+            \item \Rfunction{convertFormatFile}: converts files between two formats 
+        \end{itemize}
 
 
 \section{Overview of Classes and Functions}

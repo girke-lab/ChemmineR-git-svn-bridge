@@ -1,4 +1,7 @@
 changelog
+        version 2.13.13
+                - vignette updates
+
         version 2.13.12
                 - fixed atom align when writing SDFs
 		- support for plotting other bond types than 1-3
