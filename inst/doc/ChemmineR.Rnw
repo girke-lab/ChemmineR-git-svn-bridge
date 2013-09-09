@@ -4,27 +4,34 @@
 % NOTE -- ONLY EDIT THE .Rnw FILE!!!  The .tex file is
 % likely to be overwritten.
 %
-% \VignetteIndexEntry{gpls Tutorial}
+% \VignetteIndexEntry{ChemmineR Tutorial}
 % \VignetteDepends{}
 % \VignetteKeywords{}
 % \VignettePackage{gpls}
-\documentclass[11pt, letterpaper]{article}
-% Enlage printing area
-\usepackage{a4wide}
+\documentclass{article}
+<<style, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage[authoryear,round]{natbib}
+\usepackage{graphicx}
+\bibliographystyle{plainnat}
+\def\bibsection{\section{References}}
+
 	
 \usepackage{graphicx}
 \usepackage{color}
-\usepackage[authoryear,round]{natbib}
 \usepackage{hyperref}
 \usepackage{url}
 
-\newcommand{\comment}[1]{}
-\newcommand{\Rfunction}[1]{{\texttt{#1}}}
-\newcommand{\Robject}[1]{{\texttt{#1}}}
-\newcommand{\Rpackage}[1]{{\textit{#1}}}
-\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+%\newcommand{\comment}[1]{}
+%\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+%\newcommand{\Robject}[1]{{\texttt{#1}}}
+%\newcommand{\Rpackage}[1]{{\textit{#1}}}
+%\newcommand{\Rmethod}[1]{{\texttt{#1}}}
 \newcommand{\Rfunarg}[1]{{\texttt{#1}}}
-\newcommand{\Rclass}[1]{{\textit{#1}}}
+%\newcommand{\Rclass}[1]{{\textit{#1}}}
 	
 % Define header and footer area with fandyhdr package (see: http://www.ctan.org/tex-archive/macros/latex/contrib/fancyhdr/fancyhdr.pdf)
 \usepackage{fancyhdr}
@@ -36,8 +43,8 @@
 \rfoot{\thepage}
 
 <<echo=FALSE>>=
-options(width=80)
-unlink( "test.db")
+options(width=95)
+unlink("test.db")
 @
 %\parindent 0in
 
@@ -50,7 +57,6 @@ unlink( "test.db")
 \maketitle
 
 \section{Introduction}
-\markboth{Introduction}{} % Only required to print section title in header field without numbering. 
 
 \Rpackage{ChemmineR} is a cheminformatics package for analyzing drug-like small molecule data in R. Its latest version contains functions for efficient processing of large numbers of small molecules, physicochemical/structural property predictions, structural similarity searching, classification and clustering of compound libraries with a wide spectrum of algorithms. 
 
@@ -64,19 +70,18 @@ unlink( "test.db")
 
 \noindent In addition, \Rpackage{ChemmineR} offers visualization functions for compound clustering results and chemical structures. The integration of chemoinformatic tools with the R programming environment has many advantages, such as easy access to a wide spectrum of statistical methods, machine learning algorithms and graphic utilities. The first version of this package was published in \cite{Cao2008c}. Since then many additional utilities have been added to the package and many more are under development for future releases \citep{Backman2011a, Wang2013a}. 
 
+\tableofcontents
 
 \section{\textcolor{red}{Recently Added Features}}
-\markboth{Recently Added Features}{} % Only required to print section title in header field without numbering. 
 
 \begin{itemize}
-	\item Integration of a subset of Open Babel functionalities via new \Rpackage{ChemmineOB} add-on package
+	\item Integration of a subset of OpenBabel functionalities via new \Rpackage{ChemmineOB} add-on package
         \item Streaming functionality for processing millions of molecules on a laptop
         \item Mismatch tolerant maximum common substructure (MCS) search algorithm
         \item Fast and memory efficient fingerprint search support using atom pair or PubChem fingerprints
 \end{itemize}
 
 \section{Getting Started}
-\markboth{Getting Started}{} % Only required to print section title in header field without numbering. 
 
 \subsection{Installation}
 The R software for running ChemmineR can be downloaded from CRAN (\url{http://cran.at.r-project.org/}). The ChemmineR package can be installed from R using the \Rfunction{bioLite} install command. 
@@ -210,16 +215,14 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
    # Binning clustering using variable similarity cutoffs.
 @
 
-\pagebreak
-
-\section{Open Babel Functions}
+\section{OpenBabel Functions}
 \Rpackage{ChemmineR} integrates now a subset of cheminformatics
-functionalities implemented in the Open Babel C++ library. These
+functionalities implemented in the OpenBabel C++ library. These
 utilities can be enabled by installing the \Rpackage{ChemmineOB} package
-and the Open Babel software itself. \Rpackage{ChemmineR} will automatically
+and the OpenBabel software itself. \Rpackage{ChemmineR} will automatically
 detect the presence of \Rpackage{ChemmineOB} and make use of the additinal
 utilities. The following lists the functions and methods that make use
-of Open Babel. References are included to locate the sections in the manual
+of OpenBabel. References are included to locate the sections in the manual
 where the utility and usage of these functions is described. \\ 
 
 \vspace{0.2cm}
@@ -233,7 +236,6 @@ where the utility and usage of these functions is described. \\
 
 
 \section{Overview of Classes and Functions}
-\markboth{Overview of Classes and Functions}{} % Only required to print section title in header field without numbering. 
 The following list gives an overview of the most important S4 classes, methods and functions available in the ChemmineR package. The help documents of the package provide much more detailed information on each utility. The standard R help documents for these utilities can be accessed with this syntax: \Rfunction{?function\_name} (\textit{e.g.} \Rfunction{?cid}) and \Rfunction{?class\_name-class} (\textit{e.g}. \Rfunction{?"SDFset-class"}).
 
 \subsection{Molecular Structure Data}
@@ -316,11 +318,8 @@ The following list gives an overview of the most important S4 classes, methods a
                   \end{itemize}
         \end{itemize}
 
-\pagebreak
-
 
 \section{Importing Compounds}
-\markboth{Importing Compounds}{} % Only required to print section title in header field without numbering. 
 The following code gives an overview of the most important import/export functionalities provided by \Rpackage{ChemmineR}.
 The example creates an instance of the \Rclass{SDFset} class using as sample data set the first 100 compounds from this PubChem SD file (SDF): Compound\_00650001\_00675000.sdf.gz (\url{ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/}). \\
 
@@ -348,10 +347,7 @@ sdfstr
 as(sdfstr, "SDFset") 
 @
 
-\pagebreak
-
 \section{Export of Compounds}
-\markboth{Export of Compounds}{} % Only required to print section title in header field without numbering. 
 \noindent Write objects of classes \Rclass{SDFset/SDFstr/SDF} to SD file:
 <<eval=FALSE, keep.source=TRUE>>=
 write.SDF(sdfset[1:4], file="sub.sdf")
@@ -384,10 +380,57 @@ write.SDF(sdfstr[1:4], file="sub.sdf")
 cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 @
 
-\pagebreak
+\section{Format Interconversions}\label{sec:conversions}
+The \Rfunction{sdf2smiles} and \Rfunction{smiles2sdf} functions provide format
+interconversion between SMILES strings (Simplified Molecular Input Line Entry Specification)
+and \Rclass{SDFset} containers.\\
+
+\noindent Convert an \Rclass{SDFset} container to a SMILES \Rclass{character} string:
+
+<<sdf2smiles, eval=FALSE, keep.source=TRUE>>=
+data(sdfsample); sdfset <- sdfsample[1]
+smiles <- sdf2smiles(sdfset)
+smiles
+@
+
+\noindent Convert a SMILES \Rclass{character} string to an \Rclass{SDFset} container:
+
+<<smiles2sdf, eval=FALSE, keep.source=TRUE>>=
+sdf <- smiles2sdf("CC(=O)OC1=CC=CC=C1C(=O)O\tname")
+view(sdf)
+@
+
+\noindent When the \Rpackage{ChemineOB} package is installed these conversions can 
+be done quickly using the OpenBabel library. Otherwise these functions
+will fall back to using the ChemMine Tools web service for conversion
+with the OpenBabel Open Source Chemistry Toolbox. They will then
+require internet connectivity and will be limited to only the first compound given.
+\Rpackage{ChemmineOB} provides access to the compound format
+conversion functions of OpenBabel. Currently, over 160 formats are supported
+by OpenBabel. The functions \Rfunction{convertFormat} and
+\Rfunction{convertFormatFile} can be used to convert files or strings between
+any two formats supported by OpenBabel. For example, to convert a SMILES
+string to an SDF string, one can use the the \Rfunction{convertFormat}
+function.
+
+<<eval=FALSE, keep.source=TRUE>>=
+sdfStr <- convertFormat("SMI","SDF","CC(=O)OC1=CC=CC=C1C(=O)O\ttest_name")
+@
+
+\noindent This will return the given compound as an SDF formatted string. 2D coordinates are
+also computed and included in the resulting SDF string.
+
+\noindent To convert a file with compounds encoded in one format to another format, the 
+\Rfunction{convertFormatFile} function can be used instead.
+<<eval=FALSE, keep.source=TRUE>>=
+convertFormatFile("SMI","SDF","test.smiles","test.sdf")
+@
+
+\noindent To see the whole list of file formats supported by OpenBabel, one can run
+from the command-line ``obabel -L formats''. 
+
 
 \section{Splitting SD Files}
-\markboth{Splitting SD Files}{} % Only required to print section title in header field without numbering. 
 The following \Rfunction{write.SDFsplit} function allows to split SD Files into any number of smaller SD Files. This can become important when working with very big SD Files. Users should note that this function can output many files, thus one should run it in a dedicated directory!  \\
 
 \noindent Create sample SD File with 100 molecules:
@@ -411,10 +454,7 @@ write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
 write.SDFsplit(x=sdfset, filetag="myfile", nmol=10)
 @
 
-\pagebreak
-
 \section{Streaming Through Large SD Files}
-\markboth{Streaming Through Large SD Files}{} % Only required to print section title in header field without numbering. 
 The \Rfunction{sdfStream} function allows to stream through SD Files with millions of molecules without consuming much memory. During this process any set of descriptors, supported by \Rpackage{ChemmineR}, can be computed (\textit{e.g.} atom pairs, molecular properties, etc.), as long as they can be returned in tabular format. In addition to descriptor values, the function returns a line index that gives the start and end positions of each molecule in the source SD File. This line index can be used by the downstream \Rfunction{read.SDFindex} function to retrieve specific molecules of interest from the source SD File without reading the entire file into R. The following outlines the typical workflow of this streaming functionality in \Rpackage{ChemmineR}.\\
 
 \noindent Create sample SD File with 100 molecules:
@@ -474,8 +514,6 @@ apset <- read.AP(x=sdf2ap(sdfset[1:20], type="character"), type="ap")
 fpchar <- desc2fp(sdf2ap(sdfset[1:20]), descnames=1024, type="character")
 fpset <- as(fpchar, "FPset")
 @
-
-\pagebreak
 
 \section{Storing Compounds in an SQL Database}
 
@@ -576,10 +614,7 @@ getCompoundNames(conn,lightIds)
 @
 
 
-\pagebreak
-
 \section{Working with SDF/SDFset Classes}
-\markboth{Working with SDF/SDFset Classes}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods are available to return the different data components of \Rclass{SDF/SDFset} containers in batches. The following examples 
 list the most important ones. To save space their content is not printed in the manual. 
 <<eval=FALSE, keep.source=TRUE>>=
@@ -667,10 +702,7 @@ as(sdfset[1:4], "list")
 as(sdfset[1:4], "SDFstr")
 @
 
-\pagebreak
-
 \section{Molecular Property Functions (Physicochemical Descriptors)}
-\markboth{Molecular Property Functions (Physicochemical Descriptors)}{} % Only required to print section title in header field without numbering. 
 \noindent Several methods and functions are available to compute basic compound descriptors, such as molecular formula (MF), molecular weight (MW), and frequencies of atoms and functional groups. In many of these functions, it is important to set \Rfunarg{addH=TRUE} in order to include/add hydrogens that are often not specified in an SD file.
 
 <<boxplot, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
@@ -734,10 +766,7 @@ numchar[[1]][1:4,]; numchar[[2]][1:4,]
 .
 @
 
-\pagebreak
-
 \section{Bond Matrices}
-\markboth{Bond Matrices}{} % Only required to print section title in header field without numbering. 
 \noindent Bond matrices provide an efficient data structure for many basic computations on small molecules. The function \Rfunction{conMA} creates this data structure from \Rclass{SDF} and \Rclass{SDFset} objects. The resulting bond matrix contains the atom labels in the row/column titles and the bond types in the data part. The labels are defined as follows: 0 is no connection, 1 is a single bond, 2 is a double bond and 3 is a triple bond.
 <<contable, eval=FALSE, fig=FALSE, keep.source=TRUE>>=
 conMA(sdfset[1:2], exclude=c("H"))
@@ -751,10 +780,7 @@ rowSums(conMA(sdfset[[1]], exclude=c("H")))
 .
 @
 
-\pagebreak
-
 \section{Charges and Missing Hydrogens}
-\markboth{Charges and Missing Hydrogens}{} % Only required to print section title in header field without numbering. 
 \noindent 
 The function \Rfunction{bonds} returns information about the number of bonds, charges and missing hydrogens in \Rclass{SDF} and \Rclass{SDFset} objects. It is used by many other functions (\textit{e.g.} \Rfunction{MW}, \Rfunction{MF}, \Rfunction{atomcount}, \Rfunction{atomcuntMA} and \Rfunction{plot}) to correct for missing hydrogens that are often not specified in SD files. 
 <<eval=TRUE, keep.source=TRUE>>=
@@ -763,10 +789,7 @@ bonds(sdfset[1:2], type="charge")
 bonds(sdfset[1:2], type="addNH")
 @
 
-\pagebreak
-
 \section{Ring Perception and Aromaticity Assignment}
-\markboth{Ring Perception and Aromaticity Assignment}{} % Only required to print section title in header field without numbering. 
 \noindent 
 The function \Rfunction{rings} identifies all possible rings in one or many molecules (here \Rclass{sdfset[1]}) using the exhaustive ring perception algorithm from \cite{Hanser1996a}. In addition, the function can return all smallest possible rings as well as aromaticity information. 
 
@@ -802,10 +825,7 @@ rings(sdfset[1], upper=6, type="arom", arom=TRUE, inner=FALSE)
 rings(sdfset[1:4], upper=Inf, type="count", arom=TRUE, inner=TRUE) 
 @ 
 
-\pagebreak
-
 \section{Rendering Chemical Structure Images}
-\markboth{Rendering Chemical Structure Images}{} % Only required to print section title in header field without numbering. 
 \subsection{R Graphics Device}
 A new plotting function for compound structures has been added to the package recently. This function uses the native R graphics device for generating compound depictions. At this point this function is still in an experimental developmental stage but should become stable soon.  \\
 
@@ -865,10 +885,7 @@ sdf.visualize(sdfset[1:4], extra=extra)
 sdf.visualize(sdfset[1:4], extra=bondblock(sdfset[1:4]))
 @
 
-\pagebreak
-
 \section{Similarity Comparisons and Searching}
-\markboth{Similarity Comparisons and Searching}{} % Only required to print section title in header field without numbering. 
 \subsection{Maximum Common Substructure (MCS) Searching}
 The ChemmineR add-on package \href{http://www.bioconductor.org/packages/devel/bioc/html/fmcsR.html}{{\textcolor{blue}{fmcsR}}} provides support for identifying maximum common substructures (MCSs) and flexible MCSs among compounds. The algorithm can be used for pairwise compound comparisons, structure similarity searching and clustering. The manual describing this functionality is available \href{http://www.bioconductor.org/packages/devel/bioc/vignettes/fmcsR/inst/doc/fmcsR.pdf}{{\textcolor{blue}{here}}} and the associated publication is available in \cite{Wang2013a}. The following gives a short preview of some functionalities provided by the \Rpackage{fmcsR} package. \\
 
@@ -1073,10 +1090,7 @@ similarities <- cmp.search(apset, apset[1], type=3, cutoff = 10)
 sdf.visualize(sdfset[similarities[,1]], extra=similarities[,3])
 @
 
-\pagebreak
-
 \section{Clustering}
-\markboth{Clustering}{} % Only required to print section title in header field without numbering. 
 \subsection{Clustering Identical or Very Similar Compounds}
 Often it is of interest to identify very similar or identical compounds in a
 compound set. The \Rfunction{cmp.duplicated} function can be used to quickly
@@ -1312,8 +1326,6 @@ heatmap.2(1-distmat, Rowv=as.dendrogram(hc), Colv=as.dendrogram(hc),
           density.info="none", trace="none")
 @
 
-\pagebreak
-
 \section{Searching PubChem}
 \subsection{Get Compounds from PubChem by Id}
 The function \Rfunction{getIds} accepts one or more numeric PubChem compound ids
@@ -1357,47 +1369,13 @@ compounds <- searchSim(sdfset)
 compounds
 @
 
-\pagebreak
-
-\section{Format Interconversions}\label{sec:conversions}
-The \Rfunction{sdf2smiles} and \Rfunction{smiles2sdf} functions provide format
-interconversion between SMILES strings (Simplified Molecular Input Line Entry Specification)
-and \Rclass{SDFset} containers.\\
-
-\noindent Convert an \Rclass{SDFset} container to a SMILES \Rclass{character} string:
-
-<<sdf2smiles, eval=FALSE, keep.source=TRUE>>=
-data(sdfsample); sdfset <- sdfsample[1]
-smiles <- sdf2smiles(sdfset)
-smiles
-@
-
-\noindent Convert a SMILES \Rclass{character} string to an \Rclass{SDFset} container:
-
-<<smiles2sdf, eval=FALSE, keep.source=TRUE>>=
-sdf <- smiles2sdf("CC(=O)OC1=CC=CC=C1C(=O)O\tname")
-view(sdf)
-@
-
-\noindent When the ChemineOB package is installed these conversions can 
-be done quicly using the OpenBabel library. Otherwise these functions
-will fall back to using the ChemMine Tools web service for conversion
-with the Open Babel Open Source Chemistry Toolbox. They will then
-require internet connectivity and will be limited to only the first compound given.
-
-
-\pagebreak
 
 \section{Version Information}
-\markboth{Version Information}{} % Only required to print section title in header field without numbering. 
-<<sessionInfo, eval=TRUE, keep.source=TRUE>>=
-sessionInfo()
+<<sessionInfo, results=tex, print=TRUE>>=
+toLatex(sessionInfo())
 @
 
-\pagebreak
-
 \section{Funding}
-\markboth{Funding}{} % Only required to print section title in header field without numbering. 
 This software was developed with funding from the National Science Foundation: \href{http://www.nsf.gov/awardsearch/showAward.do?AwardNumber=0957099}{{\textcolor{blue}{ABI-0957099}}}, 2010-0520325 and IGERT-0504249.
 
 
@@ -1735,9 +1713,6 @@ This software was developed with funding from the National Science Foundation: \
 % \section*{Calculation of Physicochemical Descriptors}
 % Several functions will be available in the near future for calculating physicochemical descriptors directly in ChemmineR. Currently, users can calculate 40 common physicochemical descriptors with the online descriptor prediction tool available on ChemMine's WorkBench (\url{http://bioweb.ucr.edu/ChemMineV2/work/sdf/}).
 
-\pagebreak
-
-\section*{} % Dummy section to fix "References" link in the table-of-contents list
 \bibliography{bibtex}
-\addcontentsline{toc}{section}{References} % Includes the entry "References" in the table-of-contents list 
+
 \end{document}
