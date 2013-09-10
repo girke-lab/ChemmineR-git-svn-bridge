@@ -48,7 +48,7 @@ unlink("test.db")
 @
 %\parindent 0in
 
-\bibliographystyle{plainnat}
+%\bibliographystyle{plainnat}
 
 \begin{document}
 \title{ChemmineR: Cheminformatics of Small Molecule Data}
