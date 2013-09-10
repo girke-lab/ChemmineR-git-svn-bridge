@@ -30,3 +30,12 @@ test.genAPDescriptors <- function(){
 	}
 
 }
+test.propOB <- function() {
+	data(sdfsample)
+	p = propOB(sdfsample[1:5])
+	print(p)
+	checkEquals(ncol(p),14)
+	checkEquals(nrow(p),5)
+   checkEquals(p$MW[2],MW(sdfsample[2])[[1]])
+
+}

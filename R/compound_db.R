@@ -60,7 +60,7 @@ dbTransaction <- function(conn,expr){
 		ret
 	},error=function(e){
 		dbRollback(conn)
-		print(sys.calls())
+#		print(sys.calls())
 		stop(paste("db error inside transaction: ",e$message))
 	})
 }

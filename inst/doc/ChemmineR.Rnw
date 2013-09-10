@@ -232,6 +232,7 @@ where the utility and usage of these functions is described. \\
             \item \Rfunction{sdf2smiles}: converts from SDF to SMILES object
             \item \Rfunction{convertFormat}: converts strings between two formats
             \item \Rfunction{convertFormatFile}: converts files between two formats 
+            \item \Rfunction{propOB}: generates several compound properites
         \end{itemize}
 
 

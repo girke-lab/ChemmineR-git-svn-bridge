@@ -1011,7 +1011,11 @@ db.explain <- function(desc)
 	}
 
 }
-.ensureOB <- function(mesg = "ChemmineOB is required to meke use of this function")
+.ensureOB <- function(mesg = paste("ChemmineOB is required to meke use of this function.",
+										 "This package can be installed from BioConductor with the ",
+										 "command 'biocLite(\"ChemmineOB\"). ",
+										 "See http://bioconductor.org/packages/devel/bioc/html/ChemmineOB.html",
+										 "for more information"))
 {
 	if(!.haveOB())
 		stop(mesg)
@@ -1272,5 +1276,16 @@ genAPDescriptors <- function(sdf){
 
   .factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
 	
+}
+propOB <- function(sdfSet){
+
+	.ensureOB()
+	
+	defs = paste(Map(function(x) paste(x,collapse="\n"),
+						  as(as(sdfSet,"SDFstr"),"list")),"\n",
+					 sep="",collapse="" )
+	prop_OB("SDF",defs)
+	#Reduce(rbind,Map(function(x) prop_OB("SDF",paste(x,collapse="\n")),as(as(sdfSet,"SDFstr"),"list")))
+
 }
 
