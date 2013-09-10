@@ -1,4 +1,17 @@
 changelog
+        version 2.13.13 - 2.13.14
+                - vignette updates
+
+        version 2.13.12
+                - fixed atom align when writing SDFs
+		- support for plotting other bond types than 1-3
+
+        version 2.13.3 - 2.13.11
+                - updates of SQLite database
+
+	version 2.13.2
+		- fixed but in SDF importer
+	
 	version 2.11.10
 		- improved performance of jarvisPatrick function
 	

@@ -132,6 +132,7 @@ setClass("SDF", representation(header="character", atomblock="matrix", bondblock
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
 	if(length(countpos)==0) { countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) }
 	if(length(countpos)==0) { countpos <- 4 }
+	if(length(countpos)>1) { countpos <- 4 }
 	countline <- sdf[countpos]
         if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) { countline <- "  0  0" } # Create dummy countline if it contains non-numeric values 
 	Natom <- as.numeric(substring(countline, 1, 3))
@@ -517,7 +518,8 @@ setMethod(f="sdf2str", signature="SDF", definition = function(sdf, head, ab, bb,
 	## Atom block
 	if(missing(ab)) {
 		ab <- sdf[[2]]
-		ab <- cbind(Indent="", format(ab[,1:3], width=9, justify="right"), A=format(gsub("_.*", "", rownames(ab)), width=1, justify="right"), Space="", format(ab[,-c(1:3)], width=2, justify="right"))
+		#ab <- cbind(Indent="", format(ab[,1:3], width=9, justify="right"), A=format(gsub("_.*", "", rownames(ab)), width=1, justify="right"), Space="", format(ab[,-c(1:3)], width=2, justify="right")) # Changed on 26-Aug-13
+		ab <- cbind(Indent="", format(ab[,1:3], width=9, justify="right"), A=format(gsub("_.*", "", rownames(ab)), width=1, justify="left"),  Space="", format(ab[,-c(1:3)], width=2, justify="right"))
 		ab <- sapply(seq(along=ab[,1]), function(x) paste(ab[x, ], collapse=" "))
 	}
 
@@ -1959,6 +1961,12 @@ plotStruc <- function(sdf, atomcex=1.2, atomnum=FALSE, no_print_atoms=c("C"), no
 			lines(x=x, y=y, lty=1, lwd=3, col=z[i]) 
 			lines(x=x-rslope*bondspacer, y=y+(1-abs(rslope))*bondspacer, lty=1, lwd=3, col=z[i])
 			lines(x=x+rslope*bondspacer, y=y-(1-abs(rslope))*bondspacer, lty=1, lwd=3, col=z[i])
+		}
+		## Plot bonds with labels other than 1-3 (e.g. some ChEMBL SDFs use 4 for aromatic bonds)
+		if(!toplot[[2]][i,3] %in% c(1,2,3)) {
+			rslope <- (atan(diff(y)/diff(x))*180/pi)/90
+			lines(x=x-rslope*bondspacer, y=y+(1-abs(rslope))*bondspacer, lty=3, lwd=3, col=z[i])
+			lines(x=x+rslope*bondspacer, y=y-(1-abs(rslope))*bondspacer, lty=3, lwd=3, col=z[i])
 		}
 	}
 	## Exclude certain atoms from being printed
