@@ -209,7 +209,26 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
    # Binning clustering using variable similarity cutoffs.
 @
 
-\pagebreak
+\section{OpenBabel Functions}
+\Rpackage{ChemmineR} integrates now a subset of cheminformatics
+functionalities implemented in the OpenBabel C++ library. These
+utilities can be enabled by installing the \Rpackage{ChemmineOB} package
+and the OpenBabel software itself. \Rpackage{ChemmineR} will automatically
+detect the presence of \Rpackage{ChemmineOB} and make use of the additinal
+utilities. The following lists the functions and methods that make use
+of OpenBabel. References are included to locate the sections in the manual
+where the utility and usage of these functions is described. \\ 
+
+\vspace{0.2cm}
+\noindent \textit{Structure format interconversions} (see Section \ref{sec:conversions})
+        \begin{itemize}
+            \item \Rfunction{smiles2sdf}: converts from SMILES to SDF object
+            \item \Rfunction{sdf2smiles}: converts from SDF to SMILES object
+            \item \Rfunction{convertFormat}: converts strings between two formats
+            \item \Rfunction{convertFormatFile}: converts files between two formats 
+            \item \Rfunction{propOB}: generates several compound properites
+        \end{itemize}
+
 
 \section{Overview of Classes and Functions}
 \markboth{Overview of Classes and Functions}{} % Only required to print section title in header field without numbering. 
