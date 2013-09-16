@@ -1011,7 +1011,7 @@ db.explain <- function(desc)
 	}
 
 }
-.ensureOB <- function(mesg = paste("ChemmineOB is required to meke use of this function.",
+.ensureOB <- function(mesg = paste("ChemmineOB is required to make use of this function.",
 										 "This package can be installed from BioConductor with the ",
 										 "command 'biocLite(\"ChemmineOB\"). ",
 										 "It is not currently available for windows however.",
