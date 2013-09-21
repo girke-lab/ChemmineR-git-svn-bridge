@@ -7,9 +7,8 @@ Convert \code{SDFset} to SMILES (\code{character})
 }
 \description{
 Accepts compounds in an \code{SDFset} container and returns the corresponding
-SMILES (Simplified Molecular Input Line Entry Specification) strings as a named vector. 
-If ChemineOB is available then OpenBabel is used to quickly convert each string to and SDF
-object. 
+SMILES (Simplified Molecular Input Line Entry Specification) strings as \code{SMIset} object. 
+If ChemineOB is available then OpenBabel for the format conversion. 
 Otherwise the compound is submitted to the ChemMine Tools web service for conversion
 with the Open Babel Open Source Chemistry Toolbox. If the input object
 contains multiple items, only the first is converted.
@@ -42,6 +41,8 @@ Tyler Backman, Kevin Horan
 ## get a sample compound
 data(sdfsample); sdfset <- sdfsample[1]
 ## convert to smiles
-smiles <- sdf2smiles(sdfset)}
+(smiles <- sdf2smiles(sdfset))
+as.character(smiles)
+}
 }
 \keyword{ utilities }

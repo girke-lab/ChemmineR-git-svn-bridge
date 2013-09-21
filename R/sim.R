@@ -1224,7 +1224,7 @@ sdf2smiles <- function(sdf) {
 					 "\t",fixed=TRUE))
 		 smiles = t[,1]
 		 names(smiles)= t[,2]
-		 smiles
+		 as(smiles, "SMIset")
 	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
 		 sdf2smilesWeb(sdf)
@@ -1246,13 +1246,13 @@ sdf2smilesWeb <- function(sdf){
 }
 
 smiles2sdf <- function(smiles) {
-    if(! class(smiles) == "character"){
-        stop('reference compound must be a smiles string of class \"character\"')
+    if(!class(smiles) %in% c("character", "SMIset")){
+        stop('input must be SMILES strings stored as \"SMIset\" or \"character\" object')
     }
-	 if(.haveOB())
-		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
-																		collapse="\n")))
-	 else{
+	 if(.haveOB()) {
+		 if(class(smiles)=="SMIset") smiles <- as.character(smiles)
+		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"), collapse="\n")))
+	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
 		 smiles2sdfWeb(smiles)
 	 }

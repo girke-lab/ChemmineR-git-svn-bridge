@@ -606,9 +606,144 @@ SDFset <- function(SDFlist=list(), ID=character()) {
 
 setClass("SDFset", representation(SDF="list", ID="character"))
 
+#########################################################
+## (4) Class and Method Definitions for SMI and SMIset ##
+#########################################################
+## Define SMI and SMIset classes
+setClass("SMI", representation(smiles="character"))
+setClass("SMIset", representation(smilist="list"))
+
+## Methods to return SMI/SMIset objects as character vector or list, respectively
+setMethod(f="as.character", signature="SMI", definition=function(x) {return(x@smiles)})
+setMethod(f="as.character", signature="SMIset", definition=function(x) {return(unlist(x@smilist))})
+
+## Constructor methods
+## Character vector to FP with: as(myvector, "SMI")
+setAs(from="character", to="SMI",  
+        def=function(from) {
+		new("SMI", smiles=from)
+})
+
+## List to SMIset with: as(mylist, "SMIset")
+setAs(from="list", to="SMIset",  
+        def=function(from) {
+		new("SMIset", smilist=from)
+})
+
+## Character to SMIset with: as(mychar, "SMIset")
+setAs(from="character", to="SMIset",  
+        def=function(from) {
+		new("SMIset", smilist=as.list(from))
+})
+
+## Accessor methods for SMIset
+## Note: generic for cid() is defined under SDFset class section.
+setMethod(f="cid", signature="SMIset", definition=function(x) { return(names(x@smilist)) })
+
+## Replacement method for ID component of SMIset using accessor methods.
+setReplaceMethod(f="cid", signature="SMIset", definition=function(x, value) {
+	names(x@smilist) <- value 
+	if(any(duplicated(names(x@smilist)))) { 
+		warning("The values in the CMP ID slot are not unique anymore. To fix this, run: cid(smiset) <- makeUnique(cid(smiset))")
+	}
+	return(x)
+})
+
+## Replacement method for SMIset using "[" operator 
+## It doesn't provide here full set of expected functionalities.
+setReplaceMethod(f="[", signature="SMIset", definition=function(x, i, value) {
+	x@smilist[i] <- value
+	names(x@smilist) <- names(value)
+	return(x)
+})
+
+## Behavior of "[" operator for SMIset 
+setMethod(f="[", signature="SMIset", definition=function(x, i, ..., drop) {
+	if(is.logical(i)) {
+                i <- which(i)
+        }
+	x@smilist <- x@smilist[i]                   
+	if(any(duplicated(i))) {
+		warning("The values in the CMP ID slot are not unique anymore. To fix this, run: cid(smiset) <- makeUnique(cid(smiset))")
+	}
+	return(x)
+})
+
+## Behavior of "[[" operator for SMIset to convert single SMIset component to SMI
+setMethod(f="[[", signature="SMIset", definition=function(x, i, ..., drop) {
+	if(is.character(i)) { i <- which(names(x@fpma) %in% i) }
+	return(new("SMI", smiles=x@smilist[[i]]))                 
+})
+
+## Length function
+setMethod(f="length", signature="SMIset",
+    definition=function(x) {
+    	return(length(as.character(x)))
+})
+
+## Define print behavior for SMIset
+setMethod(f="show", signature="SMIset", 
+	definition=function(object) {    
+		cat("An instance of ", "\"", class(object), "\"", " with ", length(object), " molecules", "\n", sep="")
+		if(any(duplicated(names(object@smilist)))) {
+			warning("The values in the CMP ID slot are not unique. To fix this, run: cid(smiset) <- makeUnique(cid(smiset))")
+		}
+})
+
+## Concatenate function for SMIset
+## Note: is currently limited to 2 arguments!
+setMethod(f="c", signature="SMIset", definition=function(x, y) {
+	smilist1 <- as.list(x)
+	smilist2 <- as.list(y)
+	smilist <- c(smilist1, smilist2)
+	smiset <- as(smilist, "SMIset")
+	if(any(duplicated(cid(smiset)))) {
+		warning("The values in the CMP ID slot are not unique anymore, makeUnique() can fix this!")
+	}
+	return(smiset)
+})
+
+## Define print behavior for SMI
+setMethod(f="show", signature="SMI",                
+   definition=function(object) {
+         cat("An instance of ", "\"", class(object), "\"", "\n", sep="")
+         print(object@smiles)
+})
+
+## SMIset to list with many SMI objects (for summary view)
+setAs(from="SMIset", to="SMI", 
+        def=function(from) {
+                tmp <- lapply(seq(along=from), function(x) from[[x]])
+		names(tmp) <- cid(from)
+		return(tmp)
+})
+setMethod(f="view", signature="SMIset", definition=function(x) { as(x, "SMI") })
+# view(smiset)
+
+## Import SMILES Files and Store them as SMIset Objects
+read.SMIset <- function(file, removespaces=TRUE, ...) {
+	smisettmp <- readLines(file, ...)
+	if(removespaces==TRUE) smisettmp <- gsub(" {1,}", "", smisettmp)
+	## Add compound names where they are missing
+	index <- !grepl("\t.{1,}$", smisettmp)
+	if(any(index)) smisettmp[index] <- paste(smisettmp[index], "\t", "CMP", which(index), sep="")
+	## Construct and return SMIset object
+	smiset <- gsub("\t.*$", "", smisettmp)
+	names(smiset) <- gsub("^.*\t", "", smisettmp)
+        smiset <- as(smiset, "SMIset")
+        return(smiset)
+}
+
+## Write SMI/SMIset Objects to File 
+write.SMI <- function(smi, file, cid=TRUE, ...) {
+	if(class(smi)=="SMI") smima <- cbind(as.character(smi), "CMP1")
+	if(class(smi)=="SMIset") smima <- cbind(as.character(smi), cid(smi), ...)
+	if(cid==TRUE) write.table(smima, file=file, quote=FALSE, sep="\t", row.names=FALSE, col.names = FALSE) 
+	if(cid==FALSE) write.table(smima[ , 1, drop = TRUE], file=file, quote=FALSE, sep="\t", row.names=FALSE, col.names = FALSE) 
+} 
 
 #######################################################
-## (4) Class and Method Definitions for AP and APset ##
+## (5) Class and Method Definitions for AP and APset ##
 #######################################################
 ## Function to coerce SDF class to old non-S4 AP CMP object
 SDF2apcmp <- function(SDF) { 
@@ -835,7 +970,7 @@ apset2descdb <- function(apset) {
 }
 
 #######################################################
-## (5) Class and Method Definitions for FP and FPset ##
+## (6) Class and Method Definitions for FP and FPset ##
 #######################################################
 ## Define FP and FPset classes
 setClass("FP", representation(fp="numeric"))
@@ -951,7 +1086,7 @@ setMethod(f="view", signature="FPset", definition=function(x) { as(x, "FP") })
 # view(fpset)
 
 ###################
-## (6) Utilities ##
+## (7) Utilities ##
 ###################
 
 #################################################

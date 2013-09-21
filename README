@@ -1,5 +1,11 @@
 changelog
-        version 2.13.13 - 2.13.14
+        version 2.13.17
+                - introduced new SMIset class
+        
+	version 2.13.15 - 2.13.16
+                - ChemmineOB functions
+        
+	version 2.13.13 - 2.13.14
                 - vignette updates
 
         version 2.13.12

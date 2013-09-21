@@ -7,7 +7,7 @@ useDynLib(ChemmineR)
 ## S4 Classes
 ## Source: AllClasses.R
 exportClasses(
-    "SDFstr", "SDF", "SDFset", "AP", "APset", "FP", "FPset"
+    "SDFstr", "SDF", "SDFset", "SMI", "SMIset", "AP", "APset", "FP", "FPset"
 )
 
 ## Methods
@@ -35,7 +35,8 @@ export(
     
     ## Import/exports
     ## Source: AllClasses.R
-    "read.SDFstr", "read.SDFset", "sdfStream", "read.AP", "read.SDFindex", "write.SDF", "write.SDFsplit",
+    "read.SDFstr", "read.SDFset", "read.SMIset", "sdfStream", "read.AP", 
+    "read.SDFindex", "write.SDF", "write.SMI", "write.SDFsplit",
 
     ## Utilities
     ## Source: AllClasses.R
@@ -52,9 +53,8 @@ export(
     "SDF2apcmp", "sdf2ap", "apset2descdb", "desc2fp", 
     "cmp.search", "cmp.similarity", "cmp.parse", "cmp.parse1", 
     "sdf.subset", "db.explain", "cluster.sizestat", 
-    "cmp.duplicated", "sdf.visualize", "db.subset",
-	 "smiles2sdf","sdf2smiles",
-	 "propOB",
+    "cmp.duplicated", "sdf.visualize", "db.subset", "smiles2sdf",
+    "sdf2smiles", "propOB",
     
     ## Fingerprint functions
     ## Source: sim.R
@@ -67,20 +67,15 @@ export(
     ## Clustering functions
     ## Source: cluster.R
     "cmp.cluster", "jarvisPatrick", "cluster.visualize" ,"nearestNeighbors","trimNeighbors",
-	 "fromNNMatrix","byCluster",
+    "fromNNMatrix","byCluster",
 
-	## Database backend functions
-	## Source: compound_db.R
-	"initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
-	"getCompoundNames","findCompoundsByName","addNewFeatures",
-	"listFeatures",
+    ## Database backend functions
+    ## Source: compound_db.R
+    "initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
+    "getCompoundNames","findCompoundsByName","addNewFeatures",
+    "listFeatures", "jarvisPatrick_c", "genAPDescriptors",
 
-	"jarvisPatrick_c",
-
-	"genAPDescriptors",
-
-	## large file/query utilites
-	"bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
-
+    ## Large file/query utilites
+    "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
 )
 

@@ -5,12 +5,12 @@
 Convert SMILES (\code{character}) to \code{SDFset}
 }
 \description{
-	Accepts  a named vector of 
+	Accepts a named vector or \code{SMIset} of 
 	SMILES (Simplified Molecular Input Line Entry Specification) strings and
-	returns it's equivalent as an \code{SDFset} container. 
+	returns its equivalent as an \code{SDFset} container. 
 	
 	This function runs in two modes. If ChemmineOB is available then it will use OpenBabel
-	to quickly convert all the given smiles into an SDFset with 2D coordinates. Otherwise
+	to convert all the given smiles into an SDFset with 2D coordinates. Otherwise
 	the compound is submitted to the ChemMine Tools web service for conversion
 	with the Open Babel Open Source Chemistry Toolbox. In this case only the first element
 	will be used since this is a very slow operation.
@@ -41,6 +41,8 @@ Tyler Backman, Kevin Horan
 \examples{
 \dontrun{
 ## convert to sdf
-sdf <- smiles2sdf("CC(=O)OC1=CC=CC=C1C(=O)O\tname")}
+data(smisample)
+(sdf <- smiles2sdf(smisample[1:4]))
+}
 }
 \keyword{ utilities }
