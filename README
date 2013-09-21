@@ -1,4 +1,7 @@
 changelog
+        version 2.13.18
+                - vignette updates
+        
         version 2.13.17
                 - introduced new SMIset class
         

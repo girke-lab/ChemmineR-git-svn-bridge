@@ -13,6 +13,8 @@
 BiocStyle::latex()
 @
 \usepackage{hyperref}
+\usepackage[french]{babel} % keyword translation and hyphenation
+\usepackage{lmodern} % lmodern looks better than cm-super
 \usepackage{url}
 \usepackage[authoryear,round]{natbib}
 \usepackage{graphicx}
@@ -245,9 +247,11 @@ The following list gives an overview of the most important S4 classes, methods a
             \item \Rclass{SDFstr}: intermediate string class to facilitate SD file import; not important for end user
             \item \Rclass{SDF}: container for single molecule imported from an SD file
             \item \Rclass{SDFset}: container for many SDF objects; most important structure container for end user 
+            \item \Rclass{SMI}: container for a single SMILES string
+            \item \Rclass{SMIset}: container for many SMILES strings
         \end{itemize}
 
-\noindent \textit{Functions/Methods}
+\noindent \textit{Functions/Methods (mainly for \Rclass{SDFset} container, \Rclass{SMIset} should be coerced with \Rfunction{smiles2sdf} to \Rclass{SDFset})}
         \begin{itemize}
             \item Accessor methods for \Rclass{SDF/SDFset}
                   \begin{itemize}
@@ -320,9 +324,10 @@ The following list gives an overview of the most important S4 classes, methods a
         \end{itemize}
 
 
-\section{Importing Compounds}
-The following code gives an overview of the most important import/export functionalities provided by \Rpackage{ChemmineR}.
-The example creates an instance of the \Rclass{SDFset} class using as sample data set the first 100 compounds from this PubChem SD file (SDF): Compound\_00650001\_00675000.sdf.gz (\url{ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/}). \\
+\section{Import of Compounds}
+
+\subsection{SDF Import}
+The following gives an overview of the most important import/export functionalities for small molecules provided by \Rpackage{ChemmineR}. The given example creates an instance of the \Rclass{SDFset} class using as sample data set the first 100 compounds from this PubChem SD file (SDF): Compound\_00650001\_00675000.sdf.gz (\url{ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/}). \\
 
 \noindent SDFs can be imported with the \Rfunction{read.SDFset} function:
 <<eval=FALSE, keep.source=TRUE>>=
@@ -348,7 +353,38 @@ sdfstr
 as(sdfstr, "SDFset") 
 @
 
+\subsection{SMILES Import}
+The \Rfunction{read.SMIset} function imports one or many molecules from a SMILES file and stores them in a \Rclass{SMIset} container. The input file is expected to contain one SMILES string per row with tab-separated compound identifiers at the end of each line. The compound identifiers are optional. \\
+
+\noindent Create sample SMILES file and then import it:
+<<eval=FALSE, keep.source=TRUE>>=
+data(smisample); smiset <- smisample
+write.SMI(smiset[1:4], file="sub.smi")
+smiset <- read.SMIset("sub.smi")
+@
+
+\noindent Inspect content of \Rclass{SMIset}:
+<<eval=TRUE, keep.source=TRUE>>=
+data(smisample) # Loads the same SMIset provided by the library
+smiset <- smisample 
+smiset
+view(smiset[1:2])
+@
+
+\noindent Accessor functions:
+<<eval=TRUE, keep.source=TRUE>>=
+cid(smiset[1:4])
+(smi <- as.character(smiset[1:2]))
+@
+
+\noindent Create \Rclass{SMIset} from named character vector:
+<<eval=TRUE, keep.source=TRUE>>=
+as(smi, "SMIset") 
+@
+
 \section{Export of Compounds}
+
+\subsection{SDF Export}
 \noindent Write objects of classes \Rclass{SDFset/SDFstr/SDF} to SD file:
 <<eval=FALSE, keep.source=TRUE>>=
 write.SDF(sdfset[1:4], file="sub.sdf")
@@ -381,6 +417,14 @@ write.SDF(sdfstr[1:4], file="sub.sdf")
 cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 @
 
+\subsection{SMILES Export}
+\noindent Write objects of class \Rclass{SMIset} to SMILES file with and without compound identifiers:
+<<eval=FALSE, keep.source=TRUE>>=
+data(smisample); smiset <- smisample # Sample data set
+write.SMI(smiset[1:4], file="sub.smi", cid=TRUE)
+write.SMI(smiset[1:4], file="sub.smi", cid=FALSE)
+@ 
+    
 \section{Format Interconversions}\label{sec:conversions}
 The \Rfunction{sdf2smiles} and \Rfunction{smiles2sdf} functions provide format
 interconversion between SMILES strings (Simplified Molecular Input Line Entry Specification)
@@ -390,7 +434,7 @@ and \Rclass{SDFset} containers.\\
 
 <<sdf2smiles, eval=FALSE, keep.source=TRUE>>=
 data(sdfsample); sdfset <- sdfsample[1]
-smiles <- sdf2smiles(sdfset)
+miles <- sdf2smiles(sdfset)
 smiles
 @
 
@@ -401,17 +445,16 @@ sdf <- smiles2sdf("CC(=O)OC1=CC=CC=C1C(=O)O\tname")
 view(sdf)
 @
 
-\noindent When the \Rpackage{ChemineOB} package is installed these conversions can 
-be done quickly using the OpenBabel library. Otherwise these functions
-will fall back to using the ChemMine Tools web service for conversion
-with the OpenBabel Open Source Chemistry Toolbox. They will then
-require internet connectivity and will be limited to only the first compound given.
+\noindent When the \Rpackage{ChemineOB} package is installed these conversions 
+are performed with the OpenBabel Open Source Chemistry Toolbox. Otherwise the functions
+will fall back to using the ChemMine Tools web service for this operation. The latter
+will require internet connectivity and is limited to only the first compound given.
 \Rpackage{ChemmineOB} provides access to the compound format
 conversion functions of OpenBabel. Currently, over 160 formats are supported
 by OpenBabel. The functions \Rfunction{convertFormat} and
 \Rfunction{convertFormatFile} can be used to convert files or strings between
 any two formats supported by OpenBabel. For example, to convert a SMILES
-string to an SDF string, one can use the the \Rfunction{convertFormat}
+string to an SDF string, one can use the \Rfunction{convertFormat}
 function.
 
 <<eval=FALSE, keep.source=TRUE>>=
