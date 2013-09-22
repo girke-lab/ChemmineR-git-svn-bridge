@@ -71,7 +71,7 @@ unlink("test.db")
 \section{\textcolor{red}{Recently Added Features}}
 
 \begin{itemize}
-	\item Integration of a subset of OpenBabel functionalities via new \Rpackage{ChemmineOB} add-on package
+	\item Integration of a subset of OpenBabel functionalities via new \Rpackage{ChemmineOB} add-on package \citep{OBoyle2011a}
         \item Streaming functionality for processing millions of molecules on a laptop
         \item Mismatch tolerant maximum common substructure (MCS) search algorithm
         \item Fast and memory efficient fingerprint search support using atom pair or PubChem fingerprints
@@ -213,7 +213,7 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
 
 \section{OpenBabel Functions}
 \Rpackage{ChemmineR} integrates now a subset of cheminformatics
-functionalities implemented in the OpenBabel C++ library. These
+functionalities implemented in the OpenBabel C++ library \citep{OBoyle2008a, OBoyle2011a}. These
 utilities can be enabled by installing the \Rpackage{ChemmineOB} package
 and the OpenBabel software itself. \Rpackage{ChemmineR} will automatically
 detect the presence of \Rpackage{ChemmineOB} and make use of the additinal
