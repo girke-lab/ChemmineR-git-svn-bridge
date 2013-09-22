@@ -71,6 +71,7 @@ unlink("test.db")
 \section{\textcolor{red}{Recently Added Features}}
 
 \begin{itemize}
+	\item Improved SMILES support via new \Rclass{SMIset} object class and SMILES import/export functions
 	\item Integration of a subset of OpenBabel functionalities via new \Rpackage{ChemmineOB} add-on package \citep{OBoyle2011a}
         \item Streaming functionality for processing millions of molecules on a laptop
         \item Mismatch tolerant maximum common substructure (MCS) search algorithm
