@@ -429,7 +429,7 @@ and \Rclass{SDFset} containers.\\
 
 <<sdf2smiles, eval=FALSE, keep.source=TRUE>>=
 data(sdfsample); sdfset <- sdfsample[1]
-miles <- sdf2smiles(sdfset)
+smiles <- sdf2smiles(sdfset)
 smiles
 @
 
