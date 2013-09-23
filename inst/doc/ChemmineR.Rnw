@@ -215,9 +215,9 @@ cmp.cluster(db=apset, cutoff = c(0.65, 0.5), quiet=TRUE)[1:4,]
 \section{OpenBabel Functions}
 \Rpackage{ChemmineR} integrates now a subset of cheminformatics
 functionalities implemented in the OpenBabel C++ library \citep{OBoyle2008a, OBoyle2011a}. These
-utilities can be enabled by installing the \Rpackage{ChemmineOB} package
+utilities can be accessed by installing the \Rpackage{ChemmineOB} package
 and the OpenBabel software itself. \Rpackage{ChemmineR} will automatically
-detect the presence of \Rpackage{ChemmineOB} and make use of the additinal
+detect the availability  of \Rpackage{ChemmineOB} and make use of the additional
 utilities. The following lists the functions and methods that make use
 of OpenBabel. References are included to locate the sections in the manual
 where the utility and usage of these functions is described. \\ 
