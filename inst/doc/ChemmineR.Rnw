@@ -47,7 +47,7 @@ unlink("test.db")
 %\bibliographystyle{plainnat}
 
 \begin{document}
-\title{ChemmineR: Cheminformatics of Small Molecule Data}
+\title{ChemmineR: Cheminformatics Toolkit for R}
 \author{Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke \\
  Email contact: thomas.girke@ucr.edu}
 \maketitle
