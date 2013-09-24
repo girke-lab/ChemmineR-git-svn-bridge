@@ -1227,22 +1227,31 @@ sdf2smiles <- function(sdf) {
 		 as(smiles, "SMIset")
 	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
-		 as(sdf2smilesWeb(sdf),"SMIset")
+		 sdf2smilesWeb(sdf)
 	 }
 }
-sdf2smilesWeb <- function(sdf){
+sdf2smilesWeb <- function(sdfset,limit=100){
+	message("class of sdfset: ",class(sdfset))
+	 if(length(sdfset) > limit)
+		 sdfset = sdfset[1:limit]
 
-	 sdf <- sdf2str(sdf[[1]])
-	 sdf <- paste(sdf, collapse="\n")
-	 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-	 if(grepl("^ERROR:", response)){
-	        stop(response)
+	 smiles =c()
+	 for(i in seq(along=sdfset)){
+
+		message("class of sdfset[[]]: ",class(sdfset[[i]]))
+		 sdf <- sdf2str(sdfset[[i]])
+		 sdf <- paste(sdf, collapse="\n")
+		 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
+		 if(grepl("^ERROR:", response)){
+				  stop(response)
+		 }
+		 response <- sub("\n$", "", response) # remove trailing newline
+		 id <- sub(".*\t(.*)$", "\\1", response) # get id
+		 response <- sub("\t.*$", "", response) # get smiles
+		 names(response) <- id
+		 smiles = c(smiles,response)
 	 }
-	 response <- sub("\n$", "", response) # remove trailing newline
-	 id <- sub(".*\t(.*)$", "\\1", response) # get id
-	 response <- sub("\t.*$", "", response) # get smiles
-	 names(response) <- id
-	 return(response)
+	 as(smiles,"SMIset")
 }
 
 smiles2sdf <- function(smiles) {
@@ -1262,19 +1271,28 @@ smiles2sdf <- function(smiles) {
 	 }
 }
 # perform smiles to sdf conversion through ChemMine Web Tools
-smiles2sdfWeb <- function(smiles) {
+smiles2sdfWeb <- function(smiles,limit=100) {
+	if(length(smiles) > limit)
+		smiles = smiles[1:limit]
 
-	 if(! is.null(names(smiles)))
-        smiles <- paste(smiles, names(smiles)[1], sep="\t")
+	 smileStrings = if(! is.null(names(smiles)))
+        paste(smiles, names(smiles), sep="\t")
+	 else
+		  smiles
     
-	 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-	 if(grepl("^ERROR:", response))
-        stop(response)
-    
-	 response <- strsplit(response, "\n")
-	 response <- as(as(response, "SDFstr"), "SDFset")
-	 return(response)
-
+	 sdfs = c()
+	 for(smile  in smileStrings){
+		 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smile)[[1]]
+		 if(grepl("^ERROR:", response))
+			  stop(response)
+		 
+		 response <- strsplit(response, "\n")
+		 response <- as(as(response, "SDFstr"), "SDFset")[[1]]
+		 #response <- as(response, "SDFstr")
+		 sdfs = c(sdfs,response)
+	 }
+	 names(sdfs)=names(smiles)
+	 as(sdfs,"SDFset")
 }
 
 genAPDescriptors <- function(sdf){
