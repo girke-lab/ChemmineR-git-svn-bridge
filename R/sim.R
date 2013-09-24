@@ -1251,10 +1251,14 @@ smiles2sdf <- function(smiles) {
     }
 	 if(class(smiles)=="SMIset") smiles <- as.character(smiles)
 	 if(.haveOB()) {
-		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"), collapse="\n")))
+		 sdf = definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"), collapse="\n")))
+		 cid(sdf)=sdfid(sdf)
+		 sdf
 	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
-		 smiles2sdfWeb(smiles)
+		 sdf =smiles2sdfWeb(smiles)
+		 cid(sdf)=sdfid(sdf)
+		 sdf
 	 }
 }
 # perform smiles to sdf conversion through ChemMine Web Tools
@@ -1285,8 +1289,8 @@ propOB <- function(sdfSet){
 	defs = paste(Map(function(x) paste(x,collapse="\n"),
 						  as(as(sdfSet,"SDFstr"),"list")),"\n",
 					 sep="",collapse="" )
-	prop_OB("SDF",defs)
-	#Reduce(rbind,Map(function(x) prop_OB("SDF",paste(x,collapse="\n")),as(as(sdfSet,"SDFstr"),"list")))
-
+	results=prop_OB("SDF",defs)
+	rownames(results) = cid(sdfSet)
+	results
 }
 
