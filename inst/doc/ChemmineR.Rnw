@@ -58,13 +58,12 @@ unlink("test.db")
 
 \begin{figure}[bthp]
   \centering
-   \includegraphics[width=\textwidth]{overview.png}
-   \caption{Selected functionalities provided by the \Rpackage{ChemmineR}
-   package.}
+   \includegraphics[width=0.75\textwidth]{overview.png}
+   \caption{\Rpackage{ChemmineR} environment with its add-on packages and selected functionalities}
    \label{fig:overview}
 \end{figure}
 
-\noindent In addition, \Rpackage{ChemmineR} offers visualization functions for compound clustering results and chemical structures. The integration of chemoinformatic tools with the R programming environment has many advantages, such as easy access to a wide spectrum of statistical methods, machine learning algorithms and graphic utilities. The first version of this package was published in \cite{Cao2008c}. Since then many additional utilities have been added to the package and many more are under development for future releases \citep{Backman2011a, Wang2013a}. 
+\noindent In addition, \Rpackage{ChemmineR} offers visualization functions for compound clustering results and chemical structures. The integration of chemoinformatic tools with the R programming environment has many advantages, such as easy access to a wide spectrum of statistical methods, machine learning algorithms and graphic utilities. The first version of this package was published in \cite{Cao2008c}. Since then many additional utilities and add-on packages have been added to the environment and many more are under development for future releases (Figure 2; \citep{Backman2011a, Wang2013a}. 
 
 \tableofcontents
 
