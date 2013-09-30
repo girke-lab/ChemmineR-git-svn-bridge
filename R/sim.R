@@ -1319,5 +1319,7 @@ fingerprintOB <- function(sdfSet,fingerprintName){
 	defs = paste(Map(function(x) paste(x,collapse="\n"),
 						  as(as(sdfSet,"SDFstr"),"list")),"\n",
 					 sep="",collapse="" )
-	as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
+	fpset = as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
+	cid(fpset) = cid(sdfSet)
+	fpset
 }
