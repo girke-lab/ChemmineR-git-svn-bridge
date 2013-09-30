@@ -1289,3 +1289,11 @@ propOB <- function(sdfSet){
 
 }
 
+fingerprintOB <- function(sdfSet,fingerprintName){
+	.ensureOB()
+
+	defs = paste(Map(function(x) paste(x,collapse="\n"),
+						  as(as(sdfSet,"SDFstr"),"list")),"\n",
+					 sep="",collapse="" )
+	as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
+}
