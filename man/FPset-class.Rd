@@ -19,7 +19,7 @@
 
 \title{Class \code{"FPset"}}
 \description{
-Container for storing fingerprints of a many compounds. This container is used for structure similarity searching of compounds.
+Container for storing fingerprints of many compounds. This container is used for structure similarity searching of compounds.
 }
 \section{Objects from the Class}{
 Objects can be created by calls of the form \code{new("FPset", ...)}.

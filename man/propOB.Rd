@@ -24,7 +24,9 @@ propOB(sdfSet)
 }
 
 \examples{
-	library(ChemmineR)
-	data(sdfsample)
-	propOB(sdfsample)
+	\dontrun{
+		library(ChemmineR)
+		data(sdfsample)
+		propOB(sdfsample)
+	}
 }

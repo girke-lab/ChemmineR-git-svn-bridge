@@ -1011,7 +1011,7 @@ db.explain <- function(desc)
 	}
 
 }
-.ensureOB <- function(mesg = paste("ChemmineOB is required to meke use of this function.",
+.ensureOB <- function(mesg = paste("ChemmineOB is required to make use of this function.",
 										 "This package can be installed from BioConductor with the ",
 										 "command 'biocLite(\"ChemmineOB\"). ",
 										 "See http://bioconductor.org/packages/devel/bioc/html/ChemmineOB.html",
@@ -1223,53 +1223,75 @@ sdf2smiles <- function(sdf) {
 					 "\t",fixed=TRUE))
 		 smiles = t[,1]
 		 names(smiles)= t[,2]
-		 smiles
+		 as(smiles, "SMIset")
 	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
 		 sdf2smilesWeb(sdf)
 	 }
 }
-sdf2smilesWeb <- function(sdf){
+sdf2smilesWeb <- function(sdfset,limit=100){
+	message("class of sdfset: ",class(sdfset))
+	 if(length(sdfset) > limit)
+		 sdfset = sdfset[1:limit]
 
-	 sdf <- sdf2str(sdf[[1]])
-	 sdf <- paste(sdf, collapse="\n")
-	 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
-	 if(grepl("^ERROR:", response)){
-	        stop(response)
+	 smiles =c()
+	 for(i in seq(along=sdfset)){
+
+		message("class of sdfset[[]]: ",class(sdfset[[i]]))
+		 sdf <- sdf2str(sdfset[[i]])
+		 sdf <- paste(sdf, collapse="\n")
+		 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
+		 if(grepl("^ERROR:", response)){
+				  stop(response)
+		 }
+		 response <- sub("\n$", "", response) # remove trailing newline
+		 id <- sub(".*\t(.*)$", "\\1", response) # get id
+		 response <- sub("\t.*$", "", response) # get smiles
+		 names(response) <- id
+		 smiles = c(smiles,response)
 	 }
-	 response <- sub("\n$", "", response) # remove trailing newline
-	 id <- sub(".*\t(.*)$", "\\1", response) # get id
-	 response <- sub("\t.*$", "", response) # get smiles
-	 names(response) <- id
-	 return(response)
+	 as(smiles,"SMIset")
 }
 
 smiles2sdf <- function(smiles) {
-    if(! class(smiles) == "character"){
-        stop('reference compound must be a smiles string of class \"character\"')
+    if(!class(smiles) %in% c("character", "SMIset")){
+        stop('input must be SMILES strings stored as \"SMIset\" or \"character\" object')
     }
-	 if(.haveOB())
-		 definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"),
-																		collapse="\n")))
-	 else{
+	 if(class(smiles)=="SMIset") smiles <- as.character(smiles)
+	 if(.haveOB()) {
+		 sdf = definition2SDFset(convertFormat("SMI","SDF",paste(paste(smiles,names(smiles),sep="\t"), collapse="\n")))
+		 cid(sdf)=sdfid(sdf)
+		 sdf
+	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
-		 smiles2sdfWeb(smiles)
+		 sdf =smiles2sdfWeb(smiles)
+		 cid(sdf)=sdfid(sdf)
+		 sdf
 	 }
 }
 # perform smiles to sdf conversion through ChemMine Web Tools
-smiles2sdfWeb <- function(smiles) {
+smiles2sdfWeb <- function(smiles,limit=100) {
+	if(length(smiles) > limit)
+		smiles = smiles[1:limit]
 
-	 if(! is.null(names(smiles)))
-        smiles <- paste(smiles, names(smiles)[1], sep="\t")
+	 smileStrings = if(! is.null(names(smiles)))
+        paste(smiles, names(smiles), sep="\t")
+	 else
+		  smiles
     
-	 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smiles)[[1]]
-	 if(grepl("^ERROR:", response))
-        stop(response)
-    
-	 response <- strsplit(response, "\n")
-	 response <- as(as(response, "SDFstr"), "SDFset")
-	 return(response)
-
+	 sdfs = c()
+	 for(smile  in smileStrings){
+		 response <- postForm(paste(.serverURL, "runapp?app=smiles2sdf", sep=""), smiles=smile)[[1]]
+		 if(grepl("^ERROR:", response))
+			  stop(response)
+		 
+		 response <- strsplit(response, "\n")
+		 response <- as(as(response, "SDFstr"), "SDFset")[[1]]
+		 #response <- as(response, "SDFstr")
+		 sdfs = c(sdfs,response)
+	 }
+	 names(sdfs)=names(smiles)
+	 as(sdfs,"SDFset")
 }
 
 genAPDescriptors <- function(sdf){
@@ -1284,10 +1306,12 @@ propOB <- function(sdfSet){
 	defs = paste(Map(function(x) paste(x,collapse="\n"),
 						  as(as(sdfSet,"SDFstr"),"list")),"\n",
 					 sep="",collapse="" )
-	prop_OB("SDF",defs)
-	#Reduce(rbind,Map(function(x) prop_OB("SDF",paste(x,collapse="\n")),as(as(sdfSet,"SDFstr"),"list")))
-
+	results=prop_OB("SDF",defs)
+	rownames(results) = cid(sdfSet)
+	results
 }
+
+
 
 fingerprintOB <- function(sdfSet,fingerprintName){
 	.ensureOB()

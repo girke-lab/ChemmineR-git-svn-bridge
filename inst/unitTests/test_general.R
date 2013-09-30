@@ -2,6 +2,7 @@
 
 
 test.formatConversions <- function() {
+	message("test.formatConversions")
 
 	data(sdfsample)
 
