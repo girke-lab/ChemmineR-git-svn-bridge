@@ -53,8 +53,9 @@ export(
     "SDF2apcmp", "sdf2ap", "apset2descdb", "desc2fp", 
     "cmp.search", "cmp.similarity", "cmp.parse", "cmp.parse1", 
     "sdf.subset", "db.explain", "cluster.sizestat", 
-    "cmp.duplicated", "sdf.visualize", "db.subset", "smiles2sdf",
-    "sdf2smiles", "propOB",
+    "cmp.duplicated", "sdf.visualize", "db.subset",
+	 "smiles2sdf","sdf2smiles",
+	 "propOB","fingerprintOB",
     
     ## Fingerprint functions
     ## Source: sim.R

@@ -32,13 +32,18 @@ test.genAPDescriptors <- function(){
 
 }
 test.propOB <- function() {
+	data(sdfsample)
+	p = propOB(sdfsample[1:5])
+	print(p)
+	#checkEquals(ncol(p),15)
+	checkEquals(nrow(p),5)
+   checkEquals(p$MW[2],MW(sdfsample[2])[[1]])
+
+}
+test.fingerprintOB <- function(){
 	if(require(ChemmineOB)){
 		data(sdfsample)
-		p = propOB(sdfsample[1:5])
-		print(p)
-		checkEquals(ncol(p),16)
-		checkEquals(nrow(p),5)
-		checkEquals(p$MW[2],MW(sdfsample[2])[[1]])
+		fp = fingerprintOB(sdfsample[1:5],"FP2")
+		print(fp)
 	}
-
 }
