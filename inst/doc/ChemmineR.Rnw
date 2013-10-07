@@ -229,6 +229,7 @@ where the utility and usage of these functions is described. \\
             \item \Rfunction{convertFormat}: converts strings between two formats
             \item \Rfunction{convertFormatFile}: converts files between two formats 
             \item \Rfunction{propOB}: generates several compound properites
+            \item \Rfunction{fingerprintOB}: generates fingerprints for compounds
         \end{itemize}
 
 
@@ -612,12 +613,12 @@ searching with them.  Finally, the new compound ids are returned and stored in t
 data(sdfsample)
 
 #create and initialize a new SQLite database
-conn = initDb("test.db")
+conn <- initDb("test.db")
 
 # load data and compute 3 features: molecular weight, with the MW function, 
 # and counts for RINGS and AROMATIC, as computed by rings, which 
 # returns a data frame itself.
-ids=loadSdf(conn,sdfsample,
+ids<-loadSdf(conn,sdfsample,
       function(sdfset) 
        data.frame(MW = MW(sdfset),  
                   rings(sdfset,type="count",upper=6, arom=TRUE))
@@ -644,7 +645,7 @@ Compounds can also be fetched by name using the \Rfunction{findCompoundsByName} 
 In this example we search for compounds with molecular weight less than 300. We then fetch
 the matching compounds and show their molecular weight.
 <<eval=TRUE, keep.source=TRUE>>=
-lightIds = findCompounds(conn,"MW",c("MW < 300"))
+lightIds <- findCompounds(conn,"MW",c("MW < 300"))
 MW(getCompounds(conn,lightIds)) 
 
 #names of matching compounds:
@@ -1266,7 +1267,7 @@ jarvisPatrick(nearestNeighbors(fpset,numNbrs=6), k=5, mode="a1a2b") #Using "FPse
 \noindent The following example runs Jarvis-Patrick clustering with a minimum similarity \Rfunarg{cutoff} value (here Tanimoto coefficient). In addition, it uses the much more exhaustive \Rfunarg{"b"} method that generates larger cluster sizes, but significantly
 increased the run time. For more details, consult the corresponding help file with \Rfunarg{?jarvisPatrick}.
 <<eval=TRUE, keep.source=TRUE>>=
-cl=jarvisPatrick(nearestNeighbors(fpset,cutoff=0.6, method="Tanimoto"), k=2 ,mode="b")
+cl<-jarvisPatrick(nearestNeighbors(fpset,cutoff=0.6, method="Tanimoto"), k=2 ,mode="b")
 byCluster(cl)
 @
 
@@ -1292,7 +1293,7 @@ jarvisPatrick(nnm, k=5,mode="b")
      
 \noindent Using a user defined nearest neighbor matrix:
 <<eval=TRUE, keep.source=TRUE>>=
-nn = matrix(c(1,2,2,1),2,2,dimnames=list(c('one','two')))
+nn <- matrix(c(1,2,2,1),2,2,dimnames=list(c('one','two')))
 nn
 byCluster(jarvisPatrick(fromNNMatrix(nn),k=1))
 @

@@ -17,7 +17,7 @@ fingerprintOB(sdfSet, fingerprintName)
 	}
   \item{fingerprintName}{
 	  The name of the fingerprint in Open Babel. A list of available names can be found
-	  by executing "obabel -L fingerprints".
+	  by executing "obabel -L fingerprints".  Currently that list is: "FP2", "FP3", "FP4", and "MACCS". 
 	}
 }
 \value{
