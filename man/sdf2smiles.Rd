@@ -1,5 +1,6 @@
 \name{sdf2smiles}
 \alias{sdf2smiles}
+\alias{sdf2smilesOB}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 \code{SDFset} to \code{character}

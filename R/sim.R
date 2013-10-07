@@ -1210,7 +1210,7 @@ searchSim <- function(sdf) {
 }
 
 # perform sdf to smiles conversion through ChemMine Web Tools
-sdf2smiles <- function(sdf) {
+sdf2smilesOB <- function(sdf) {
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
@@ -1229,6 +1229,8 @@ sdf2smiles <- function(sdf) {
 		 sdf2smilesWeb(sdf)
 	 }
 }
+sdf2smiles <- sdf2smilesOB
+
 sdf2smilesWeb <- function(sdfset,limit=100){
 	message("class of sdfset: ",class(sdfset))
 	 if(length(sdfset) > limit)
@@ -1253,7 +1255,7 @@ sdf2smilesWeb <- function(sdfset,limit=100){
 	 as(smiles,"SMIset")
 }
 
-smiles2sdf <- function(smiles) {
+smiles2sdfOB <- function(smiles) {
     if(!class(smiles) %in% c("character", "SMIset")){
         stop('input must be SMILES strings stored as \"SMIset\" or \"character\" object')
     }
@@ -1269,6 +1271,8 @@ smiles2sdf <- function(smiles) {
 		 sdf
 	 }
 }
+smiles2sdf <- smiles2sdfOB
+
 # perform smiles to sdf conversion through ChemMine Web Tools
 smiles2sdfWeb <- function(smiles,limit=100) {
 	if(length(smiles) > limit)

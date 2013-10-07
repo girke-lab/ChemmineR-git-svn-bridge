@@ -1,5 +1,6 @@
 \name{smiles2sdf}
 \alias{smiles2sdf}
+\alias{smiles2sdfOB}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Convert SMILES (\code{character}) to \code{SDFset}
