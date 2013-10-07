@@ -7,6 +7,11 @@ CREATE TABLE compounds(
 );
 CREATE INDEX compounds_name ON compounds(name);
 
+
+ALTER SEQUENCE compounds_compound_id_seq RESTART 200;
+INSERT INTO compounds(format,definition,definition_checksum)
+	VALUES('junk','this is to shift the id numbers to ferret out index bugs','junk');
+
 CREATE TABLE descriptor_types (
 	descriptor_type_id serial PRIMARY KEY,
 	descriptor_type TEXT NOT NULL UNIQUE
