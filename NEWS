@@ -1,4 +1,14 @@
-CHANGES IN VERSION ChemmineR 2.12.0
+CHANGES IN VERSION 2.13.0
+-------------------------
+
+NEW FEATURES
+
+    o Integration of OpenBabel functionalities via new ChemmineOB add-on package
+    o Improved SMILES support via new SMIset object class and SMILES import/export functions
+    o Many other compound formats are now also supported via ChemmineOB
+
+
+CHANGES IN VERSION 2.12.0
 -------------------------
 
 NEW FEATURES
