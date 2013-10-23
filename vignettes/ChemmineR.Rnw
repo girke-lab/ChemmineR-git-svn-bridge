@@ -12,7 +12,6 @@
 <<style, echo=FALSE, results=tex>>=
 BiocStyle::latex()
 @
-\usepackage[authoryear,round]{natbib}
 \bibliographystyle{plainnat}
 \def\bibsection{\section{References}}
 
