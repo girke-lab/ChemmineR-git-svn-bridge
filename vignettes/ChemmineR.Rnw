@@ -10,11 +10,11 @@
 % \VignettePackage{gpls}
 \documentclass{article}
 <<style, echo=FALSE, results=tex>>=
-BiocStyle::latex()
+BiocStyle::latex(bibstyle="plainnat")
 @
-\bibliographystyle{plainnat}
 \def\bibsection{\section{References}}
 
+\usepackage[authoryear,round]{natbib}
 \usepackage{graphicx}
 \usepackage{color}
 \usepackage{hyperref}
