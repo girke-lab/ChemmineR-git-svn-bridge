@@ -1327,3 +1327,35 @@ fingerprintOB <- function(sdfSet,fingerprintName){
 	cid(fpset) = cid(sdfSet)
 	fpset
 }
+
+#compounds should be items that can be passed into similarity
+maximallyDissimilar <- function(compounds,n,similarity = cmp.similarity) {
+	dist = function(a,b) 1-similarity(a,b)
+	if(length(compounds) <= 2)
+		stop("maximallyDissimilar: compounds must have more than 2 elements")
+
+	#pick first selection at random
+	selected = sample(1:length(compounds),1)
+
+	#compute dist between compounds[-selected] and compounds[selected]
+	minDistsToSelected = sapply(1:length(compounds),
+										 function(i) dist(compounds[[i]],compounds[[selected]]))
+
+	for(k in 2:n){
+		#find candidate farthest from those selected
+		newPoint = which.max(minDistsToSelected)
+		selected = c(selected,newPoint)
+		minDistsToSelected[newPoint] = 0
+
+		#update min distances
+		minDistsToSelected = sapply(1:length(compounds),
+											 function(i) 
+												 if(minDistsToSelected[i]==0) 0 
+												 else min(minDistsToSelected[i],dist(compounds[i],compounds[newPoint])))
+	}
+	
+
+	selected
+}
+
+

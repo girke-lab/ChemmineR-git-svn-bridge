@@ -43,6 +43,7 @@ export(
     "validSDF", "makeUnique", "atomcountMA", "MW", "MF", 
     "datablock2ma", "splitNumChar",  "grepSDFset", 
     "conMA", "bonds", "groups", "rings", "atomsubset", "SDFset", 
+	 "maximallyDissimilar",
    
     ## Plotting
     ## Source: AllClasses.R
