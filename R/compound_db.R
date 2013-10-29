@@ -121,6 +121,17 @@ loadDescriptors <- function(conn,data){
 
 	insertDescriptor(conn,data)
 }
+
+addDescriptorType <- function(conn,descriptorType){
+	present = dbGetQuery(conn,
+			paste("SELECT 1 FROM
+					descriptor_types WHERE descriptor_type = '",
+					descriptorType,"'",sep=""))
+	print(nrow(present))
+	if(nrow(present) == 0)
+		insertDescriptorType(conn,data.frame(descriptor_type=descriptorType))
+}
+
 addNeededFeatures <- function(conn,data, featureGenerator){
 	if(dim(data)[1] == 0){ # no data given
 		warning("no data given to addNeededFeatures, doing nothing")

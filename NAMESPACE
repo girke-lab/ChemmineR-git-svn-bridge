@@ -75,6 +75,7 @@ export(
     "initDb","loadSdf","loadSmiles","getCompounds","findCompounds",
     "getCompoundNames","findCompoundsByName","addNewFeatures",
     "listFeatures", "jarvisPatrick_c", "genAPDescriptors",
+	 "addDescriptorType",
 
     ## Large file/query utilites
     "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
