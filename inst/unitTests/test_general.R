@@ -47,3 +47,15 @@ test.fingerprintOB <- function(){
 		print(fp)
 	}
 }
+test.obmolRefs <- function() {
+	data(sdfsample)
+
+	obmolRef = obmol(sdfsample[[1]])
+	checkEquals(class(obmolRef),"_p_OpenBabel__OBMol")
+
+	obmolRefs = obmol(sdfsample)
+	checkEquals(class(obmolRefs),"list")
+	checkEquals(class(obmolRefs[[2]]),"_p_OpenBabel__OBMol")
+	checkEquals(length(sdfsample),length(obmolRefs))
+
+}

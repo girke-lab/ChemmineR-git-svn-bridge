@@ -124,7 +124,13 @@ setAs(from="character", to="SDFstr",
 ################################################
 ## (2) Class and Method Definitions for SDF ##
 ################################################
-setClass("SDF", representation(header="character", atomblock="matrix", bondblock="matrix", datablock="character"))
+setClass("ExternalReference")
+setClassUnion("ExternalReferenceOrNULL",members=c("ExternalReference","NULL"))
+setClass("SDF", representation(header="character", atomblock="matrix", 
+										 bondblock="matrix", datablock="character",
+										 obmolRef="ExternalReferenceOrNULL"),
+			prototype=list(obmolRef=NULL))
+										# obmolRef="_p_OpenBabel__OBMol"))
 
 ## Convert SDFstr to SDF Class
 ## SDFstr Parser Function
@@ -237,6 +243,14 @@ setMethod(f="datablock", signature="SDF", definition=function(x) {return(x@datab
 setGeneric(name="datablocktag", def=function(x, tag) standardGeneric("datablocktag"))
 setMethod(f="datablocktag", signature="SDF", definition=function(x, tag) {return(x@datablock[tag])}) 
 
+setGeneric(name="obmol",def=function(x) standardGeneric("obmol"))
+setMethod(f="obmol",signature="SDF",definition= function(x) {
+	.ensureOB()
+	if(is.null(x@obmolRef))
+		x@obmolRef = sdf2OBMol(x)
+	x@obmolRef
+})
+
 ## Define print behavior for SDF
 setMethod(f="show", signature="SDF",                
    definition=function(object) {
@@ -278,6 +292,7 @@ setReplaceMethod(f="[", signature="SDF", definition=function(x, i, j, value) {
 	if(i=="atomblock") x@atomblock <- value 
 	if(i=="bondblock") x@bondblock <- value
 	if(i=="datablock") x@datablock <- value
+	obmolRef=NULL
 	return(x)
 })
 
@@ -297,6 +312,7 @@ setReplaceMethod(f="[[", signature="SDF", definition=function(x, i, j, value) {
 	if(i=="atomblock") x@atomblock <- value 
 	if(i=="bondblock") x@bondblock <- value
 	if(i=="datablock") x@datablock <- value
+	obmolRef=NULL
 	return(x)
 })
 
@@ -367,6 +383,7 @@ setMethod(f="atomcount", signature="SDFset", definition=function(x, addH, ...) {
 setMethod(f="bondblock", signature="SDFset", definition=function(x) {return(lapply(SDFset2SDF(x), bondblock))}) 
 setMethod(f="datablock", signature="SDFset", definition=function(x) {return(lapply(SDFset2SDF(x), datablock))}) 
 setMethod(f="datablocktag", signature="SDFset", definition=function(x, tag) {return(as.vector(sapply(SDFset2SDF(x), datablocktag, tag)))}) 
+setMethod(f="obmol",signature="SDFset",definition= function(x) lapply(SDFset2SDF(x),obmol))
 
 ## Replacement method for SDF component of SDFset using accessor methods
 setGeneric(name="SDFset2SDF<-", def=function(x, value) standardGeneric("SDFset2SDF<-"))
