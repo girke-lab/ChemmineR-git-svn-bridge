@@ -339,10 +339,10 @@ read.SDFset <- function(sdfstr=sdfstr, ...) {
 	## Iterate over SDFstr components	
 	sdfset <- lapply(seq(along=sdfstr@a), function(x) .sdfParse(sdfstr2list(sdfstr)[[x]], ...))
 	sdfset <- new("SDFset", SDF=sdfset, ID=paste("CMP", seq(along=sdfset), sep=""))
-        ## Validity check of SDFs based on atom/bond block column numbers
-        badsdf <- sum(!validSDF(sdfset))
-        if(sum(badsdf)!=0) warning(paste(c(sum(badsdf), " invalid SDFs detected. To fix, run: valid <- validSDF(sdfset); sdfset <- sdfset[valid]")))
-        return(sdfset)
+	## Validity check of SDFs based on atom/bond block column numbers
+	badsdf <- sum(!validSDF(sdfset))
+	if(sum(badsdf)!=0) warning(paste(c(sum(badsdf), " invalid SDFs detected. To fix, run: valid <- validSDF(sdfset); sdfset <- sdfset[valid]")))
+	return(sdfset)
 }
 
 ## Accessor methods for SDFset class
