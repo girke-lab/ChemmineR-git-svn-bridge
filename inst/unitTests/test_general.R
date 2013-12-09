@@ -49,13 +49,15 @@ test.fingerprintOB <- function(){
 }
 test.obmolRefs <- function() {
 	data(sdfsample)
+	if(require(ChemmineOB)){
+		obmolRef = obmol(sdfsample[[1]])
+		checkEquals(class(obmolRef),"_p_OpenBabel__OBMol")
 
-	obmolRef = obmol(sdfsample[[1]])
-	checkEquals(class(obmolRef),"_p_OpenBabel__OBMol")
-
-	obmolRefs = obmol(sdfsample)
-	checkEquals(class(obmolRefs),"list")
-	checkEquals(class(obmolRefs[[2]]),"_p_OpenBabel__OBMol")
-	checkEquals(length(sdfsample),length(obmolRefs))
+		obmolRefs = obmol(sdfsample)
+		checkEquals(class(obmolRefs),"list")
+		checkEquals(class(obmolRefs[[2]]),"_p_OpenBabel__OBMol")
+		checkEquals(length(sdfsample),length(obmolRefs))
+	}else
+		checkException(obmol(sdfsample[[1]]))
 
 }

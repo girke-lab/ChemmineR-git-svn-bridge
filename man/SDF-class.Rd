@@ -9,6 +9,7 @@
 \alias{atomblock,SDF-method}
 \alias{atomcount,SDF-method}
 \alias{bondblock,SDF-method}
+\alias{obmol,SDF-method}
 \alias{coerce,character,SDF-method}
 \alias{coerce,list,SDF-method}
 \alias{coerce,SDF,character-method}
@@ -41,6 +42,7 @@ Objects can be created by calls of the form \code{new("SDF", ...)}.
     \item{\code{atomblock}:}{Object of class \code{"matrix"} }
     \item{\code{bondblock}:}{Object of class \code{"matrix"} }
     \item{\code{datablock}:}{Object of class \code{"character"} }
+    \item{\code{obmolRef}:}{Object of class \code{"ExternalReferenceOrNULL"} }
   }
 }
 \section{Methods}{
@@ -52,6 +54,7 @@ Objects can be created by calls of the form \code{new("SDF", ...)}.
     \item{atomblock}{\code{signature(x = "SDF")}: returns atom block as matrix}
     \item{atomcount}{\code{signature(x = "SDF")}: returns atom frequency }
     \item{bondblock}{\code{signature(x = "SDF")}: returns bond block as matrix }
+    \item{obmol}{\code{signature(x = "SDF")}: returns an OBMol pointer }
     \item{coerce}{\code{signature(from = "character", to = "SDF")}: \code{as(character, "SDF")} }
     \item{coerce}{\code{signature(from = "list", to = "SDF")}: \code{as(list, "SDF")} }
     \item{coerce}{\code{signature(from = "SDF", to = "character")}: \code{as(sdf, "character")} }

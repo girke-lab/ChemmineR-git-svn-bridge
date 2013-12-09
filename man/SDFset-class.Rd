@@ -9,6 +9,7 @@
 \alias{atomblock,SDFset-method}
 \alias{atomcount,SDFset-method}
 \alias{bondblock,SDFset-method}
+\alias{obmol,SDFset-method}
 \alias{c,SDFset-method}
 \alias{cid,SDFset-method}
 \alias{cid<-,SDFset-method}
@@ -55,6 +56,7 @@ Objects can be created by calls of the form \code{new("SDFset", ...)}.
     \item{atomblock}{\code{signature(x = "SDFset")}: returns all atom blocks as list }
     \item{atomcount}{\code{signature(x = "SDFset")}: returns all atom frequencies as list }
     \item{bondblock}{\code{signature(x = "SDFset")}: returns all bond blocks as list }
+    \item{obmol}{\code{signature(x = "SDFset")}: returns pointers to OBMol objects as a vector }
     \item{c}{\code{signature(x = "SDFset")}: concatenates two \code{SDFset} containers }
     \item{cid}{\code{signature(x = "SDFset")}: returns all compound identifiers from ID slot }
     \item{header<-}{\code{signature(x = "SDFset")}: replacement method for header block }
