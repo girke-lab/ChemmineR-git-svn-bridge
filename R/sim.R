@@ -1300,32 +1300,17 @@ smiles2sdfWeb <- function(smiles,limit=100) {
 }
 
 genAPDescriptors <- function(sdf){
-
   .factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
-	
 }
 propOB <- function(sdfSet){
-
 	.ensureOB()
 	results = prop_OB(obmol(sdfSet))
-	
-	#defs = paste(Map(function(x) paste(x,collapse="\n"),
-						  #as(as(sdfSet,"SDFstr"),"list")),"\n",
-					 #sep="",collapse="" )
-	#results=prop_OB("SDF",defs)
 	rownames(results) = cid(sdfSet)
 	results
 }
 
-
-
 fingerprintOB <- function(sdfSet,fingerprintName){
 	.ensureOB()
-
-	#defs = paste(Map(function(x) paste(x,collapse="\n"),
-						  #as(as(sdfSet,"SDFstr"),"list")),"\n",
-					 #sep="",collapse="" )
-	#fpset = as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
 	fpset = as(fingerprint_OB(obmol(sdfSet),fingerprintName),"FPset")
 	cid(fpset) = cid(sdfSet)
 	fpset
@@ -1357,7 +1342,6 @@ maximallyDissimilar <- function(compounds,n,similarity = cmp.similarity) {
 												 else min(minDistsToSelected[i],dist(compounds[i],compounds[newPoint])))
 	}
 	
-
 	compounds[selected]
 }
 
