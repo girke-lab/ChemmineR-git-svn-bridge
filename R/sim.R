@@ -1367,6 +1367,6 @@ sdf2OBMol<- function(sdfSet){
 						  as(as(sdfSet,"SDFstr"),"list")),"\n",
 					 sep="",collapse="" )
 
-	forEachMol("SDF",defs,c,identity)
+	forEachMol("SDF",defs,identity,c)
 }
 
