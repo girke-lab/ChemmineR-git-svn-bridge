@@ -1307,11 +1307,12 @@ genAPDescriptors <- function(sdf){
 propOB <- function(sdfSet){
 
 	.ensureOB()
+	results = prop_OB(obmol(sdfSet))
 	
-	defs = paste(Map(function(x) paste(x,collapse="\n"),
-						  as(as(sdfSet,"SDFstr"),"list")),"\n",
-					 sep="",collapse="" )
-	results=prop_OB("SDF",defs)
+	#defs = paste(Map(function(x) paste(x,collapse="\n"),
+						  #as(as(sdfSet,"SDFstr"),"list")),"\n",
+					 #sep="",collapse="" )
+	#results=prop_OB("SDF",defs)
 	rownames(results) = cid(sdfSet)
 	results
 }
@@ -1321,10 +1322,11 @@ propOB <- function(sdfSet){
 fingerprintOB <- function(sdfSet,fingerprintName){
 	.ensureOB()
 
-	defs = paste(Map(function(x) paste(x,collapse="\n"),
-						  as(as(sdfSet,"SDFstr"),"list")),"\n",
-					 sep="",collapse="" )
-	fpset = as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
+	#defs = paste(Map(function(x) paste(x,collapse="\n"),
+						  #as(as(sdfSet,"SDFstr"),"list")),"\n",
+					 #sep="",collapse="" )
+	#fpset = as(fingerprint_OB("SDF",defs,fingerprintName),"FPset")
+	fpset = as(fingerprint_OB(obmol(sdfSet),fingerprintName),"FPset")
 	cid(fpset) = cid(sdfSet)
 	fpset
 }
@@ -1359,4 +1361,12 @@ maximallyDissimilar <- function(compounds,n,similarity = cmp.similarity) {
 	compounds[selected]
 }
 
+sdf2OBMol<- function(sdfSet){
+	.ensureOB()
+	defs = paste(Map(function(x) paste(x,collapse="\n"),
+						  as(as(sdfSet,"SDFstr"),"list")),"\n",
+					 sep="",collapse="" )
+
+	forEachMol("SDF",defs,c,identity)
+}
 
