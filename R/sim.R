@@ -1356,7 +1356,7 @@ maximallyDissimilar <- function(compounds,n,similarity = cmp.similarity) {
 	}
 	
 
-	selected
+	compounds[selected]
 }
 
 
