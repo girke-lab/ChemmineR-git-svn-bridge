@@ -1222,8 +1222,13 @@ sdf2smilesOB <- function(sdf) {
 		 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
 															  "\n",fixed=TRUE)),
 					 "\t",fixed=TRUE))
-		 smiles = t[,1]
-		 names(smiles)= t[,2]
+		 if(class(t)=="character"){ # R rearranged our matrix because there was only one result
+			 smiles=t[1]
+			 names(smiles)=t[2]
+		 }else{
+			 smiles = t[,1]
+			 names(smiles)= t[,2]
+		 }
 		 as(smiles, "SMIset")
 	 }else{
 		 message("ChemmineOB not found, falling back to web service version. This will be much slower")
