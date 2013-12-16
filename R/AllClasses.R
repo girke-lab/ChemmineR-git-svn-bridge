@@ -991,9 +991,20 @@ apset2descdb <- function(apset) {
 #######################################################
 ## Define FP and FPset classes
 setClass("FP", representation(fp="numeric",type="character",foldCount="numeric"),
-			prototype=list(foldCount=0,type=paste("unknown",as.integer(runif(1)*10000),sep="-")))
+			prototype=list(foldCount=0))
+setMethod(f="initialize", signature="FP",definition= function(.Object, ...){
+			  obj <- callNextMethod(.Object, ...)
+			  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
+			  obj
+			})
+
 setClass("FPset", representation(fpma="matrix",type="character",foldCount="numeric"),
-			prototype=list(foldCount=0,type=paste("unknown",as.integer(runif(1)*10000),sep="-")))
+			prototype=list(foldCount=0))
+setMethod(f="initialize", signature="FPset",definition= function(.Object, ...){
+			  obj <- callNextMethod(.Object, ...)
+			  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
+			  obj
+			})
 
 ## Methods to return FPSet as vector or matrix, respectively
 setMethod(f="as.vector", signature="FP", definition=function(x) {return(x@fp)})
@@ -1033,28 +1044,54 @@ setReplaceMethod(f="cid", signature="FPset", definition=function(x, value) {
 	return(x)
 })
 
-foldVector <- function(v,count=1){
+foldVector <- function(v,count=1,bits=NULL){
 	 len = length(v)
 	 if(len%%2!=0)
 		 stop("must have an even number of bits to fold")
+
+	 if(!is.null(bits))
+		 count=foldsNeeded(len,bits)
+
+	 #message("count: ",count," len: ",len)
+	 realCount=0
 	 for(i in rep(0,count)){
 		 if(len==1)
 			 break
 		 mid = len/2
-		 v = mapply(`||`,v[1:mid],v[mid+1:len])
+		 #message("mid: ",mid)
+		 v = mapply(function(a,b) if(a||b)1 else 0,v[1:mid],v[(mid+1):len])
+		 len = length(v)
+		 realCount=realCount+1
 	 }
-	 x
-
+	 if(count!=realCount)
+		 warning(count," folds requested but could only fold ",realCount," times")
+	 list(fp=v,actualFoldCount=realCount)
 }
-setGeneric(name="fold", def=function(x,count) standardGeneric("fold"))
-setMethod(f="fold",signature="FP", definition=function(x,count=1){
-			 x@fp = foldVector(x@fp,count)
-			 x@foldCount = x@foldCount+1
+foldsNeeded <- function(length,bits){
+	count = log2(length) - log2(bits)
+	if(count != as.integer(count))
+		stop("not possible to achieve ",bits," with an integral number of folds")
+	count
+}
+setGeneric(name="fold", def=function(x,count=1,bits=NULL) standardGeneric("fold"))
+setMethod(f="fold",signature="FP", definition=function(x,count,bits){
+			 result = foldVector(x@fp,count,bits)
+			 x@fp = result$fp
+			 x@foldCount = x@foldCount+result$actualFoldCount
 			 x
 })
-setMethod(f="fold",signature="FPset", definition=function(x,count=1) {
-			 x@fpma = apply(x@fpma,c(1),function(y) foldVector(y,count))
-			 x@foldCount = x@foldCount+1
+setMethod(f="fold",signature="FPset", definition=function(x,count,bits) {
+			 actualFolds=0
+			 data = apply(x@fpma,c(1),function(y){
+								 result = foldVector(y,count,bits)
+								 actualFolds <<- result$actualFoldCount #just keep the last one, they should all be the same
+								 result$fp	 })
+			 if(class(data) != "matrix") # account for case when fp gets folded down to 1
+				 dim(data) = c(nrow(x@fpma),1)
+			 else
+				 data = t(data)
+			 x@fpma = data
+			 x@foldCount = x@foldCount+actualFolds
 			 x
 })
 
@@ -1065,6 +1102,10 @@ setMethod(f="fptype", signature="FPset",definition=function(x) x@type)
 setGeneric(name="foldCount", def=function(x) standardGeneric("foldCount"))
 setMethod(f="foldCount", signature="FP",definition=function(x) x@foldCount)
 setMethod(f="foldCount", signature="FPset",definition=function(x) x@foldCount)
+
+setGeneric(name="numBits", def=function(x) standardGeneric("numBits"))
+setMethod(f="numBits", signature="FP",definition=function(x) length(x@fp))
+setMethod(f="numBits", signature="FPset",definition=function(x) ncol(x@fpma))
 
 ## Replacement method for FPset using "[" operator 
 ## It doesn't provide here full set of expected functionalities.
@@ -1100,12 +1141,20 @@ setMethod(f="length", signature="FPset",
 ## Define print behavior for FPset
 setMethod(f="show", signature="FPset", 
 	definition=function(object) {    
-	cat("An instance of a ", length(object@fpma[1,]), " bit ", "\"", class(object), "\" ", "with ", length(object@fpma[,1]), " molecules", "\n", sep="")
+	cat("An instance of a ", length(object@fpma[1,]), " bit ", "\"", class(object), 
+		 "\" of type \"",object@type,"\" with ",
+		 length(object@fpma[,1]), " molecules", "\n", sep="")
 })
 
 ## Concatenate function for FPset
 ## Note: is currently limited to 2 arguments!
 setMethod(f="c", signature="FPset", definition=function(x, y) {
+   if(numBits(x) != numBits(y))
+		stop("can only concatenate FPsets with the same number of bits. ",
+			  numBits(x)," != ",numBits(y))
+	if(x@type != y@type)
+		stop("cannot concatenate FPsets of different types. ",
+			  "'",x@type,"' != '",y@type,"'")
 	fpma1 <- as.matrix(x)
 	fpma2 <- as.matrix(y)
 	fpma <- rbind(fpma1, fpma2)
@@ -1119,7 +1168,7 @@ setMethod(f="c", signature="FPset", definition=function(x, y) {
 ## Define print behavior for FP
 setMethod(f="show", signature="FP",                
    definition=function(object) {
-         cat("An instance of ", "\"", class(object), "\"", "\n", sep="")
+         cat("An instance of ", "\"", class(object), "\" of type \"",object@type, "\"\n", sep="")
          cat("<<fingerprint>>", "\n", sep="")
          if(length(object@fp)>=20) {
              cat(c(object@fp[1:20], "... length:", length(object@fp), "\n"))
