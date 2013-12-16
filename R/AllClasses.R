@@ -990,8 +990,10 @@ apset2descdb <- function(apset) {
 ## (6) Class and Method Definitions for FP and FPset ##
 #######################################################
 ## Define FP and FPset classes
-setClass("FP", representation(fp="numeric"))
-setClass("FPset", representation(fpma="matrix"))
+setClass("FP", representation(fp="numeric",type="character",foldCount="numeric"),
+			prototype=list(foldCount=0,type=paste("unknown",as.integer(runif(1)*10000),sep="-")))
+setClass("FPset", representation(fpma="matrix",type="character",foldCount="numeric"),
+			prototype=list(foldCount=0,type=paste("unknown",as.integer(runif(1)*10000),sep="-")))
 
 ## Methods to return FPSet as vector or matrix, respectively
 setMethod(f="as.vector", signature="FP", definition=function(x) {return(x@fp)})
@@ -1030,6 +1032,39 @@ setReplaceMethod(f="cid", signature="FPset", definition=function(x, value) {
 	}
 	return(x)
 })
+
+foldVector <- function(v,count=1){
+	 len = length(v)
+	 if(len%%2!=0)
+		 stop("must have an even number of bits to fold")
+	 for(i in rep(0,count)){
+		 if(len==1)
+			 break
+		 mid = len/2
+		 v = mapply(`||`,v[1:mid],v[mid+1:len])
+	 }
+	 x
+
+}
+setGeneric(name="fold", def=function(x,count) standardGeneric("fold"))
+setMethod(f="fold",signature="FP", definition=function(x,count=1){
+			 x@fp = foldVector(x@fp,count)
+			 x@foldCount = x@foldCount+1
+			 x
+})
+setMethod(f="fold",signature="FPset", definition=function(x,count=1) {
+			 x@fpma = apply(x@fpma,c(1),function(y) foldVector(y,count))
+			 x@foldCount = x@foldCount+1
+			 x
+})
+
+setGeneric(name="fptype", def=function(x) standardGeneric("fptype"))
+setMethod(f="fptype", signature="FP",definition=function(x) x@type)
+setMethod(f="fptype", signature="FPset",definition=function(x) x@type)
+
+setGeneric(name="foldCount", def=function(x) standardGeneric("foldCount"))
+setMethod(f="foldCount", signature="FP",definition=function(x) x@foldCount)
+setMethod(f="foldCount", signature="FPset",definition=function(x) x@foldCount)
 
 ## Replacement method for FPset using "[" operator 
 ## It doesn't provide here full set of expected functionalities.
