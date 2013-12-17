@@ -994,7 +994,8 @@ setClass("FP", representation(fp="numeric",type="character",foldCount="numeric")
 			prototype=list(foldCount=0))
 setMethod(f="initialize", signature="FP",definition= function(.Object, ...){
 			  obj <- callNextMethod(.Object, ...)
-			  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
+			  if(length(obj@type)==0)
+				  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
 			  obj
 			})
 
@@ -1002,7 +1003,8 @@ setClass("FPset", representation(fpma="matrix",type="character",foldCount="numer
 			prototype=list(foldCount=0))
 setMethod(f="initialize", signature="FPset",definition= function(.Object, ...){
 			  obj <- callNextMethod(.Object, ...)
-			  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
+			  if(length(obj@type)==0)
+				  obj@type=paste("unknown",as.integer(runif(1)*10000),sep="-")
 			  obj
 			})
 
