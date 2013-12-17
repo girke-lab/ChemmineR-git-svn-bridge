@@ -1,5 +1,11 @@
 
-genRandFp = function(n) new("FP",fp=sapply(runif(n),function(x) if(x>0.5) 1 else 0))
+genRandFp = function(n,type=NULL) {
+	if(is.null(type))
+		new("FP",fp=sapply(runif(n),function(x) if(x>0.5) 1 else 0))
+	else
+		new("FP",type=type,fp=sapply(runif(n),function(x) if(x>0.5) 1 else 0))
+}
+
 test.fp <- function(){
 										 
 
@@ -25,6 +31,18 @@ test.fp <- function(){
 	x=fold(fp4,16)
 	checkEquals(numBits(x),1)
 	checkEquals(foldCount(x),4)
+
+	x1=genRandFp(16,"test")
+	x2=genRandFp(16,"test")
+	x3=genRandFp(18,"test")
+	x4=genRandFp(16,"test")
+
+	checkException(c(x1,x3))   #different number of bits
+	checkException(c(x1,fp1))  #different label
+	checkException(c(x1,"hi")) #mixed types
+
+	fpset1 = c(x1,x2,x4)
+	checkEquals(length(fpset1),3)
 
 }
 
@@ -57,6 +75,11 @@ test.fpset <- function(){
 	checkException(c(fpset,fpset2))
 
 	data = matrix(replicate(640,if(runif(1)>0.5)1 else 0),10,64)
-	fpset2 = new("FPset",fpma=data)
-	checkException(c(fpset,fpset2))
+	fpset3 = new("FPset",fpma=data)
+	checkException(c(fpset,fpset3))
+
+	fpset4 = new("FPset",fpma=data,type="randFP")
+	catfp1=c(fpset2,fpset2,fpset2)
+	checkEquals(length(catfp1),30)
+
 }
