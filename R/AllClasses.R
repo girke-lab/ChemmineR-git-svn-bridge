@@ -1148,23 +1148,58 @@ setMethod(f="show", signature="FPset",
 		 length(object@fpma[,1]), " molecules", "\n", sep="")
 })
 
-## Concatenate function for FPset
-## Note: is currently limited to 2 arguments!
-setMethod(f="c", signature="FPset", definition=function(x, y) {
-   if(numBits(x) != numBits(y))
-		stop("can only concatenate FPsets with the same number of bits. ",
-			  numBits(x)," != ",numBits(y))
-	if(x@type != y@type)
-		stop("cannot concatenate FPsets of different types. ",
-			  "'",x@type,"' != '",y@type,"'")
-	fpma1 <- as.matrix(x)
-	fpma2 <- as.matrix(y)
-	fpma <- rbind(fpma1, fpma2)
-	fpset <- as(fpma, "FPset")
-	if(any(duplicated(cid(fpset)))) {
+setMethod(f="c",signature="FP",definition=function(x,...){
+	args = list(x,...)
+
+	type=NULL
+	length=0
+	fpma = t(sapply(args,function(obj){
+		if(!inherits(obj,"FP"))
+			stop("all arguments must be of type FP")
+
+		if(is.null(type))
+			type<<-obj@type
+		if(length==0)
+			length <<- numBits(obj)
+
+		if(obj@type != type)
+			stop("found differing types: ",obj@type," and ",type)
+		if(numBits(obj) != length)
+			stop("found differing number of bits: ",numBits(obj)," and ",length)
+
+		obj@fp
+	}))
+	fpset=new("FPset",fpma=fpma,type=type)
+	if(any(duplicated(cid(fpset)))) 
 		warning("The values in the CMP ID slot are not unique anymore, makeUnique() can fix this!")
-	}
-	return(fpset)
+	fpset
+})
+## Concatenate function for FPset
+setMethod(f="c", signature="FPset", definition=function(x, ...) {
+	args = list(x,...)
+	type=NULL
+	length=0
+	fpma = Reduce(rbind,Map(function(obj){
+		if(!inherits(obj,"FPset"))
+			stop("all arguments must be of type FPset")
+
+		if(is.null(type))
+			type<<-obj@type
+		if(length==0)
+			length <<- numBits(obj)
+
+		if(obj@type != type)
+			stop("found differing types: ",obj@type," and ",type)
+		if(numBits(obj) != length)
+			stop("found differing number of bits: ",numBits(obj)," and ",length)
+
+		obj@fpma
+	},args))
+	fpset=new("FPset",fpma=fpma,type=type)
+	if(any(duplicated(cid(fpset)))) 
+		warning("The values in the CMP ID slot are not unique anymore, makeUnique() can fix this!")
+
+	fpset
 })
 
 ## Define print behavior for FP
