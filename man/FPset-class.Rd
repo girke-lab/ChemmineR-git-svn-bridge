@@ -16,6 +16,10 @@
 \alias{length,FPset-method}
 \alias{show,FPset-method}
 \alias{view,FPset-method}
+\alias{fold,FPset-method}
+\alias{foldCount,FPset-method}
+\alias{fptype,FPset-method}
+\alias{numBits,FPset-method}
 
 \title{Class \code{"FPset"}}
 \description{
@@ -27,7 +31,8 @@ Objects can be created by calls of the form \code{new("FPset", ...)}.
 \section{Slots}{
   \describe{
     \item{\code{fpma}:}{Object of class \code{"matrix"} with compound identifiers stored in row names}
-    
+    \item{\code{foldCount}:}{Object of class \code{"numeric"} }
+    \item{\code{type}:}{Object of class \code{"character"} }
   }
 }
 \section{Methods}{
@@ -37,7 +42,7 @@ Objects can be created by calls of the form \code{new("FPset", ...)}.
     \item{[<-}{\code{signature(x = "FPset")}: replacement method for several components }
     \item{as.character}{\code{signature(x = "FPset")}: returns content as named character vector }
     \item{as.matrix}{\code{signature(x = "FPset")}: returns content as numeric matrix }
-    \item{c}{\code{signature(x = "FPset")}: concatenates two \code{FPset} containers }
+    \item{c}{\code{signature(x = "FPset")}: concatenates any number of \code{FPset} containers }
     \item{cid}{\code{signature(x = "FPset")}: returns all compound identifiers from row names }
     \item{cid<-}{\code{signature(x = "FPset")}: replacement method for compound identifiers  }
     \item{coerce}{\code{signature(from = "FPset", to = "FP")}: \code{as(fpset, "FP")} }
@@ -46,6 +51,10 @@ Objects can be created by calls of the form \code{new("FPset", ...)}.
     \item{length}{\code{signature(x = "FPset")}: returns number of entries stored in object }
     \item{show}{\code{signature(object = "FPset")}: prints summary of \code{FPset} }
     \item{view}{\code{signature(x = "FPset")}: prints extended summary of \code{FPset} }
+    \item{fold}{\code{signature(x = "FPset")}: fold fingerprint in half }
+    \item{foldCount}{\code{signature(x = "FPset")}: number of times this object has been folded}
+    \item{fptype}{\code{signature(x = "FPset")}: the type of these fingerprints }
+    \item{numBits}{\code{signature(x = "FPset")}: the number of bits in these fingerprints}
 	 }
 }
 \references{
