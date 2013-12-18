@@ -1097,7 +1097,8 @@ fp2bit <- function(x, type=3, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
                 return(fpbitma)
         }
 	if(type==3) {
-                return(as(fpbitma, "FPset"))
+                #return(as(fpbitma, "FPset"))
+                return(new("FPset",fpma=fpbitma,type="pubchem"))
         }
 }
 
@@ -1316,7 +1317,8 @@ propOB <- function(sdfSet){
 
 fingerprintOB <- function(sdfSet,fingerprintName){
 	.ensureOB()
-	fpset = as(fingerprint_OB(obmol(sdfSet),fingerprintName),"FPset")
+	fpset = new("FPset",fpma=fingerprint_OB(obmol(sdfSet),fingerprintName),
+					type=fingerprintName)
 	cid(fpset) = cid(sdfSet)
 	fpset
 }

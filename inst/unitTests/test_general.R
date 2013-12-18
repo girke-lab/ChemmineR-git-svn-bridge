@@ -45,6 +45,7 @@ test.fingerprintOB <- function(){
 		data(sdfsample)
 		fp = fingerprintOB(sdfsample[1:5],"FP2")
 		print(fp)
+		checkEquals(fptype(fp),"FP2")
 	}
 }
 test.obmolRefs <- function() {

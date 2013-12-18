@@ -852,7 +852,8 @@ desc2fp <- function(x, descnames=1024, type="FPset") {
 		stop("x needs to be of class APset or list")
 	}
         if(type=="FPset") {
-                return(as(apfp, "FPset"))
+                #return(as(apfp, "FPset"))
+                return(new("FPset",fpma=apfp,type="apfp"))
         }
         if(type=="matrix") {
                 return(apfp)
@@ -2097,7 +2098,8 @@ read.AP <- function(x, type, colid,isFile = class(x)=="character" & length(x)==1
                         ids <- row.names(x); x <- x[,colid]; names(x) <- ids
                 }
                 descma <- matrix(as.numeric(unlist(strsplit(x, ""))), length(x), nchar(x[1]), byrow=TRUE, dimnames=list(names(x), 1:nchar(x[1])))
-                return(as(descma, "FPset"))
+                #return(as(descma, "FPset"))
+                return(new( "FPset",fpma=descma,type="apfp"))
         }
 }
 
