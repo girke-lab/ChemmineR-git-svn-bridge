@@ -8,6 +8,11 @@
 %\alias{coerce,FPset,FP-method}
 \alias{coerce,numeric,FP-method}
 \alias{show,FP-method}
+\alias{c,FP-method}
+\alias{fold,FP-method}
+\alias{foldCount,FP-method}
+\alias{fptype,FP-method}
+\alias{numBits,FP-method}
 
 \title{Class \code{"FP"}}
 \description{
@@ -19,6 +24,8 @@ Objects can be created by calls of the form \code{new("FP", ...)}.
 \section{Slots}{
   \describe{
     \item{\code{fp}:}{Object of class \code{"numeric"} }
+    \item{\code{foldCount}:}{Object of class \code{"numeric"} }
+    \item{\code{type}:}{Object of class \code{"character"} }
   }
 }
 \section{Methods}{
@@ -29,6 +36,11 @@ Objects can be created by calls of the form \code{new("FP", ...)}.
     \item{coerce}{\code{signature(from = "FPset", to = "FP")}: coerce \code{FPset} component to list with many \code{FP} objects }
     \item{coerce}{\code{signature(from = "numeric", to = "FP")}: construct \code{FP} object from numeric vector }
     \item{show}{\code{signature(object = "FP")}: prints summary of \code{FP} }
+    \item{c}{\code{signature(x = "FP")}: concatenates any number of \code{FP} objects}
+    \item{fold}{\code{signature(x = "FP")}: fold fingerprint in half }
+    \item{foldCount}{\code{signature(x = "FP")}: number of times this object has been folded}
+    \item{fptype}{\code{signature(x = "FP")}: the type of this fingerprint }
+    \item{numBits}{\code{signature(x = "FP")}: the number of bits in this fingerprint}
 	 }
 }
 \references{
