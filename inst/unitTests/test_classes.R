@@ -52,7 +52,8 @@ test.fpset <- function(){
 	checkEquals(foldCount(x),7)
 
 	
-	fpset2 = new("FPset",fpma=data)
+	fpset2 = new("FPset",fpma=data,type="randFP")
+	checkEquals(fptype(fpset2),"randFP")
 	checkException(c(fpset,fpset2))
 
 	data = matrix(replicate(640,if(runif(1)>0.5)1 else 0),10,64)
