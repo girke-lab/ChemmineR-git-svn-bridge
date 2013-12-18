@@ -20,6 +20,7 @@ exportMethods(
     "show", "length", "c", "plot", "as.matrix", 
     "header", "atomblock", "bondblock", "datablock", "view",
     "cid", "sdfid", "atomcount", "datablocktag", "obmol",
+	 "fold","foldCount","fptype","numBits",
     
     ## Atom pair methods
     ## Source: AllClasses.R
