@@ -1,7 +1,8 @@
 
 test_aaa.clean <- function(){
 
-	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db","part1.db","part2.db"))
+	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db",
+				"part1.db","part2.db","dup_test.db"))
 	
 }
 
@@ -252,3 +253,25 @@ getCompoundCount  <- function(conn){
 	dbGetQuery(conn,"SELECT count(*) FROM compounds WHERE format!='junk'")[1][[1]]
 }
 
+test_ea.dupDescriptors <- function() {
+
+	#   descriptor_id          compound_id
+	# 13881056,13881075      13884414,13884433
+	# 41764092,41764082      41780498,41780494
+   print("loading  duplicated descriptors")
+	conn = initDb("dup_test.db")
+	sdfs = read.SDFset("/home/khoran/ChemmineR/inst/unitTests/descriptor_dups.sdf")
+	loadSdf(conn,sdfs,function(sdfset) data.frame(MW=MW(sdfset)),
+			  descriptors=function(sdfset) 
+				data.frame(descriptor_type="ap",descriptor=unlist(lapply(ap(sdf2ap(sdfset)),
+														function(ap) paste(ap,collapse=", ")))))
+	print("done loading")
+	descriptorCount= dbGetQuery(conn,"SELECT count(*) FROM descriptors")[1][[1]]
+	checkEquals(descriptorCount,1)
+	typeCount= dbGetQuery(conn,"SELECT count(*) FROM descriptor_types WHERE descriptor_type = 'ap' ")[1][[1]]
+	checkEquals(typeCount,1)
+	linkCount= dbGetQuery(conn,"SELECT count(*) FROM compound_descriptors")[1][[1]]
+	checkEquals(linkCount,7)
+   dbDisconnect(conn)
+	
+}
