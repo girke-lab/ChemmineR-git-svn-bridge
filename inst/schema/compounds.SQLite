@@ -27,5 +27,7 @@ CREATE TABLE descriptors (
 CREATE TABLE compound_descriptors (
 	compound_id INTEGER REFERENCES compounds(compound_id) ON DELETE CASCADE ON UPDATE CASCADE,
 	descriptor_id INTEGER REFERENCES descriptors(descriptor_id),
+	priority INTEGER NOT NULL,
+	UNIQUE(descriptor_id, priority),
 	UNIQUE(compound_id,descriptor_id)
 );
