@@ -57,7 +57,7 @@ export(
     "sdf.subset", "db.explain", "cluster.sizestat", 
     "cmp.duplicated", "sdf.visualize", "db.subset",
 	 "smiles2sdf","sdf2smiles",
-	 "propOB","fingerprintOB",
+	 "propOB","fingerprintOB", "regenerateCoords",
     
     ## Fingerprint functions
     ## Source: sim.R
