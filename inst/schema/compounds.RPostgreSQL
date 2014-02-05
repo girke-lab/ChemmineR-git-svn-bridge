@@ -29,8 +29,18 @@ CREATE TABLE descriptors (
 CREATE TABLE compound_descriptors (
 	compound_id INTEGER REFERENCES compounds(compound_id) ON DELETE CASCADE ON UPDATE CASCADE,
 	descriptor_id INTEGER REFERENCES descriptors(descriptor_id),
-	priority INTEGER NOT NULL,
-	UNIQUE(descriptor_id, priority),
+	priority INTEGER NOT NULL DEFAULT 0,
 	UNIQUE(compound_id,descriptor_id)
 );
+CREATE INDEX compound_descriptors_descriptor_id_key ON compounds(name);
 
+
+CREATE VIEW compounds_grouped_by_descriptors AS
+	SELECT	descriptor_id, 
+				trim(leading '{' from 
+					trim( trailing '}' from
+						array_agg(compound_id)::varchar)) AS compound_ids 
+	FROM compound_descriptors
+	GROUP BY descriptor_id
+	HAVING count(compound_id) > 1
+;
