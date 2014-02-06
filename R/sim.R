@@ -1305,8 +1305,27 @@ smiles2sdfWeb <- function(smiles,limit=100) {
 	 as(sdfs,"SDFset")
 }
 
+times = new.env()
+times$descT = 0
+times$facT = 0
+times$vecT = 0
 genAPDescriptors <- function(sdf){
-  .factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
+  #.factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
+
+	t=Sys.time()
+	d=.Call("genAPDescriptor",sdf)
+	times$descT <- times$descT + (Sys.time() - t)
+
+	t=Sys.time()
+	f=as.factor(d)
+	times$facT <- times$facT + (Sys.time() - t)
+
+	t=Sys.time()
+	v= .factor_to_vector(f)
+	times$vecT <- times$vecT + (Sys.time() - t)
+
+	v
+
 }
 propOB <- function(sdfSet){
 	.ensureOB()
