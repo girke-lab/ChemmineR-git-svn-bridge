@@ -27,7 +27,7 @@ initDb <- function(handle){
 
 	tableList=dbListTables(conn)
 
-	if( ! all(c("compounds","descriptor_types","descriptors","compound_descriptors") %in% tableList)) {
+	if( ! all(c("compounds","descriptor_types","descriptors", "compound_descriptors") %in% tableList)) {
 		print("createing db")
 
 		sqlFile = file.path("schema",if(inherits(conn,"SQLiteConnection")) "compounds.SQLite" 
@@ -210,6 +210,8 @@ bufferLines <- function(fh,batchSize,lineProcessor){
 			break;
 	}
 }
+#db connections cannot be nested, so make sure rsProcessor does not
+#try to use the db.
 bufferResultSet <- function(rs,rsProcessor,batchSize=1000,closeRS=FALSE){
 	while(TRUE){
 		chunk = fetch(rs,n=batchSize)
@@ -542,7 +544,21 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		})
 	}
 }
+setPriorities <- function(conn,priorityFn){
 
+	rows=dbGetQuery(conn,"SELECT * FROM compounds_grouped_by_descriptors")
+	dbTransaction(conn,	
+		for(i in seq(along=rows$compound_ids)){
+			compIds = unlist(strsplit(rows$compound_ids[i],",",fixed="TRUE"))
+			priorities = priorityFn(compIds)
+			priorities$descriptor_id = rep(rows$descriptor_id[i],nrow(priorities))
+			updatePriorities(conn,priorities)
+		}
+	)
+}
+randomPriorities <- function(compIds){
+	data.frame(compound_id = compIds,priority=1:length(compIds))
+}
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){
 	.ensureOB("smile format only suppported with ChemmineOB package")
@@ -797,9 +813,6 @@ insertNamedDef <- function(conn,data) {
 		postgresqlWriteTable(conn,"compounds",data[,fields],append=TRUE,row.names=FALSE)
 
 
-		#apply(data[,fields],1,function(row) dbOp(dbGetQuery(conn, 
-						 #"INSERT INTO compounds(name,definition,definition_checksum,format) VALUES($1,$2,$3,$4)",
-						 #row)))
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
@@ -816,65 +829,27 @@ insertFeature <- function(conn,name,values){
 		postgresqlWriteTable(conn,paste("feature_",name,sep=""),values[,fields],append=TRUE,row.names=FALSE)
 
 
-	#	apply(values[,fields],1,function(row) 
-	#			dbGetQuery(conn,paste("INSERT INTO feature_",name,"(compound_id,\"",name,"\") ",
-	#										 "VALUES($1,$2)",sep=""),row))
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
 }
-#Incomplete. endedup accomplishing what was needed in SQL statements
-#descriptorsPresentInDb <- function(conn, data){
-#
-#	where = Reduce(function(l1,l2){
-#				paste(l1," OR ( descriptor_type = '",l2$descriptor_type,"' AND ",
-#								  " descriptor_checksum IN
-#								  (",paste(l2$descriptor_checksums,","),") )"),sep="")
-#			 },Map(function(dt){
-#					list(descriptor_type=dt,
-#						  descriptor_checksums = data$descriptor_checksum[data$descriptor_type == dt])
-#								 },unique(data$descritptor_type)),init="FALSE")
-#
-#
-#	message("where: \n",where)
-#
-#	result = dbGetQuery(conn,paste("SELECT descriptor_type, descriptor_checksum 
-#											  FROM descriptor_types as dt 
-#												    JOIN descriptors as d USING(descriptor_type_id)
-#											  WHERE  ",where))
-#
-#	toKeep=c()
-#	for(i in seq(along=data$descriptor_type)){
-#		
-#	}
-#	
-#}
+
 insertDescriptor <- function(conn,data){
 	data = rmDups(data,c("definition_checksum","descriptor_type"))
 	data$descriptor_checksum = sapply(as.character(data$descriptor),function(x) digest(x,serialize=FALSE))
 	uniqueDescriptors = rmDups(data,c("descriptor_type","descriptor_checksum"))
 
-	if(is.null(data$priority)){ # no priorities given
-		uniqueDescChecksums = unique(data$descriptor_checksum)
-		for(dc in uniqueDescChecksums){
-			ids = data$descriptor_checksum == dc
-			print("ids:")
-			print(ids)
-			data$priority[ids] = 1:length(ids)
-		}
-	}
-	print(data[,c("definition_checksum","descriptor_checksum","priority" )])
 
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn, paste("INSERT OR IGNORE INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
 				"VALUES( (SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
 							:descriptor,:descriptor_checksum )") ,bind.data=uniqueDescriptors)
 		dbGetPreparedQuery(conn, paste("INSERT INTO compound_descriptors(compound_id,
-												 descriptor_id,priority) ",
+												 descriptor_id) ",
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
 							(SELECT descriptor_id FROM descriptors JOIN descriptor_types USING(descriptor_type_id) 
 							 WHERE descriptor_type = :descriptor_type 
-								AND descriptor_checksum = :descriptor_checksum),:priority)"),
+								AND descriptor_checksum = :descriptor_checksum))"),
 						bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		#fields = c("definition_checksum","descriptor_type","descriptor")
@@ -887,12 +862,12 @@ insertDescriptor <- function(conn,data){
 													WHERE descriptor_type = $1 AND
 													descriptor_checksum=$3)" ) ,row)
 						})
-		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum","priority")],1,function(row) 
+		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) 
 			dbGetQuery(conn, paste("INSERT INTO compound_descriptors(compound_id,
-										  descriptor_id,priority) ",
+										  descriptor_id) ",
 					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = $1),
 								(SELECT descriptor_id FROM descriptors JOIN descriptor_types USING(descriptor_type_id) 
-								 WHERE descriptor_type = $2 AND descriptor_checksum = $3),$4)"),row)
+								 WHERE descriptor_type = $2 AND descriptor_checksum = $3))"),row)
 			)
 	}else{
 		stop("database ",class(conn)," unsupported")
@@ -908,4 +883,18 @@ insertDescriptorType <- function(conn,data){
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
+}
+updatePriorities <- function(conn,data){
+	#print(data[1:10,])
+	if(inherits(conn,"SQLiteConnection")){
+		dbGetPreparedQuery(conn,"UPDATE compound_descriptors SET priority = :priority WHERE compound_id=:compound_id AND
+								 descriptor_id=:descriptor_id", bind.data=data)
+	}else if(inherits(conn,"PostgreSQLConnection")){
+		apply(data[,c("compound_id","descriptor_id","priority")],1,function(row) 
+				dbGetQuery(conn,paste("UPDATE compound_descriptors SET priority = $3 WHERE compound_id=$1 AND
+								 descriptor_id=$2"),row))
+	}else{
+		stop("database ",class(conn)," unsupported")
+	}
+
 }
