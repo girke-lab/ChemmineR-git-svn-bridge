@@ -27,7 +27,7 @@ initDb <- function(handle){
 
 	tableList=dbListTables(conn)
 
-	if( ! all(c("compounds","descriptor_types","descriptors") %in% tableList)) {
+	if( ! all(c("compounds","descriptor_types","descriptors","compound_descriptors") %in% tableList)) {
 		print("createing db")
 
 		sqlFile = file.path("schema",if(inherits(conn,"SQLiteConnection")) "compounds.SQLite" 
@@ -824,19 +824,46 @@ insertFeature <- function(conn,name,values){
 	}
 }
 insertDescriptor <- function(conn,data){
+message("inserting descriptor")
 	data = rmDups(data,c("definition_checksum","descriptor_type"))
+	data$descriptor_checksum = sapply(as.character(data$descriptor),function(x) digest(x,serialize=FALSE))
+	uniqueDescriptors = rmDups(data,c("descriptor_type","descriptor_checksum"))
 	if(inherits(conn,"SQLiteConnection")){
-		dbGetPreparedQuery(conn, paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
+		dbGetPreparedQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
+				"VALUES( (SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
+							:descriptor,:descriptor_checksum )") ,bind.data=uniqueDescriptors)
+		dbGetPreparedQuery(conn, paste("INSERT INTO compound_descriptors(compound_id, descriptor_id) ",
 				"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = :definition_checksum),
-							(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
-							:descriptor )") ,bind.data=data)
+							(SELECT descriptor_id FROM descriptors JOIN descriptor_types USING(descriptor_type_id) 
+							 WHERE descriptor_type = :descriptor_type 
+								AND descriptor_checksum = :descriptor_checksum))"),
+						bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
-		fields = c("definition_checksum","descriptor_type","descriptor")
-		apply(data[,fields],1,function(row) 
-			dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
-					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum =$1 ),
-								(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = $2 ), $3)"),
-							row))
+		#fields = c("definition_checksum","descriptor_type","descriptor")
+message("tables: ",paste(dbListTables(conn),collapse=","))
+message("inserting unique descriptors")
+		apply(uniqueDescriptors[,c("descriptor_type","descriptor","descriptor_checksum")],1,function(row) {
+			#print(names(row))
+			#print(row)
+			#print(paste("INSERT INTO descriptors(descriptor_type_id,descriptor) ",
+					#"VALUES( (SELECT descriptor_type_id FROM descriptor_types 
+									#WHERE descriptor_type = $1), $2 )"))
+			dbGetQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
+					"VALUES( (SELECT descriptor_type_id FROM descriptor_types 
+									WHERE descriptor_type = $1), $2, $3 )") ,row)
+						})
+message("inserting descriptor links")
+		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) 
+			dbGetQuery(conn, paste("INSERT INTO compound_descriptors(compound_id, descriptor_id) ",
+					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = $1),
+								(SELECT descriptor_id FROM descriptors JOIN descriptor_types USING(descriptor_type_id) 
+								 WHERE descriptor_type = $2 AND descriptor_checksum = $3))"),row)
+			)
+
+			#dbGetQuery(conn,paste("INSERT INTO descriptors(compound_id, descriptor_type_id,descriptor) ",
+					#"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum =$1 ),
+								#(SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = $2 ), $3)"),
+							#row))
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
