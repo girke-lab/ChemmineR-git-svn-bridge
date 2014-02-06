@@ -823,12 +823,38 @@ insertFeature <- function(conn,name,values){
 		stop("database ",class(conn)," unsupported")
 	}
 }
+#Incomplete. endedup accomplishing what was needed in SQL statements
+#descriptorsPresentInDb <- function(conn, data){
+#
+#	where = Reduce(function(l1,l2){
+#				paste(l1," OR ( descriptor_type = '",l2$descriptor_type,"' AND ",
+#								  " descriptor_checksum IN
+#								  (",paste(l2$descriptor_checksums,","),") )"),sep="")
+#			 },Map(function(dt){
+#					list(descriptor_type=dt,
+#						  descriptor_checksums = data$descriptor_checksum[data$descriptor_type == dt])
+#								 },unique(data$descritptor_type)),init="FALSE")
+#
+#
+#	message("where: \n",where)
+#
+#	result = dbGetQuery(conn,paste("SELECT descriptor_type, descriptor_checksum 
+#											  FROM descriptor_types as dt 
+#												    JOIN descriptors as d USING(descriptor_type_id)
+#											  WHERE  ",where))
+#
+#	toKeep=c()
+#	for(i in seq(along=data$descriptor_type)){
+#		
+#	}
+#	
+#}
 insertDescriptor <- function(conn,data){
 	data = rmDups(data,c("definition_checksum","descriptor_type"))
 	data$descriptor_checksum = sapply(as.character(data$descriptor),function(x) digest(x,serialize=FALSE))
 	uniqueDescriptors = rmDups(data,c("descriptor_type","descriptor_checksum"))
 	if(inherits(conn,"SQLiteConnection")){
-		dbGetPreparedQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
+		dbGetPreparedQuery(conn, paste("INSERT OR IGNORE INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
 				"VALUES( (SELECT descriptor_type_id FROM descriptor_types WHERE descriptor_type = :descriptor_type), 
 							:descriptor,:descriptor_checksum )") ,bind.data=uniqueDescriptors)
 		dbGetPreparedQuery(conn, paste("INSERT INTO compound_descriptors(compound_id, descriptor_id) ",
@@ -841,8 +867,12 @@ insertDescriptor <- function(conn,data){
 		#fields = c("definition_checksum","descriptor_type","descriptor")
 		apply(uniqueDescriptors[,c("descriptor_type","descriptor","descriptor_checksum")],1,function(row) {
 			dbGetQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
-					"VALUES( (SELECT descriptor_type_id FROM descriptor_types 
-									WHERE descriptor_type = $1), $2, $3 )") ,row)
+					" SELECT descriptor_type_id, $2, $3 FROM descriptor_types 
+									WHERE descriptor_type = $1 ",
+					"AND NOT EXISTS (SELECT 1 FROM descriptor_types 
+															JOIN descriptors USING(descriptor_type_id) 
+													WHERE descriptor_type = $1 AND
+													descriptor_checksum=$3)" ) ,row)
 						})
 		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) 
 			dbGetQuery(conn, paste("INSERT INTO compound_descriptors(compound_id, descriptor_id) ",
