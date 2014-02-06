@@ -13,7 +13,8 @@ Plots compound structure(s) for molecules stored in SDF and SDFset containers.
 
 ## Less important for user 
 plotStruc(sdf, atomcex = 1.2, atomnum = FALSE, no_print_atoms = c("C"),
-          noHbonds = TRUE, bondspacer = 0.12, colbonds=NULL, bondcol="red", ...)
+          noHbonds = TRUE, bondspacer = 0.12, colbonds=NULL, bondcol="red",
+			 regenCoords=FALSE, ...)
 }
 
 \arguments{
@@ -43,6 +44,14 @@ The bonds of connected atoms will be plotted in the color provided under \code{b
 A character or numeric vector of length one to specify the color to use for substructure highlighting under \code{colbonds}.
 
 }
+	\item{regenCoords}{
+		If ChemmineOB is installed and this option is TRUE, then Open
+		Babel will be used to re-generate the 2D coords for each
+		compound before plotting it. This often results in a nicer
+		layout. If you want to save the results of the coord
+		re-generation, call the \code{\link{regenerateCoords}} function
+		first yourself and save the result.
+	}
 \item{\dots}{
 Arguments to be passed to/from other methods.
 }
