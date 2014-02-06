@@ -2199,8 +2199,21 @@ grepSDFset <- function(pattern, x, field="datablock", mode="subset", ignore.case
 ## (7) Plotting Methods ##
 ##########################
 ## Plot single CMP Structure
-plotStruc <- function(sdf, atomcex=1.2, atomnum=FALSE, no_print_atoms=c("C"), noHbonds=TRUE, bondspacer=0.12, colbonds=NULL, bondcol="red", ...) {
-        toplot <- list(atomblock=cbind(atomblock(sdf)[,c(1:2)], as.matrix(bonds(sdf, type="bonds")[,-1])), bondblock=cbind(as.matrix(as.data.frame(bondblock(sdf))[,1:3]), bondcol=1))
+plotStruc <- function(sdf,
+							 atomcex=1.2,
+							 atomnum=FALSE,
+							 no_print_atoms=c("C"),
+							 noHbonds=TRUE,
+							 bondspacer=0.12,
+							 colbonds=NULL,
+							 bondcol="red",
+							 regenCoords=FALSE,
+							 ...) {
+
+	if(regenCoords && .haveOB())
+		sdf = regenCoordsOB(sdf)
+
+   toplot <- list(atomblock=cbind(atomblock(sdf)[,c(1:2)], as.matrix(bonds(sdf, type="bonds")[,-1])), bondblock=cbind(as.matrix(as.data.frame(bondblock(sdf))[,1:3]), bondcol=1))
 	## Add bond color
 	toplot[[2]][, "bondcol"] <- toplot[[2]][,"bondcol"] + as.numeric((toplot[[2]][,"C1"] %in% colbonds) & (toplot[[2]][,"C2"] %in% colbonds))
 	## Create empty plot with proper dimensions
