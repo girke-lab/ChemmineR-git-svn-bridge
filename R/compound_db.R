@@ -117,7 +117,7 @@ loadDescriptors <- function(conn,data){
 		print(paste("existing desc types:",paste(all_descriptor_types,collapse=","),"needed right now: ",
 				paste(unique_types,collapse=",")," to be added: ",paste(newTypes,collapse=",")))
 	if(length(newTypes) > 0)
-		tx(conn,insertDescriptorType(conn,data.frame(descriptor_type=newTypes)))
+		dbTransaction(conn,insertDescriptorType(conn,data.frame(descriptor_type=newTypes)))
 
 	insertDescriptor(conn,data)
 }
@@ -860,37 +860,12 @@ insertDescriptor <- function(conn,data){
 	}else if(inherits(conn,"PostgreSQLConnection")){
 		apply(uniqueDescriptors[,c("descriptor_type","descriptor","descriptor_checksum")],1,function(row) {
 				row[1] = descTypes[row[1]] #translate descriptor_type to descriptor_type_id
-
 				dbTransaction(conn,
 					dbClearResult(dbSendQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
 										" SELECT $1, $2, $3 ",
 										" WHERE NOT EXISTS (SELECT 1 FROM descriptors WHERE descriptor_type_id = $1 AND descriptor_checksum=$3)" 
 									) ,row))
 				)
-
-
-
-#				tryCatch({
-#						dbGetQuery(conn,"BEGIN TRANSACTION")
-#						rs=dbSendQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
-#										" VALUES($1, $2, $3) "
-#										#" SELECT $1, $2, $3 ",
-#										#" WHERE NOT EXISTS (SELECT 1 FROM descriptors WHERE descriptor_type_id = $1 AND descriptor_checksum=$3)" 
-#									) ,row)
-#						dbClearResult(rs)
-#						dbCommit(conn)
-#
-#					},error=function(e){
-#						dbRollback(conn)
-#						if(!grepl("duplicate key value violates unique constraint",e$message))
-#							stop(paste("error while inserting descriptor: ",e$message))
-#						else{
-#							message("rolling back dub descriptor")
-#						}
-#					})
-
-
-
 			})
 		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) {
 			row[2] = descTypes[row[2]] #translate descriptor_type to descriptor_type_id
