@@ -255,6 +255,7 @@ getCompoundCount  <- function(conn){
 
 test_ea.dupDescriptors <- function() {
 
+	DEACTIVATED("local test only")
 	#   descriptor_id          compound_id
 	# 13881056,13881075      13884414,13884433
 	# 41764092,41764082      41780498,41780494
