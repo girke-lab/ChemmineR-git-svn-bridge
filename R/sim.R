@@ -1358,6 +1358,11 @@ fingerprintOB <- function(sdfSet,fingerprintName){
 	cid(fpset) = cid(sdfSet)
 	fpset
 }
+smartsSearchOB <- function(sdfset,smartsPattern,uniqueMatches=TRUE){
+	.ensureOB()
+	smartsSearch_OB(obmol(sdfset),smartsPattern,uniqueMatches)
+}
+
 
 #compounds should be items that can be passed into similarity
 maximallyDissimilar <- function(compounds,n,similarity = cmp.similarity) {

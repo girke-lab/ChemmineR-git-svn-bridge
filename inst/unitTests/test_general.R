@@ -62,3 +62,12 @@ test.obmolRefs <- function() {
 		checkException(obmol(sdfsample[[1]]))
 
 }
+test.smartsSearchOB <- function(){
+	data(sdfsample)
+	rotableBonds = smartsSearchOB(sdfsample[1:5],"[!$(*#*)&!D1]-!@[!$(*#*)&!D1]",uniqueMatches=FALSE)
+	print("rotable bonds: ")
+	print(rotableBonds)
+	print(sdfid(sdfsample[1:5]))
+	checkEquals(as.vector(rotableBonds[1:5]),c(24,20,14,30,10))
+
+}

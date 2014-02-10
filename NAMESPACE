@@ -58,6 +58,7 @@ export(
     "cmp.duplicated", "sdf.visualize", "db.subset",
 	 "smiles2sdf","sdf2smiles",
 	 "propOB","fingerprintOB", "regenerateCoords",
+	 "smartsSearchOB",
     
     ## Fingerprint functions
     ## Source: sim.R
