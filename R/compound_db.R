@@ -117,7 +117,7 @@ loadDescriptors <- function(conn,data){
 		print(paste("existing desc types:",paste(all_descriptor_types,collapse=","),"needed right now: ",
 				paste(unique_types,collapse=",")," to be added: ",paste(newTypes,collapse=",")))
 	if(length(newTypes) > 0)
-		insertDescriptorType(conn,data.frame(descriptor_type=newTypes))
+		dbTransaction(conn,insertDescriptorType(conn,data.frame(descriptor_type=newTypes)))
 
 	insertDescriptor(conn,data)
 }
@@ -341,55 +341,54 @@ loadSdf <- function(conn,sdfFile,fct=function(x) data.frame(),
 		cmpid <- 1
 		partial <- NULL
 
-		dbTransaction(conn,{
-			while(!stop) {
-				counter <- counter + 1
-				chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
-				if(length(chunk) > 0) {
-					if(length(partial) > 0) {
-						chunk <- c(partial, chunk)
-					}
-					## Assure that lines of least 2 complete molecules are stored in chunk if available
-					inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-					while(inner) {
-						chunklength <- length(chunk)
-						chunk <- c(chunk, readLines(f, n = n))
-						if(chunklength == length(chunk)) { 
-							inner <- FALSE 
-						} else {
-							#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
-							inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
-						}
-					}
-					y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
-					index <- which(y!=-1)
-					indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
-					complete <- chunk[1:index[length(index)]]
-					if((index[length(index)]+1) <= length(chunk)) {
-						partial <- chunk[(index[length(index)]+1):length(chunk)]
+		while(!stop) {
+			counter <- counter + 1
+			chunk <- scan(f, n=n, what="a", blank.lines.skip=FALSE, quiet=TRUE, sep ="\n") # scan has more flexibilities for reading specific line ranges in files.
+			if(length(chunk) > 0) {
+				if(length(partial) > 0) {
+					chunk <- c(partial, chunk)
+				}
+				## Assure that lines of least 2 complete molecules are stored in chunk if available
+				inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+				while(inner) {
+					chunklength <- length(chunk)
+					chunk <- c(chunk, readLines(f, n = n))
+					if(chunklength == length(chunk)) { 
+						inner <- FALSE 
 					} else {
-						partial <- NULL
+						#inner <- sum(grepl("^\\${4,4}", chunk, perl=TRUE)) < 2
+						inner <- sum(grepl("$$$$", chunk, fixed=TRUE)) < 2
 					}
-
-					sdfset <- read.SDFset(read.SDFstr(complete))
-					valid = validSDF(sdfset)
-					sdfset=sdfset[valid]
-
-					defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
-					names = complete[indexDF[,1]][valid]
-					cmdIds = processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName,inTransaction=TRUE)
-
-					compoundIds = c(compoundIds,cmdIds)
-					
 				}
-				if(length(chunk) == 0) {
-					stop <- TRUE
-					close(f)
+				y <- regexpr("^\\${4,4}", chunk, perl=TRUE) # identifies all fields that start with a '$$$$' sign
+				index <- which(y!=-1)
+				indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
+				complete <- chunk[1:index[length(index)]]
+				if((index[length(index)]+1) <= length(chunk)) {
+					partial <- chunk[(index[length(index)]+1):length(chunk)]
+				} else {
+					partial <- NULL
 				}
+
+				sdfset <- read.SDFset(read.SDFstr(complete))
+				valid = validSDF(sdfset)
+				sdfset=sdfset[valid]
+
+				defs=apply(indexDF,1,function(row) paste(complete[row[1]:row[2]],collapse="\n"))[valid]
+				names = complete[indexDF[,1]][valid]
+				cmdIds = processAndLoad(conn,names,defs,sdfset,fct,descriptors,updateByName,inTransaction=TRUE)
+
+				compoundIds = c(compoundIds,cmdIds)
+				
 			}
+			if(length(chunk) == 0) {
+				stop <- TRUE
+				close(f)
+			}
+		}
 
-			compoundIds
-		})
+		compoundIds
+		
 	}
 }
 
@@ -504,44 +503,44 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		systemFields=data.frame(name=names,definition=defs,format=rep("sdf",length(names)),definition_checksum=checksums)
 
 		allFields = if(length(userFeatures)!=0) cbind(systemFields,userFeatures) else systemFields
-		tx(conn,{
-			deleteCompounds(conn,deleteCompIds)
-			loadedChecksums=loadDb(conn,allFields,featureFn)
 
-			#We assume descriptors are in the same order as compounds
-			descriptor_data = descriptors(sdfset)
-			if(length(descriptor_data) != 0)
-				loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
+		tx(conn, deleteCompounds(conn,deleteCompIds) )
+		loadedChecksums = tx(conn, loadDb(conn,allFields,featureFn) )
 
-
-			#print("original deleted comp ids")
-			#print(deleteCompIds)
-			#cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
-			#print("new comp ids: ")
-			#print(cmdIds)
-
-			# to keep stable compound id numbers, we reset the compound id of those
-			# compounds that were merely modified.
-			for(i in seq(along=deleteCompIds)){
-				cksum=names(deleteCompIds)[i]
-				id = deleteCompIds[i]
-				dbSendQuery(conn,paste("UPDATE compounds SET compound_id = ",id,
-											  " WHERE definition_checksum = '",cksum,"'",sep=""))
-			}
+		#We assume descriptors are in the same order as compounds
+		descriptor_data = descriptors(sdfset)
+		if(length(descriptor_data) != 0)
+			loadDescriptors(conn,cbind(loadedChecksums,descriptor_data))
 
 
-			cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
-			if(nrow(loadedChecksums) != length(cmdIds)){
-				stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
-					  " but only inserted ",length(cmdIds))
-			}
-			#print("updated comp ids:")
-			#print(cmdIds)
+		#print("original deleted comp ids")
+		#print(deleteCompIds)
+		#cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+		#print("new comp ids: ")
+		#print(cmdIds)
+
+		# to keep stable compound id numbers, we reset the compound id of those
+		# compounds that were merely modified.
+		for(i in seq(along=deleteCompIds)){
+			cksum=names(deleteCompIds)[i]
+			id = deleteCompIds[i]
+			dbSendQuery(conn,paste("UPDATE compounds SET compound_id = ",id,
+										  " WHERE definition_checksum = '",cksum,"'",sep=""))
+		}
+
+
+		cmdIds=findCompoundsByChecksum(conn,loadedChecksums)
+		if(nrow(loadedChecksums) != length(cmdIds)){
+			stop("failed to insert all compounds. recieved ",nrow(loadedChecksums), 
+				  " but only inserted ",length(cmdIds))
+		}
+		#print("updated comp ids:")
+		#print(cmdIds)
+	
+		#those in deleteCompIds were not really added, just modified. so remove them here.
+		#return newly added compound ids.
+		setdiff(cmdIds,deleteCompIds)
 		
-			#those in deleteCompIds were not really added, just modified. so remove them here.
-			#return newly added compound ids.
-			setdiff(cmdIds,deleteCompIds)
-		})
 	}
 }
 setPriorities <- function(conn,priorityFn){
@@ -833,11 +832,18 @@ insertFeature <- function(conn,name,values){
 		stop("database ",class(conn)," unsupported")
 	}
 }
-
+descriptorTypes <- function(conn){
+	data = dbGetQuery(conn,"SELECT descriptor_type_id, descriptor_type FROM descriptor_types")
+	dt = data$descriptor_type_id
+	names(dt) = data$descriptor_type
+	dt	
+}
 insertDescriptor <- function(conn,data){
 	data = rmDups(data,c("definition_checksum","descriptor_type"))
 	data$descriptor_checksum = sapply(as.character(data$descriptor),function(x) digest(x,serialize=FALSE))
 	uniqueDescriptors = rmDups(data,c("descriptor_type","descriptor_checksum"))
+
+	descTypes = descriptorTypes(conn)
 
 
 	if(inherits(conn,"SQLiteConnection")){
@@ -852,23 +858,23 @@ insertDescriptor <- function(conn,data){
 								AND descriptor_checksum = :descriptor_checksum))"),
 						bind.data=data)
 	}else if(inherits(conn,"PostgreSQLConnection")){
-		#fields = c("definition_checksum","descriptor_type","descriptor")
 		apply(uniqueDescriptors[,c("descriptor_type","descriptor","descriptor_checksum")],1,function(row) {
-			dbGetQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
-					" SELECT descriptor_type_id, $2, $3 FROM descriptor_types 
-									WHERE descriptor_type = $1 ",
-					"AND NOT EXISTS (SELECT 1 FROM descriptor_types 
-															JOIN descriptors USING(descriptor_type_id) 
-													WHERE descriptor_type = $1 AND
-													descriptor_checksum=$3)" ) ,row)
-						})
-		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) 
-			dbGetQuery(conn, paste("INSERT INTO compound_descriptors(compound_id,
+				row[1] = descTypes[row[1]] #translate descriptor_type to descriptor_type_id
+				dbTransaction(conn,
+					dbClearResult(dbSendQuery(conn, paste("INSERT INTO descriptors(descriptor_type_id,descriptor,descriptor_checksum) ",
+										" SELECT $1, $2, $3 ",
+										" WHERE NOT EXISTS (SELECT 1 FROM descriptors WHERE descriptor_type_id = $1 AND descriptor_checksum=$3)" 
+									) ,row))
+				)
+			})
+		apply(data[,c("definition_checksum","descriptor_type","descriptor_checksum")],1,function(row) {
+			row[2] = descTypes[row[2]] #translate descriptor_type to descriptor_type_id
+			dbTransaction(conn,dbGetQuery(conn, paste("INSERT INTO compound_descriptors(compound_id,
 										  descriptor_id) ",
 					"VALUES( (SELECT compound_id FROM compounds WHERE definition_checksum = $1),
-								(SELECT descriptor_id FROM descriptors JOIN descriptor_types USING(descriptor_type_id) 
-								 WHERE descriptor_type = $2 AND descriptor_checksum = $3))"),row)
-			)
+								(SELECT descriptor_id FROM descriptors  
+								 WHERE descriptor_type_id = $2 AND descriptor_checksum = $3))"),row))
+			})
 	}else{
 		stop("database ",class(conn)," unsupported")
 	}
