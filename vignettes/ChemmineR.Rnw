@@ -8,8 +8,9 @@
 % \VignetteDepends{}
 % \VignetteKeywords{}
 % \VignettePackage{gpls}
+% \VignetteEngine{knitr::knitr}
 \documentclass{article}
-<<style, echo=FALSE, results=tex>>=
+<<style, echo=FALSE, results='asis'>>=
 BiocStyle::latex(use.unsrturl=FALSE)
 @
 \usepackage[authoryear,round]{natbib}
@@ -88,10 +89,10 @@ biocLite("ChemmineR") # Installs the package.
 
 \subsection{Loading the Package and Documentation}
 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 library("ChemmineR") # Loads the package
 @
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 library(help="ChemmineR") # Lists all functions and classes 
 vignette("ChemmineR") # Opens this PDF manual from R
 @
@@ -100,44 +101,44 @@ vignette("ChemmineR") # Opens this PDF manual from R
 The following code gives an overview of the most important functionalities provided by \Rpackage{ChemmineR}. Copy and paste of the commands into the R console will demonstrate their utilities. \\
 
 \noindent Create Instances of \Rclass{SDFset} class:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(sdfsample)
 sdfset <- sdfsample
 sdfset # Returns summary of SDFset
 sdfset[1:4] # Subsetting of object 
 sdfset[[1]] # Returns summarized content of one SDF
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 view(sdfset[1:4]) # Returns summarized content of many SDFs, not printed here
 as(sdfset[1:4], "list") # Returns complete content of many SDFs, not printed here
 @
 
 \noindent An \Rclass{SDFset} is created during the import of an SD file:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfset <- read.SDFset("http://faculty.ucr.edu/~tgirke/Documents/
                        R_BioCond/Samples/sdfsample.sdf")
 @
 
 \noindent Miscellaneous accessor methods for \Rclass{SDFset} container:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 header(sdfset[1:4]) # Not printed here
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 header(sdfset[[1]])
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 atomblock(sdfset[1:4]) # Not printed here
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 atomblock(sdfset[[1]])[1:4,]
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 bondblock(sdfset[1:4]) # Not printed here
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 bondblock(sdfset[[1]])[1:4,] 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 datablock(sdfset[1:4]) # Not printed here
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 datablock(sdfset[[1]])[1:4]
 @
 
 \noindent Assigning compound IDs and keeping them unique:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cid(sdfset)[1:4] # Returns IDs from SDFset object
 sdfid(sdfset)[1:4] # Returns IDs from SD file header block
 unique_ids <- makeUnique(sdfid(sdfset))
@@ -145,7 +146,7 @@ cid(sdfset) <- unique_ids
 @
 
 \noindent Converting the data blocks in an \Rclass{SDFset} to a matrix:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 blockmatrix <- datablock2ma(datablocklist=datablock(sdfset))
    # Converts data block to matrix   
 numchar <- splitNumChar(blockmatrix=blockmatrix) 
@@ -155,38 +156,38 @@ numchar[[2]][1:2,10:11] # Slice of character matrix
 @
 
 \noindent Compute atom frequency matrix, molecular weight and formula:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 propma <- data.frame(MF=MF(sdfset), MW=MW(sdfset), atomcountMA(sdfset))
 propma[1:4, ]
 @
 
 \noindent Assign matrix data to data block:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 datablock(sdfset) <- propma
 datablock(sdfset[1])
 @
 
 \noindent String searching in \Rclass{SDFset} ():
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 grepSDFset("650001", sdfset, field="datablock", mode="subset") 
    # Returns summary view of matches. Not printed here.
 .
 @
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 grepSDFset("650001", sdfset, field="datablock", mode="index") 
 @
 
 \noindent Export SDFset to SD file:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE)
 @
 
 \noindent Plot molecule structure of one or many SDFs:
-<<plotstruct, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct, eval=TRUE, tidy=FALSE>>=
 plot(sdfset[1:4], print=FALSE) # Plots structures to R graphics device
 @
 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 @
 \begin{figure}[bthp]
@@ -197,12 +198,12 @@ sdf.visualize(sdfset[1:4]) # Compound viewing in web browser
 \end{figure}
 
 \noindent Structure similarity searching and clustering:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 apset <- sdf2ap(sdfset) 
    # Generate atom pair descriptor database for searching
 .
 @
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(apset)
    # Load sample apset data provided by library.
 cmp.search(apset, apset[1], type=3, cutoff = 0.3, quiet=TRUE) 
@@ -325,11 +326,11 @@ The following list gives an overview of the most important S4 classes, methods a
 The following gives an overview of the most important import/export functionalities for small molecules provided by \Rpackage{ChemmineR}. The given example creates an instance of the \Rclass{SDFset} class using as sample data set the first 100 compounds from this PubChem SD file (SDF): Compound\_00650001\_00675000.sdf.gz (\url{ftp://ftp.ncbi.nih.gov/pubchem/Compound/CURRENT-Full/SDF/}). \\
 
 \noindent SDFs can be imported with the \Rfunction{read.SDFset} function:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfset <- read.SDFset("http://faculty.ucr.edu/~tgirke/Documents/
                        R_BioCond/Samples/sdfsample.sdf")
 @
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(sdfsample) # Loads the same SDFset provided by the library
 sdfset <- sdfsample 
 valid <- validSDF(sdfset) # Identifies invalid SDFs in SDFset objects
@@ -337,12 +338,12 @@ sdfset <- sdfset[valid] # Removes invalid SDFs, if there are any
 @
 
 \noindent Import SD file into \Rclass{SDFstr} container:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfstr <- read.SDFstr("http://faculty.ucr.edu/~tgirke/Documents/
                        R_BioCond/Samples/sdfsample.sdf")
 @
 \noindent Create \Rclass{SDFset} from \Rclass{SDFstr} class:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 sdfstr <- as(sdfset, "SDFstr")
 sdfstr
 as(sdfstr, "SDFset") 
@@ -352,14 +353,14 @@ as(sdfstr, "SDFset")
 The \Rfunction{read.SMIset} function imports one or many molecules from a SMILES file and stores them in a \Rclass{SMIset} container. The input file is expected to contain one SMILES string per row with tab-separated compound identifiers at the end of each line. The compound identifiers are optional. \\
 
 \noindent Create sample SMILES file and then import it:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 data(smisample); smiset <- smisample
 write.SMI(smiset[1:4], file="sub.smi")
 smiset <- read.SMIset("sub.smi")
 @
 
 \noindent Inspect content of \Rclass{SMIset}:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(smisample) # Loads the same SMIset provided by the library
 smiset <- smisample 
 smiset
@@ -367,13 +368,13 @@ view(smiset[1:2])
 @
 
 \noindent Accessor functions:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cid(smiset[1:4])
 (smi <- as.character(smiset[1:2]))
 @
 
 \noindent Create \Rclass{SMIset} from named character vector:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 as(smi, "SMIset") 
 @
 
@@ -381,24 +382,24 @@ as(smi, "SMIset")
 
 \subsection{SDF Export}
 \noindent Write objects of classes \Rclass{SDFset/SDFstr/SDF} to SD file:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset[1:4], file="sub.sdf")
 @ 
     
 \noindent Writing customized \Rclass{SDFset} to file containing \Rpackage{ChemmineR} signature, IDs from \Rclass{SDFset} and no data block:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE, cid=TRUE, db=NULL)
 @
     
 \noindent Example for injecting a custom matrix/data frame into the data block of an \Rclass{SDFset} and then writing it to an SD file:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 props <- data.frame(MF=MF(sdfset), MW=MW(sdfset), atomcountMA(sdfset))
 datablock(sdfset) <- props
 write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE, cid=TRUE)
 @
 
 \noindent Indirect export via \Rclass{SDFstr} object:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdf2str(sdf=sdfset[[1]], sig=TRUE, cid=TRUE) 
    # Uses default components
 sdf2str(sdf=sdfset[[1]], head=letters[1:4], db=NULL) 
@@ -406,7 +407,7 @@ sdf2str(sdf=sdfset[[1]], head=letters[1:4], db=NULL)
 @
 
 \noindent Write \Rclass{SDF}, \Rclass{SDFset} or \Rclass{SDFstr} classes to file:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset[1:4], file="sub.sdf", sig=TRUE, cid=TRUE, db=NULL)
 write.SDF(sdfstr[1:4], file="sub.sdf")
 cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
@@ -414,7 +415,7 @@ cat(unlist(as(sdfstr[1:4], "list")), file="sub.sdf", sep="\n")
 
 \subsection{SMILES Export}
 \noindent Write objects of class \Rclass{SMIset} to SMILES file with and without compound identifiers:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 data(smisample); smiset <- smisample # Sample data set
 write.SMI(smiset[1:4], file="sub.smi", cid=TRUE)
 write.SMI(smiset[1:4], file="sub.smi", cid=FALSE)
@@ -427,7 +428,7 @@ and \Rclass{SDFset} containers.\\
 
 \noindent Convert an \Rclass{SDFset} container to a SMILES \Rclass{character} string:
 
-<<sdf2smiles, eval=FALSE, keep.source=TRUE>>=
+<<sdf2smiles, eval=FALSE, tidy=FALSE>>=
 data(sdfsample); sdfset <- sdfsample[1]
 smiles <- sdf2smiles(sdfset)
 smiles
@@ -435,7 +436,7 @@ smiles
 
 \noindent Convert a SMILES \Rclass{character} string to an \Rclass{SDFset} container:
 
-<<smiles2sdf, eval=FALSE, keep.source=TRUE>>=
+<<smiles2sdf, eval=FALSE, tidy=FALSE>>=
 sdf <- smiles2sdf("CC(=O)OC1=CC=CC=C1C(=O)O\tname")
 view(sdf)
 @
@@ -452,7 +453,7 @@ any two formats supported by OpenBabel. For example, to convert a SMILES
 string to an SDF string, one can use the \Rfunction{convertFormat}
 function.
 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfStr <- convertFormat("SMI","SDF","CC(=O)OC1=CC=CC=C1C(=O)O\ttest_name")
 @
 
@@ -461,7 +462,7 @@ also computed and included in the resulting SDF string.
 
 \noindent To convert a file with compounds encoded in one format to another format, the 
 \Rfunction{convertFormatFile} function can be used instead.
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 convertFormatFile("SMI","SDF","test.smiles","test.sdf")
 @
 
@@ -473,23 +474,23 @@ from the command-line ``obabel -L formats''.
 The following \Rfunction{write.SDFsplit} function allows to split SD Files into any number of smaller SD Files. This can become important when working with very big SD Files. Users should note that this function can output many files, thus one should run it in a dedicated directory!  \\
 
 \noindent Create sample SD File with 100 molecules:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset, "test.sdf")
 @ 
     
 \noindent Read in sample SD File. Note: reading file into SDFstr is much faster than into SDFset:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfstr <- read.SDFstr("test.sdf")
 @
     
 \noindent Run export on \Rclass{SDFstr} object:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDFsplit(x=sdfstr, filetag="myfile", nmol=10)
    # 'nmol' defines the number of molecules to write to each file
 @
 
 \noindent Run export on \Rclass{SDFset} object:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDFsplit(x=sdfset, filetag="myfile", nmol=10)
 @
 
@@ -497,12 +498,12 @@ write.SDFsplit(x=sdfset, filetag="myfile", nmol=10)
 The \Rfunction{sdfStream} function allows to stream through SD Files with millions of molecules without consuming much memory. During this process any set of descriptors, supported by \Rpackage{ChemmineR}, can be computed (\textit{e.g.} atom pairs, molecular properties, etc.), as long as they can be returned in tabular format. In addition to descriptor values, the function returns a line index that gives the start and end positions of each molecule in the source SD File. This line index can be used by the downstream \Rfunction{read.SDFindex} function to retrieve specific molecules of interest from the source SD File without reading the entire file into R. The following outlines the typical workflow of this streaming functionality in \Rpackage{ChemmineR}.\\
 
 \noindent Create sample SD File with 100 molecules:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 write.SDF(sdfset, "test.sdf")
 @ 
     
 \noindent Define descriptor set in a simple function:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 desc <- function(sdfset) {
         cbind(SDFID=sdfid(sdfset),
               # datablock2ma(datablocklist=datablock(sdfset)),
@@ -516,19 +517,19 @@ desc <- function(sdfset) {
 @
     
 \noindent Run \Rfunction{sdfStream} with \Rfunction{desc} function and write results to a file called \Robject{matrix.xls}:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfStream(input="test.sdf", output="matrix.xls", fct=desc, Nlines=1000)
    # 'Nlines': number of lines to read from input SD File at a time
 @
 
 \noindent One can also start reading from a specific line number in the SD file. The following example starts at line number 950. This is useful for restarting and debugging the process. With \Rfunarg{append=TRUE} the result can be appended to an existing file. 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfStream(input="test.sdf", output="matrix2.xls", append=FALSE, fct=desc, 
           Nlines=1000, startline=950) 
 @
 
 \noindent Select molecules meeting certain property criteria from SD File using line index generated by previous \Rfunction{sdfStream} step:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 indexDF <- read.delim("matrix.xls", row.names=1)[,1:4]
 indexDFsub <- indexDF[indexDF$MW < 400, ] 
    # Selects molecules with MW < 400
@@ -537,18 +538,18 @@ sdfset <- read.SDFindex(file="test.sdf", index=indexDFsub, type="SDFset")
 @
 
 \noindent Write results directly to SD file without storing larger numbers of molecules in memory: 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 read.SDFindex(file="test.sdf", index=indexDFsub, type="file", outfile="sub.sdf")
 @
 
 \noindent Read AP/APFP strings from file into \Robject{APset} or \Robject{FP} object:  
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 apset <- read.AP(x="matrix.xls", type="ap", colid="AP") 
 apfp <- read.AP(x="matrix.xls", type="fp", colid="APFP")
 @
 
 \noindent Alternatively, one can provide the AP/APFP strings in a named character vector:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 apset <- read.AP(x=sdf2ap(sdfset[1:20], type="character"), type="ap")
 fpchar <- desc2fp(sdf2ap(sdfset[1:20]), descnames=1024, type="character")
 fpset <- as(fpchar, "FPset")
@@ -608,7 +609,7 @@ number of rings and aromatic rings. The rings function actually returns a data f
 contain the ``MW'' column. These will be the names used for these features and must be used when
 searching with them.  Finally, the new compound ids are returned and stored in the ``ids'' variable.
 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 
 data(sdfsample)
 
@@ -644,7 +645,7 @@ Compounds can also be fetched by name using the \Rfunction{findCompoundsByName} 
 
 In this example we search for compounds with molecular weight less than 300. We then fetch
 the matching compounds and show their molecular weight.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 lightIds <- findCompounds(conn,"MW",c("MW < 300"))
 MW(getCompounds(conn,lightIds)) 
 
@@ -656,7 +657,7 @@ getCompoundNames(conn,lightIds)
 \section{Working with SDF/SDFset Classes}
 \noindent Several methods are available to return the different data components of \Rclass{SDF/SDFset} containers in batches. The following examples 
 list the most important ones. To save space their content is not printed in the manual. 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 view(sdfset[1:4]) # Summary view of several molecules
 length(sdfset) # Returns number of molecules
 sdfset[[1]] # Returns single molecule from SDFset as SDF object
@@ -666,14 +667,14 @@ c(sdfset[1:4], sdfset[5:8]) # Concatenation of several SDFsets
 @
 
 \noindent The \Rfunction{grepSDFset} function allows string matching/searching on the different data components in \Rclass{SDFset}. By default the function returns a SDF summary of the matching entries. Alternatively, an index of the matches can be returned with the setting \emph{mode="index"}.
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 grepSDFset("650001", sdfset, field="datablock", mode="subset") 
    # To return index, set mode="index")
 .
 @
 
 \noindent Utilities to maintain unique compound IDs:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfid(sdfset[1:4])
    # Retrieves CMP IDs from Molecule Name field in header block.
 cid(sdfset[1:4])
@@ -684,7 +685,7 @@ cid(sdfset) <- unique_ids # Assigns uniquified IDs to ID slot
 @
 
 \noindent Subsetting by character, index and logical vectors:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 view(sdfset[c("650001", "650012")])
 view(sdfset[4:1])
 mylog <- cid(sdfset) %in% c("650001", "650012")
@@ -692,7 +693,7 @@ view(sdfset[mylog])
 @
 
 \noindent Accessing \Rclass{SDF/SDFset} components: header, atom, bond and data blocks:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 atomblock(sdf); sdf[[2]]; sdf[["atomblock"]] 
    # All three methods return the same component
 header(sdfset[1:4])
@@ -706,27 +707,27 @@ datablock(sdfset[[1]])
 @
 
 \noindent Replacement Methods:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfset[[1]][[2]][1,1] <- 999
 atomblock(sdfset)[1] <- atomblock(sdfset)[2]
 datablock(sdfset)[1] <- datablock(sdfset)[2]
 @
 
 \noindent Assign matrix data to data block:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 datablock(sdfset) <- as.matrix(iris[1:100,])
 view(sdfset[1:4])
 @
 
 \noindent Class coercions from \Rclass{SDFstr} to \Rclass{list}, \Rclass{SDF} and \Rclass{SDFset}:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 as(sdfstr[1:2], "list") 
 as(sdfstr[[1]], "SDF")
 as(sdfstr[1:2], "SDFset")
 @
 
 \noindent Class coercions from \Rclass{SDF} to \Rclass{SDFstr}, \Rclass{SDFset}, list with SDF sub-components:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdfcomplist <- as(sdf, "list")
 sdfcomplist <- as(sdfset[1:4], "list"); as(sdfcomplist[[1]], "SDF")
 sdflist <- as(sdfset[1:4], "SDF"); as(sdflist, "SDFset")
@@ -735,7 +736,7 @@ as(sdfset[[1]], "SDFset")
 @
 
 \noindent Class coercions from \Rclass{SDFset} to lists with components consisting of SDF or sub-components:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 as(sdfset[1:4], "SDF")
 as(sdfset[1:4], "list")
 as(sdfset[1:4], "SDFstr")
@@ -744,34 +745,34 @@ as(sdfset[1:4], "SDFstr")
 \section{Molecular Property Functions (Physicochemical Descriptors)}
 \noindent Several methods and functions are available to compute basic compound descriptors, such as molecular formula (MF), molecular weight (MW), and frequencies of atoms and functional groups. In many of these functions, it is important to set \Rfunarg{addH=TRUE} in order to include/add hydrogens that are often not specified in an SD file.
 
-<<boxplot, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<boxplot, eval=TRUE, tidy=FALSE>>=
 propma <- atomcountMA(sdfset, addH=FALSE)
 boxplot(propma, col="blue", main="Atom Frequency")
 @
 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 boxplot(rowSums(propma), main="All Atom Frequency")   
 @
 
 \noindent Data frame provided by library containing atom names, atom symbols, standard atomic weights, group and period numbers:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(atomprop)
 atomprop[1:4,] 
 @
 
 \noindent Compute MW and formula:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 MW(sdfset[1:4], addH=FALSE)
 MF(sdfset[1:4], addH=FALSE)
 @
 
 \noindent Enumerate functional groups:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 groups(sdfset[1:4], groups="fctgroup", type="countMA")
 @
 
 \noindent Combine MW, MF, charges, atom counts, functional group counts and ring counts in one data frame:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 propma <- data.frame(MF=MF(sdfset, addH=FALSE), MW=MW(sdfset, addH=FALSE), 
                      Ncharges=sapply(bonds(sdfset, type="charge"), length), 
                      atomcountMA(sdfset, addH=FALSE), groups(sdfset, 
@@ -781,7 +782,7 @@ propma[1:4,]
 @
 
 \noindent The following shows an example for assigning the values stored in a matrix (\textit{e.g.} property descriptors) to the data block components in an \Rclass{SDFset}. Each matrix row will be assigned to the corresponding slot position in the \Rclass{SDFset}.
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 datablock(sdfset) <- propma # Works with all SDF components
 datablock(sdfset)[1:4]
 test <- apply(propma[1:4,], 1, function(x) data.frame(col=colnames(propma), value=x))
@@ -789,13 +790,13 @@ sdf.visualize(sdfset[1:4], extra = test)
 @
 
 \noindent The data blocks in SDFs contain often important annotation information about compounds. The \Rfunction{datablock2ma} function returns this information as matrix for all compounds stored in an \Rclass{SDFset} container. The \Rfunction{splitNumChar} function can then be used to organize all numeric columns in a \Rclass{numeric matrix} and the character columns in a \Rclass{character matrix} as components of a \Rclass{list} object.
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 datablocktag(sdfset, tag="PUBCHEM_NIST_INCHI")
 datablocktag(sdfset, tag="PUBCHEM_OPENEYE_CAN_SMILES")
 @
 
 \noindent Convert entire data block to matrix:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 blockmatrix <- datablock2ma(datablocklist=datablock(sdfset)) 
    # Converts data block to matrix 
 numchar <- splitNumChar(blockmatrix=blockmatrix) 
@@ -807,7 +808,7 @@ numchar[[1]][1:4,]; numchar[[2]][1:4,]
 
 \section{Bond Matrices}
 \noindent Bond matrices provide an efficient data structure for many basic computations on small molecules. The function \Rfunction{conMA} creates this data structure from \Rclass{SDF} and \Rclass{SDFset} objects. The resulting bond matrix contains the atom labels in the row/column titles and the bond types in the data part. The labels are defined as follows: 0 is no connection, 1 is a single bond, 2 is a double bond and 3 is a triple bond.
-<<contable, eval=FALSE, fig=FALSE, keep.source=TRUE>>=
+<<contable, eval=FALSE, fig.keep='none', tidy=FALSE>>=
 conMA(sdfset[1:2], exclude=c("H"))
    # Create bond matrix for first two molecules in sdfset
 conMA(sdfset[[1]], exclude=c("H"))
@@ -822,7 +823,7 @@ rowSums(conMA(sdfset[[1]], exclude=c("H")))
 \section{Charges and Missing Hydrogens}
 \noindent 
 The function \Rfunction{bonds} returns information about the number of bonds, charges and missing hydrogens in \Rclass{SDF} and \Rclass{SDFset} objects. It is used by many other functions (\textit{e.g.} \Rfunction{MW}, \Rfunction{MF}, \Rfunction{atomcount}, \Rfunction{atomcuntMA} and \Rfunction{plot}) to correct for missing hydrogens that are often not specified in SD files. 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 bonds(sdfset[[1]], type="bonds")[1:4,]
 bonds(sdfset[1:2], type="charge")
 bonds(sdfset[1:2], type="addNH")
@@ -834,33 +835,33 @@ The function \Rfunction{rings} identifies all possible rings in one or many mole
 
 \vspace{0.3cm}
 \noindent The following example returns all possible rings in a \Rclass{list}. The argument \Rfunarg{upper} allows to specify an upper length limit for rings. Choosing smaller length limits will reduce the search space resulting in shortened compute times. Note: each ring is represented by a character vector of atom symbols that are numbered by their position in the atom block of the corresponding \Rclass{SDF/SDFset} object.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 (ringatoms <- rings(sdfset[1], upper=Inf, type="all", arom=FALSE, inner=FALSE))
 @
 
 \noindent For visual inspection, the corresponding compound structure can be plotted with the ring bonds highlighted in color:
-<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 atomindex <- as.numeric(gsub(".*_", "", unique(unlist(ringatoms))))
 plot(sdfset[1], print=FALSE, colbonds=atomindex)
 @
 
 \noindent Alternatively, one can include the atom numbers in the plot: 
-<<eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 plot(sdfset[1], print=FALSE, atomnum=TRUE, no_print_atoms="H")
 @
 
 \noindent Aromaticity information of the rings can be returned in a logical vector by setting \Rfunarg{arom=TRUE}:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 rings(sdfset[1], upper=Inf, type="all", arom=TRUE, inner=FALSE)  
 @
 
 \noindent Return rings with no more than 6 atoms that are also aromatic:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 rings(sdfset[1], upper=6, type="arom", arom=TRUE, inner=FALSE)
 @ 
 
 \noindent Count shortest possible rings and their aromaticity assignments by setting \Rfunarg{type=count} and \Rfunarg{inner=TRUE}. The inner (smallest possible) rings are identified by first computing all possible rings and then selecting only the inner rings. For more details, consult the help documentation with \Rfunction{?rings}.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 rings(sdfset[1:4], upper=Inf, type="count", arom=TRUE, inner=TRUE) 
 @ 
 
@@ -869,26 +870,26 @@ rings(sdfset[1:4], upper=Inf, type="count", arom=TRUE, inner=TRUE)
 A new plotting function for compound structures has been added to the package recently. This function uses the native R graphics device for generating compound depictions. At this point this function is still in an experimental developmental stage but should become stable soon.  \\
 
 \noindent Plot compound Structures with R's graphics device:
-<<plotstruct2, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct2, eval=TRUE, tidy=FALSE>>=
 data(sdfsample)
 sdfset <- sdfsample
 plot(sdfset[1:4], print=FALSE) # 'print=TRUE' returns SDF summaries
 @
 
 \noindent Customized plots:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 plot(sdfset[1:4], griddim=c(2,2), print_cid=letters[1:4], print=FALSE, 
      noHbonds=FALSE)
 @
 
 \noindent In the following plot, the atom block position numbers in the SDF are printed next to the atom symbols (\Rfunarg{atomnum = TRUE}). For more details, consult help documentation with \Rfunction{?plotStruc} or \Rfunction{?plot}.
-<<plotstruct3, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct3, eval=TRUE, tidy=FALSE>>=
 plot(sdfset["CMP1"], atomnum = TRUE,  noHbonds=F , no_print_atoms = "", 
      atomcex=0.8, sub=paste("MW:", MW(sdfsample["CMP1"])), print=FALSE)
 @
 
 \noindent Substructure highlighting by atom numbers:
-<<plotstruct4, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotstruct4, eval=TRUE, tidy=FALSE>>=
 plot(sdfset[1], print=FALSE, colbonds=c(22,26,25,3,28,27,2,23,21,18,8,19,20,24))
 @
 
@@ -897,7 +898,7 @@ plot(sdfset[1], print=FALSE, colbonds=c(22,26,25,3,28,27,2,23,21,18,8,19,20,24))
 Alternatively, one can visualize compound structures with a standard web browser using the online ChemMine Tools service. The service allows to display other information next to the structures using the extra argument of the \Rfunction{sdf.visualize} function. The following examples demonstrate, how one can plot and annotate structures by passing on extra data as vector of character strings, matrices or lists.  \\
 
 \noindent Plot structures using web service ChemMine Tools:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdf.visualize(sdfset[1:4])
 @
 \begin{figure}[bthp]
@@ -908,19 +909,19 @@ sdf.visualize(sdfset[1:4])
 \end{figure}
 
 \noindent Add extra annotation as \Rclass{vector}:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdf.visualize(sdfset[1:4], extra=month.name[1:4])
 @
 
 \noindent Add extra annotation as \Rclass{matrix}:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 extra <- apply(propma[1:4,], 1, function(x) 
          data.frame(Property=colnames(propma), Value=x))
 sdf.visualize(sdfset[1:4], extra=extra)
 @
 
 \noindent Add extra annotation as \Rclass{list}:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 sdf.visualize(sdfset[1:4], extra=bondblock(sdfset[1:4]))
 @
 
@@ -928,7 +929,7 @@ sdf.visualize(sdfset[1:4], extra=bondblock(sdfset[1:4]))
 \subsection{Maximum Common Substructure (MCS) Searching}
 The ChemmineR add-on package \href{http://www.bioconductor.org/packages/devel/bioc/html/fmcsR.html}{{\textcolor{blue}{fmcsR}}} provides support for identifying maximum common substructures (MCSs) and flexible MCSs among compounds. The algorithm can be used for pairwise compound comparisons, structure similarity searching and clustering. The manual describing this functionality is available \href{http://www.bioconductor.org/packages/devel/bioc/vignettes/fmcsR/inst/doc/fmcsR.pdf}{{\textcolor{blue}{here}}} and the associated publication is available in \cite{Wang2013a}. The following gives a short preview of some functionalities provided by the \Rpackage{fmcsR} package. \\
 
-<<plotmcs, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<plotmcs, eval=TRUE, tidy=FALSE>>=
 library(fmcsR)
 data(fmcstest) # Loads test sdfset object
 test <- fmcs(fmcstest[1], fmcstest[2], au=2, bu=1) # Searches for MCS with mismatches
@@ -939,24 +940,24 @@ plotMCS(test) # Plots both query compounds with MCS in color
 The function \Rfunction{sdf2ap} computes atom pair descriptors for one or many compounds \citep{carhart1985apm, chen2002psm}. It returns a searchable atom pair database stored in a container of class \Rclass{APset}, which can be used for structural similarity searching and clustering. As similarity measure, the Tanimoto coefficient or related coefficients can be used. An \Rclass{APset} object consists of one or many \Rclass{AP} entries each storing the atom pairs of a single compound. Note: the deprecated \Rfunction{cmp.parse} function is still available which also generates atom pair descriptor databases, but directly from an SD file. Since the latter function is less flexible it may be discontinued in the future. \\
 
 \noindent Generate atom pair descriptor database for searching:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 ap <- sdf2ap(sdfset[[1]]) # For single compound
 ap
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 apset <- sdf2ap(sdfset) # For many compounds. 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 view(apset[1:4])
 @
 
 \noindent Return main components of APset objects:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 cid(apset[1:4]) # Compound IDs
 ap(apset[1:4]) # Atom pair descriptors
 db.explain(apset[1]) # Return atom pairs in human readable format
 @
 
 \noindent Coerce APset to other objects:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 apset2descdb(apset) # Returns old list-style AP database
 tmp <- as(apset, "list") # Returns list
 as(tmp, "APset") # Converts list back to APset
@@ -966,7 +967,7 @@ as(tmp, "APset") # Converts list back to APset
 When working with large data sets it is often desirable to save the \Rclass{SDFset} and \Rclass{APset} containers as binary R objects to files for later use. This way they can be loaded very quickly into a new R session without recreating them every time from scratch. \\ 
 
 \noindent Save and load of \Rclass{SDFset} and \Rclass{APset} containers:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 save(sdfset, file = "sdfset.rda", compress = TRUE)
 load("sdfset.rda")
 save(apset, file = "apset.rda", compress = TRUE)
@@ -975,18 +976,18 @@ load("apset.rda")
 
 \subsection{Pairwise Compound Comparisons with Atom Pairs}
 \noindent The \Rfunction{cmp.similarity} function computes the atom pair similarity between two compounds using the Tanimoto coefficient as similarity measure. The coefficient is defined as $c/(a+b+c)$, which is the proportion of the atom pairs shared among two compounds divided by their union. The variable $c$ is the number of atom pairs common in both compounds, while $a$ and $b$ are the numbers of their unique atom pairs. 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cmp.similarity(apset[1], apset[2])
 cmp.similarity(apset[1], apset[1])
 @
 
 \subsection{Similarity Searching with Atom Pairs}
 The \Rfunction{cmp.search} function searches an atom pair database for compounds that are similar to a query compound. The following example returns a data frame where the rows are sorted by the Tanimoto similarity score (best to worst). The first column contains the indices of the matching compounds in the database. The argument cutoff can be a similarity cutoff, meaning only compounds with a similarity value larger than this cutoff will be returned; or it can be an integer value restricting how many compounds will be returned. When supplying a cutoff of 0, the function will return the similarity values for every compound in the database.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cmp.search(apset, apset["650065"], type=3, cutoff = 0.3, quiet=TRUE) 
 @
 Alternatively, the function can return the matches in form of an index or a named vector if the \Rfunarg{type} argument is set to \Rfunarg{1} or \Rfunarg{2}, respectively. 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cmp.search(apset, apset["650065"], type=1, cutoff = 0.3, quiet=TRUE) 
 cmp.search(apset, apset["650065"], type=2, cutoff = 0.3, quiet=TRUE) 
 @
@@ -995,19 +996,19 @@ cmp.search(apset, apset["650065"], type=2, cutoff = 0.3, quiet=TRUE)
 The \Rclass{FPset} class stores fingerprints of small molecules in a matrix-like representation where every molecule is encoded as a fingerprint of the same type and length. The \Rclass{FPset} container acts as a searchable database that contains the fingerprints of many molecules. The \Rclass{FP} container holds only one fingerprint. Several constructor and coerce methods are provided to populate \Rclass{FP/FPset} containers with fingerprints, while supporting any type and length of fingerprints. For instance, the function \Rfunction{desc2fp} generates fingerprints from an atom pair database stored in an \Rclass{APset}, and \Rfunction{as(matrix, "FPset")} and \Rfunction{as(character, "FPset")} construct an \Rclass{FPset} database from objects where the fingerprints are represented as \Rclass{matrix} or \Rclass{character} objects, respectively. \\
 
 \noindent Show slots of \Rclass{FPset} class:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 showClass("FPset")
 @
      
 \noindent Instance of \Rclass{FPset} class:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(apset)
 (fpset <- desc2fp(apset))
 view(fpset[1:2])
 @
      
 \noindent \Rclass{FPset} class usage:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpset[1:4] # behaves like a list
 fpset[[1]] # returns FP object
 length(fpset) # number of compounds
@@ -1018,19 +1019,19 @@ c(fpset[1:4], fpset[11:14]) # concatenation of several FPset objects
 @
      
 \noindent Construct \Rclass{FPset} class form \Rclass{matrix}:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpma <- as.matrix(fpset) # coerces FPset to matrix 
 as(fpma, "FPset")
 @
 
 \noindent Construct \Rclass{FPset} class form \Rclass{character vector}:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpchar <- as.character(fpset) # coerces FPset to character strings
 as(fpchar, "FPset") # construction of FPset class from character vector
 @
      
 \noindent Compound similarity searching with \Rclass{FPset}: 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpSim(fpset[1], fpset, method="Tanimoto", cutoff=0.4, top=4)
 @
 
@@ -1038,53 +1039,53 @@ fpSim(fpset[1], fpset, method="Tanimoto", cutoff=0.4, top=4)
 Atom pairs can be converted into binary atom pair fingerprints of fixed length. Computations on this compact data structure are more time and memory efficient than on their relatively complex atom pair counterparts. The function \Rfunction{desc2fp} generates fingerprints from descriptor vectors of variable length such as atom pairs stored in \Rclass{APset} or \Rclass{list} containers. The obtained fingerprints can be used for structure similarity comparisons, searching and clustering. \\ 
 
 \noindent Create atom pair sample data set:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 data(sdfsample)
 sdfset <- sdfsample[1:10]
 apset <- sdf2ap(sdfset)
 @
 
 \noindent Compute atom pair fingerprint database using internal atom pair selection containing the 4096 most common atom pairs identified in DrugBank's compound collection. For details see \Rclass{?apfp}. The following example uses from this set the 1024 most frequent atom pairs:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpset <- desc2fp(apset, descnames=1024, type="FPset")
 @
 
 \noindent Alternatively, one can provide any custom atom pair selection. Here, the 1024 most common ones in \Robject{apset}: 
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpset1024 <- names(rev(sort(table(unlist(as(apset, "list")))))[1:1024])
 fpset <- desc2fp(apset, descnames=fpset1024, type="FPset")
 @
 
 \noindent A more compact way of storing fingerprints is as character values:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpchar <- desc2fp(x=apset, descnames=1024, type="character")
 fpchar <- as.character(fpset) 
 @
 
 \noindent Converting a fingerprint database to a matrix and vice versa:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpma <- as.matrix(fpset) 
 fpset <- as(fpma, "FPset")
 @
 
 \noindent Similarity searching and returning Tanimoto similarity coefficients:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpSim(fpset[1], fpset, method="Tanimoto")
 @
 
 \noindent Under \Rfunarg{method} one can choose from several predefined similarity measures including \Rfunarg{Tanimoto} (default), \Rfunarg{Euclidean}, \Rfunarg{Tversky} or \Rfunarg{Dice}. Alternatively, one can pass on custom similarity functions.
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 fpSim(fpset[1], fpset, method="Tversky", cutoff=0.4, top=4, alpha=0.5, beta=1)
 @
 
 \noindent Example for using a custom similarity function:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 myfct <- function(a, b, c, d) c/(a+b+c+d)
 fpSim(fpset[1], fpset, method=myfct) 
 @
 
 \noindent Clustering example:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 simMAap <- sapply(cid(apfpset), function(x) fpSim(x=apfpset[x], apfpset, sorted=FALSE))
 hc <- hclust(as.dist(1-simMAap), method="single")
 plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE)
@@ -1094,7 +1095,7 @@ plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE)
 \noindent The \Rfunction{fpSim} function computes the similarity coefficients (\textit{e.g.} Tanimoto) for pairwise comparisons of binary fingerprints. For this data type, $c$ is the number of "on-bits" common in both compounds, and $a$ and $b$ are the numbers of their unique "on-bits". Currently, the PubChem fingerprints need to be provided (here PubChem's SD files) and cannot be computed from scratch in \Rpackage{ChemmineR}. The PubChem fingerprint specifications can be loaded with \Rfunction{data(pubchemFPencoding)}.\\
 
 \noindent Convert base 64 encoded PubChem fingerprints to \Rclass{character} vector, \Rclass{matrix} or \Rclass{FPset} object:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cid(sdfset) <- sdfid(sdfset)
 fpset <- fp2bit(sdfset, type=1) 
 fpset <- fp2bit(sdfset, type=2)
@@ -1103,13 +1104,13 @@ fpset
 @
 
 \noindent Pairwise compound structure comparisons:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpSim(fpset[1], fpset[2])
 @
 
 \subsection{Similarity Searching with PubChem Fingerprints}
 Similarly, the \Rfunction{fpSim} function provides search functionality for PubChem fingerprints:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpSim(fpset["650065"], fpset, method="Tanimoto", cutoff=0.6, top=6) 
 @
 
@@ -1117,14 +1118,14 @@ fpSim(fpset["650065"], fpset, method="Tanimoto", cutoff=0.6, top=6)
 The \Rfunction{cmp.search} function allows to visualize the chemical structures for the search results. Similar but more flexible chemical structure rendering functions are \Rfunction{plot} and \Rfunction{sdf.visualize} described above. By setting the visualize argument in \Rfunction{cmp.search} to \Rfunarg{TRUE}, the matching compounds and their scores can be visualized with a standard web browser. Depending on the \Rfunarg{visualize.browse} argument, an URL will be printed or a webpage will be opened showing the structures of the matching compounds along with their scores.\\ 
 
 \noindent View similarity search results in R's graphics device:
-<<search_result, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<search_result, eval=TRUE, tidy=FALSE>>=
 cid(sdfset) <- cid(apset) # Assure compound name consistency among objects.
 plot(sdfset[names(cmp.search(apset, apset["650065"], type=2, cutoff=4, 
      quiet=TRUE))], print=FALSE)
 @
 
 \noindent View results online with Chemmine Tools:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 similarities <- cmp.search(apset, apset[1], type=3, cutoff = 10)
 sdf.visualize(sdfset[similarities[,1]], extra=similarities[,3])
 @
@@ -1137,18 +1138,18 @@ identify very similar compounds in atom pair sets, which will be frequently, but
 not necessarily, identical compounds.\\ 
 
 \noindent Identify compounds with identical AP sets:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cmp.duplicated(apset, type=1)[1:4] # Returns AP duplicates as logical vector
 cmp.duplicated(apset, type=2)[1:4,] # Returns AP duplicates as data frame
 @
 
 \noindent Plot the structure of two pairs of duplicates: 
-<<duplicates, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<duplicates, eval=TRUE, tidy=FALSE>>=
 plot(sdfset[c("650059","650060", "650065", "650066")], print=FALSE)
 @
 
 \noindent Remove AP duplicates from SDFset and APset objects:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 apdups <- cmp.duplicated(apset, type=1)
 sdfset[which(!apdups)]; apset[which(!apdups)]
 @
@@ -1159,7 +1160,7 @@ use here fingerprints, InChI, SMILES or other molecular representations. The fol
 examples show how to enumerate by identical InChI strings, SMILES strings and molecular 
 formula, respectively.
 
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 count <- table(datablocktag(sdfset, tag="PUBCHEM_NIST_INCHI"))
 count <- table(datablocktag(sdfset, tag="PUBCHEM_OPENEYE_CAN_SMILES"))
 count <- table(datablocktag(sdfset, tag="PUBCHEM_MOLECULAR_FORMULA"))
@@ -1193,14 +1194,14 @@ matrix either from a previous call to \Rfunction{cmp.cluster} or from other dist
 calculation subroutines.  \\ 
 
 \noindent Single-linkage binning clustering with one or multiple cutoffs:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 clusters <- cmp.cluster(db=apset, cutoff = c(0.7, 0.8, 0.9), quiet = TRUE)
 clusters[1:12,]
 @
 
 
 \noindent Clustering of \Robject{FPset} objects with multiple cutoffs. This method allows to call various similarity methods provided by the \Rfunction{fpSim} function.  For details consult \Rfunction{?fpSim}.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 fpset <- desc2fp(apset)
 clusters2 <- cmp.cluster(fpset, cutoff=c(0.5, 0.7, 0.9), method="Tanimoto", 
                          quiet=TRUE) 
@@ -1208,20 +1209,20 @@ clusters2[1:12,]
 @
 
 \noindent Sames as above, but using Tversky similarity measure:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 clusters3 <- cmp.cluster(fpset, cutoff=c(0.5, 0.7, 0.9), method="Tversky", 
                          alpha=0.3, beta=0.7, quiet=TRUE) 
 @
 
 \noindent Return cluster size distributions for each cutoff:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cluster.sizestat(clusters, cluster.result=1)
 cluster.sizestat(clusters, cluster.result=2)
 cluster.sizestat(clusters, cluster.result=3)
 @
 
 \noindent Enforce calculation of distance matrix:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 clusters <- cmp.cluster(db=apset, cutoff = c(0.65, 0.5, 0.3), 
                         save.distances="distmat.rda") 
    # Saves distance matrix to file "distmat.rda" in current working directory.
@@ -1253,26 +1254,26 @@ cluster vector output by \Rfunction{jarvisPatrick} and transforms it into a list
 By default the function excludes singletons from the output, but they can be included by setting \Rfunarg{excludeSingletons}=FALSE. 
 
 \noindent Load/create sample \Rclass{APset} and \Rclass{FPset}:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 data(apset)
 fpset <- desc2fp(apset)
 @
 
 \noindent Standard Jarvis-Patrick clustering on \Rclass{APset} and \Rclass{FPset} objects:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 jarvisPatrick(nearestNeighbors(apset,numNbrs=6), k=5, mode="a1a2b") #Using "APset"
 jarvisPatrick(nearestNeighbors(fpset,numNbrs=6), k=5, mode="a1a2b") #Using "FPset"
 @
 
 \noindent The following example runs Jarvis-Patrick clustering with a minimum similarity \Rfunarg{cutoff} value (here Tanimoto coefficient). In addition, it uses the much more exhaustive \Rfunarg{"b"} method that generates larger cluster sizes, but significantly
 increased the run time. For more details, consult the corresponding help file with \Rfunarg{?jarvisPatrick}.
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 cl<-jarvisPatrick(nearestNeighbors(fpset,cutoff=0.6, method="Tanimoto"), k=2 ,mode="b")
 byCluster(cl)
 @
 
 \noindent Output nearest neighbor table (\Rclass{matrix}):
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 nnm <- nearestNeighbors(fpset,numNbrs=6)
 nnm$names[1:4]
 nnm$ids[1:4,]
@@ -1280,19 +1281,19 @@ nnm$similarities[1:4,]
 @
 
 \noindent Trim nearest neighbor table:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 nnm <- trimNeighbors(nnm,cutoff=0.4)
 nnm$similarities[1:4,]
 
 @
 
 \noindent Perform clustering on precomputed nearest neighbor table:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 jarvisPatrick(nnm, k=5,mode="b")
 @
      
 \noindent Using a user defined nearest neighbor matrix:
-<<eval=TRUE, keep.source=TRUE>>=
+<<eval=TRUE, tidy=FALSE>>=
 nn <- matrix(c(1,2,2,1),2,2,dimnames=list(c('one','two')))
 nn
 byCluster(jarvisPatrick(fromNNMatrix(nn),k=1))
@@ -1308,21 +1309,21 @@ to consider in the plot. To help determining a proper cutoff size, the
 \Rfunction{cluster.sizestat} function is provided to generate cluster size statistics.
 
 \noindent MDS clustering and scatter plot:
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 cluster.visualize(apset, clusters, size.cutoff=2, quiet = TRUE) 
    # Color codes clusters with at least two members.
 cluster.visualize(apset, clusters, quiet = TRUE) # Plots all items.
 @
 
 \noindent Create a 3D scatter plot of MDS result:
-<<mds_scatter, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<mds_scatter, eval=TRUE, tidy=FALSE>>=
 library(scatterplot3d)
 coord <- cluster.visualize(apset, clusters, size.cutoff=1, dimensions=3, quiet=TRUE)
 scatterplot3d(coord)
 @
 
 \noindent Interactive 3D scatter plot with Open GL (graphics not evaluated here):
-<<eval=FALSE, keep.source=TRUE>>=
+<<eval=FALSE, tidy=FALSE>>=
 library(rgl)
 rgl.open(); offset <- 50; par3d(windowRect=c(offset, offset, 640+offset, 640+offset))
 rm(offset); rgl.clear(); rgl.viewpoint(theta=45, phi=30, fov=60, zoom=1)
@@ -1338,27 +1339,27 @@ clustering utilities available in R. An example on how to perform hierarchical
 clustering with the hclust function is given below. \\ 
 
 \noindent Create atom pair distance matrix:
-<<mds_scatter, eval=TRUE, keep.source=TRUE>>=
+<<ap_dist_matrix, eval=TRUE, tidy=FALSE>>=
 dummy <- cmp.cluster(db=apset, cutoff=0, save.distances="distmat.rda", quiet=TRUE)
 load("distmat.rda")
 @
 
 \noindent Hierarchical clustering with \Rfunction{hclust}:
-<<hclust, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<hclust, eval=TRUE, tidy=FALSE>>=
 hc <- hclust(as.dist(distmat), method="single")
 hc[["labels"]] <- cid(apset) # Assign correct item labels
 plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=T) 
 @
 
 \noindent Instead of atom pairs one can use PubChem's fingerprints for clustering: 
-<<fp_hclust, eval=FALSE, keep.source=TRUE>>=
+<<fp_hclust, eval=FALSE, tidy=FALSE>>=
 simMA <- sapply(cid(fpset), function(x) fpSim(fpset[x], fpset, sorted=FALSE)) 
 hc <- hclust(as.dist(1-simMA), method="single")  
 plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE)
 @
 
 \noindent Plot dendrogram with heatmap (here similarity matrix):
-<<heatmap, eval=TRUE, fig=TRUE, keep.source=TRUE>>=
+<<heatmap, eval=TRUE, tidy=FALSE>>=
 library(gplots)
 heatmap.2(1-distmat, Rowv=as.dendrogram(hc), Colv=as.dendrogram(hc), 
           col=colorpanel(40, "darkblue", "yellow", "white"), 
@@ -1375,7 +1376,7 @@ a PUG SOAP query.\\
 
 \noindent Fetch 2 compounds from PubChem:
 
-<<getIds, eval=FALSE, keep.source=TRUE>>=
+<<getIds, eval=FALSE, tidy=FALSE>>=
 compounds <- getIds(c(111,123))
 compounds
 @
@@ -1390,7 +1391,7 @@ a PubChem Power User Gateway (PUG) query.\\
 
 \noindent Search a SMILES string on PubChem:
 
-<<getIds, eval=FALSE, keep.source=TRUE>>=
+<<searchString, eval=FALSE, tidy=FALSE>>=
 compounds <- searchString("CC(=O)OC1=CC=CC=C1C(=O)O")
 compounds
 @
@@ -1402,7 +1403,7 @@ If the query contains more than one compound, only the first is searched.\\
 
 \noindent Search an \Rclass{SDFset} container on PubChem:
 
-<<getIds, eval=FALSE, keep.source=TRUE>>=
+<<searchSim, eval=FALSE, tidy=FALSE>>=
 data(sdfsample); sdfset <- sdfsample[1]
 compounds <- searchSim(sdfset)
 compounds
@@ -1410,7 +1411,7 @@ compounds
 
 
 \section{Version Information}
-<<sessionInfo, results=tex, print=TRUE>>=
+<<sessionInfo, results='asis'>>=
 toLatex(sessionInfo())
 @
 
