@@ -543,9 +543,16 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		
 	}
 }
-setPriorities <- function(conn,priorityFn){
+setPriorities <- function(conn,priorityFn,descriptorIds=c()){
 
-	rows=dbGetQuery(conn,"SELECT * FROM compounds_grouped_by_descriptors")
+	if(length(descriptorIds) == 0)
+		rows=dbGetQuery(conn,"SELECT * FROM compounds_grouped_by_descriptors")
+	else{
+		rows = selectInBatches(conn,descriptorIds, function(ids)
+						paste("SELECT * FROM compounds_grouped_by_descriptors ",
+											 " WHERE descriptor_id IN
+											 (",paste(ids,collapse=","),")") )
+	}
 	dbTransaction(conn,	
 		for(i in seq(along=rows$compound_ids)){
 			compIds = unlist(strsplit(rows$compound_ids[i],",",fixed="TRUE"))
