@@ -19,13 +19,13 @@
 }
 
 \usage{
-setPriorities(conn, priorityFn)
+setPriorities(conn, priorityFn,descriptorIds=c())
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{conn}{
 	  A database connection object.
-}
+	}
   \item{priorityFn}{
 	  This function will be called with the compound_id numbers 
 	  associated with the same descriptor. It should use the id
@@ -37,7 +37,14 @@ setPriorities(conn, priorityFn)
 	  The function should return a data.frame with the fields
 	  "compound_id" and "priority". The order of the rows is not
 	  important.
-}
+	}
+	\item{descriptorIds}{
+		This is a set of descriptor ids that have been inserted
+		since the last time priorities were set. This allows the
+		function to run on only those compound groups that might
+		have been affected by these additions. If no descriptor
+		ids are given then all compound groups are considered.
+	}
 }
 \value{
 	No value is returned
