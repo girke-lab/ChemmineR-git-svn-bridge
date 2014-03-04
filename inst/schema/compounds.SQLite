@@ -1,0 +1,40 @@
+
+CREATE TABLE compounds(
+	compound_id INTEGER  PRIMARY KEY ,
+	name TEXT NOT NULL DEFAULT '',
+	definition TEXT NOT NULL,
+	definition_checksum TEXT NOT NULL UNIQUE,
+	format TEXT NOT NULL 
+);
+CREATE INDEX compounds_name ON compounds(name);
+INSERT INTO compounds(compound_id,format,definition,definition_checksum)
+	VALUES(200,'junk','this is to shift the id numbers to ferret out index bugs','junk');
+
+CREATE TABLE descriptor_types (
+	descriptor_type_id INTEGER PRIMARY KEY,
+	descriptor_type TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE descriptors (
+	descriptor_id INTEGER PRIMARY KEY,
+	descriptor_type_id INTEGER REFERENCES descriptor_types(descriptor_type_id) ON DELETE RESTRICT,
+	descriptor TEXT NOT NULL,
+	descriptor_checksum TEXT NOT NULL,
+	UNIQUE(descriptor_type_id,descriptor_checksum)
+);
+
+
+CREATE TABLE compound_descriptors (
+	compound_id INTEGER REFERENCES compounds(compound_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	descriptor_id INTEGER REFERENCES descriptors(descriptor_id),
+	priority INTEGER NOT NULL DEFAULT 0,
+	UNIQUE(compound_id,descriptor_id)
+);
+CREATE INDEX compound_descriptors_descriptor_id_key ON compounds(name);
+
+CREATE VIEW compounds_grouped_by_descriptors AS
+	SELECT descriptor_id, group_concat(compound_id) AS compound_ids
+	FROM compound_descriptors
+	GROUP BY descriptor_id
+	HAVING count(compound_id) > 1
+;
