@@ -637,10 +637,17 @@ findCompoundsByX<- function(conn,fieldName,data,keepOrder=FALSE,allowMissing=FAL
 
 	#no column names preserved for empty dataframes, so we can't just
 	# handle it the same way, we need a special case :(
-	if(length(result)==0)
-		return(result)
+	if(length(result)==0){
+		if(!allowMissing && length(data) != 0)
+			stop(paste("found 0 out of",length(data),
+					  "queries given"))
+		else
+			return(result)
+	}
+
 
 	ids = result$compound_id
+	#message("allowMissing? ",allowMissing," num ids: ",length(ids),", num data: ",length(data))
 
 	if(!allowMissing && length(ids)!=length(data))
 		stop(paste("found only",length(ids),"out of",length(data),
