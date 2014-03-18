@@ -556,14 +556,30 @@ setPriorities <- function(conn,priorityFn,descriptorIds=c()){
 	dbTransaction(conn,	
 		for(i in seq(along=rows$compound_ids)){
 			compIds = unlist(strsplit(rows$compound_ids[i],",",fixed="TRUE"))
-			priorities = priorityFn(compIds)
+			priorities = priorityFn(conn,compIds)
 			priorities$descriptor_id = rep(rows$descriptor_id[i],nrow(priorities))
 			updatePriorities(conn,priorities)
 		}
 	)
 }
-randomPriorities <- function(compIds){
+randomPriorities <- function(conn,compIds){
 	data.frame(compound_id = compIds,priority=1:length(compIds))
+}
+forestSizePriorities <- function(conn,compIds){
+	#convert sdf to smiles and count dots to see how many trees are in the forest
+	sdf = getCompounds(conn,compIds)
+	smiles = sdf2smiles(sdf)
+	matches = gregexpr(".",as.character(smiles),fixed=TRUE)
+	numTrees = sapply(seq(along=matches),function(i){
+							 l=length(matches[[i]])
+							 if(l==1 && matches[[i]][1]==-1)
+								 1
+							 else 
+								 l+1
+	})
+
+	data.frame(compound_id = compIds, priority = numTrees)
+
 }
 
 smile2sdfFile <- function(smileFile,sdfFile=tempfile()){

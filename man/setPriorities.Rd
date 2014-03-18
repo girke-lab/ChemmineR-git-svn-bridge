@@ -1,5 +1,7 @@
 \name{setPriorities}
 \alias{setPriorities}
+\alias{forestSizePriorities}
+\alias{randomPriorities}
 \title{
 	Set Priorities
 }
@@ -9,17 +11,31 @@
 	descriptor and call the given function, \code{priorityFn}, 
 	with the compound_id numbers of the group. This function should
 	then assign priorities to each compound-descriptor pair, however
-	it wishes.
+	it wishes. Priorities are integer values with lower values being
+	used in preference of higher values.
 
 	It is important that this function be called after all data is
 	loaded. It may be that a compound loaded at the beginning of a data
 	set shares a descriptor with a compound loaded near the end of the
 	data set. If the priorities were set at some point in between these
 	then it would not see all the compounds for that one descriptor.
+
+	Some pre-defined functions that can be use for \code{priorityFn}
+	are:
+
+	\code{randomPriorities}: Set the priorities of compounds within a descriptor group
+	randomly.
+
+	\code{forestSizePriorities}: Set the priority based on the number
+	of disconnected components (trees) within the compound. Compounds
+	with fewer trees will have a higher priority (lower numerical
+	value) than compounds with more trees.
 }
 
 \usage{
 setPriorities(conn, priorityFn,descriptorIds=c())
+forestSizePriorities(conn,compIds)
+randomPriorities(conn,compIds)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -39,27 +55,29 @@ setPriorities(conn, priorityFn,descriptorIds=c())
 	  important.
 	}
 	\item{descriptorIds}{
-		This is a set of descriptor ids that have been inserted
-		since the last time priorities were set. This allows the
-		function to run on only those compound groups that might
-		have been affected by these additions. If no descriptor
-		ids are given then all compound groups are considered.
+			If given then only re-compute priorities for groups
+			involving descriptors in this list. This is useful
+			for updating priorities after adding new compounds
+			to an existing database.
 	}
+	\item{compIds}{
+	  The compound_id values for each group.
+	}
+
 }
 \value{
-	No value is returned
+	For \code{setPriorities}, no value is returned.
+	\code{randomPriories} and \code{forestSizePriorities} return
+	a data.frame with columns "compound_id" and "priority".
 }
 \author{
 	Kevin Horan
-}
-\seealso{
-	\code{\link{randomPriorities}}
 }
 \examples{
 	\dontrun{
 		data(sdfsample)
 		conn = initDb("sample.db")
 		sdfLoad(conn,sdfsample)
-		setPriorities(conn,randomPriorities)
+		setPriorities(conn,forestSizePriorities)
 	}
 }
