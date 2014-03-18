@@ -481,7 +481,7 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		if(debug) message("checksumsToLoad: ",paste(checksumsToLoad,collapse=","))
 
 		ids = index[checksumsToLoad]
-		message("loading ",length(ids)," new compounds")
+		if(debug) message("loading ",length(ids)," new compounds")
 	}
 	if(debug) message("updating ids: ",paste(ids,collapse=","))
 
