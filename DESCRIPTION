@@ -14,4 +14,3 @@ Suggests: RSQLite, scatterplot3d, gplots, fmcsR,snow, RPostgreSQL, BiocStyle,kni
 Enhances: ChemmineOB
 URL: http://manuals.bioinformatics.ucr.edu/home/chemminer
 VignetteBuilder: knitr
-
