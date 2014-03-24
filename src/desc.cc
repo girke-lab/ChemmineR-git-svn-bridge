@@ -254,6 +254,9 @@ SEXP genAPDescriptor(SEXP sdf)
 		INTEGER(sDesc)[i]=descs[i];
 	UNPROTECT(1);
 
+	if(mol)
+		delete mol;
+
 	return sDesc;
 	
 

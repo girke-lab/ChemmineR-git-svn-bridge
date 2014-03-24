@@ -1,5 +1,11 @@
 changelog
-        version 2.13.18-2.13.21
+        version 2.15.15 - 2.15.16
+                - fixed trailing character problem in importer
+
+        version 2.13.21 - 2.15.15
+        	- various updates
+
+	version 2.13.18 - 2.13.21
                 - vignette updates
         
         version 2.13.17

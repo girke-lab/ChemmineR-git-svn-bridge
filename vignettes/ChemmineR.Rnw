@@ -8,8 +8,9 @@
 % \VignetteDepends{}
 % \VignetteKeywords{}
 % \VignettePackage{gpls}
+% \VignetteEngine{knitr::knitr}
 \documentclass{article}
-<<style, echo=FALSE, results=tex>>=
+<<style, echo=FALSE, results=asis>>=
 BiocStyle::latex(use.unsrturl=FALSE)
 @
 \usepackage[authoryear,round]{natbib}

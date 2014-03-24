@@ -79,6 +79,7 @@ export(
     "getCompoundNames","findCompoundsByName","addNewFeatures",
     "listFeatures", "jarvisPatrick_c", "genAPDescriptors",
 	 "addDescriptorType", "setPriorities", "randomPriorities",
+	 "forestSizePriorities",
 
     ## Large file/query utilites
     "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
