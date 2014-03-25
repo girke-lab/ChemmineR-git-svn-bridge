@@ -258,6 +258,8 @@ where the utility and usage of these functions is described.
 
 -   *fingerprintOB*: generates fingerprints for compounds
 
+-   *smartsSearchOB*: find matches of SMARTS patterns in compounds
+
 Overview of Classes and Functions
 =================================
 
@@ -272,7 +274,7 @@ accessed with this syntax: *?function\_name* (*e.g.*
 Molecular Structure Data
 ------------------------
 
-*Classes*
+Classes
 
 -   *SDFstr*: intermediate string class to facilitate SD
     file import; not important for end user
@@ -287,9 +289,9 @@ Molecular Structure Data
 
 -   *SMIset*: container for many SMILES strings
 
-*Functions/Methods (mainly for *SDFset* container,
+Functions/Methods (mainly for *SDFset* container,
 *SMIset* should be coerced with
-*smiles2sdf* to *SDFset*)*
+*smiles2sdf* to *SDFset*)
 
 -   Accessor methods for *SDF/SDFset*
 
@@ -328,7 +330,7 @@ Molecular Structure Data
 Structure Descriptor Data
 -------------------------
 
-*Classes*
+Classes
 
 -   *AP*: container for atom pair descriptors of a single
     molecule
@@ -342,7 +344,7 @@ Structure Descriptor Data
     molecules, most important structure descriptor container for end
     user
 
-*Functions/Methods*
+Functions/Methods
 
 -   Create *AP/APset* instances
 
@@ -378,6 +380,12 @@ Structure Descriptor Data
         *cluster.visualize*
 
     -   Size distribution of clusters: *cluster.sizestat*
+-   Folding
+    - Fold a descriptor with *fold*
+	 - Query the number of times a descriptor has been folded:
+		*foldCount*
+	 - Query the number of bits in a descriptor: *numBits*
+	 
 
 Import of Compounds
 ===================
@@ -565,8 +573,7 @@ convert a SMILES string to an SDF string, one can use the
 
 
 ```{r eval=FALSE, tidy=FALSE}
- sdfStr <-
- convertFormat("SMI","SDF","CC(=O)OC1=CC=CC=C1C(=O)O_name") 
+ sdfStr <- convertFormat("SMI","SDF","CC(=O)OC1=CC=CC=C1C(=O)O_name") 
 ```
 
 
@@ -709,7 +716,7 @@ Storing Compounds in an SQL Database
 
 As an alternative to sdfStream, there is now also an option to store
 data in an SQL database, which then allows for fast queries and compound
-retrieval. This is still an experimental feature. The default database
+retrieval. The default database
 is SQLite, but any other SQL database should work with some minor
 modifications to the table definitions, which are stored in
 schema/compounds.SQLite under the ChemmineR package directory. Compounds
@@ -735,9 +742,9 @@ data.
 Loading Data
 ------------
 
-The function *loadSdf* can be used to load
-*SDF* data, either from a file or *SDFset*
-object. The *fct* parameter should be a function to
+The functions *loadSdf* and *loadSmiles* can be used to load
+compound data from either a file (both) or an *SDFset* (*loadSdf*
+only).  The *fct* parameter should be a function to
 extract features from the data. It will be handed an
 *SDFset* generated from the data being loaded. This may
 be done in batches, so there is no guarantee that the given SDFSset will
@@ -779,7 +786,7 @@ be raised. If just new features are being added, but no new compounds,
 use the *addNewFeatures* function.
 
 In this example, we create a new database called "test.db" and load it
-with data from and *SDFset*. We also define
+with data from an *SDFset*. We also define
 *fct* to compute the molecular weight, "MW", and the
 number of rings and aromatic rings. The rings function actually returns
 a data frame with columns "RINGS" and "AROMATIC", which will be merged
@@ -802,6 +809,60 @@ stored in the "ids" variable.
  data.frame(MW = MW(sdfset), rings(sdfset,type="count",upper=6, arom=TRUE)) ) 
 ```
 
+Updates
+-------
+By default the *loadSdf*/*loadSmiles* functions will detect duplicate
+compound entries and only insert one of them. This means it is safe
+to run these functions on the same data set several times and you
+won't end up with duplicates. This allows the functions to be re-run
+in the event that a previous run on a dataset does not complete.
+Duplicate compounds are detected by compouting the MD5 checksum on
+the textual representation of it. 
+
+It can also update existing compounds with new versions of the same
+compound. To enable this, set *updateByName* to true. It will then
+consider two compounds with the same name to be the same, even if the
+definition is different. Then, if the name of a compound exists in
+the database and it is trying to insert another compound with the
+same name, it will overwrite the existing compound. It will also drop
+and re-compute all associated descriptors and features for the new
+compound (assuming the required functions for descriptor and feature
+computation are available at the time the update is performed).
+
+Duplicate Descriptors
+---------------------
+It is often the case when loading a large set of compounds that
+several compounds will produce the same descriptor. *ChemmineR* 
+detects this case and only stores one copy of the descriptor for
+every compound it is for. This feature saves some space and some
+time for processes that need to be applied to every descriptor.
+It also highlights a new problem. If you have a descriptor in hand
+and you want to find a single compound to represent it, which
+compound should be used if the descriptor was produced from multiple
+compounds? To address this problem, *ChemmineR* allows you to set
+priority values for each compound-descriptor mapping. Then, in
+contexts where a single compound is required, the highest priority
+compound will be chosen. Highest priority corresponds to the lowest
+numerical value. So mapping with priority 0 would be used first.
+
+To set these priorities there is the function *setPriorities*.
+It takes a function, *priorityFn*, for computing these priority values.
+The *setPriorities* function should be run after loading a complete set of data.
+It will find each group of compounds which share the same
+descriptor and call the given function, *priorityFn*, 
+with the compound_id numbers of the group. This function should
+then assign priorities to each compound-descriptor pair, however
+it wishes. 
+
+One built in priority function is *forestSizePriorities*. This simply
+prefers compounds with fewer disconnected components over compounds with
+more dissconnected components.
+
+```{r eval=FALSE, tidy=FALSE}
+setPriorities(conn,forestSizePriorities)
+```
+
+
 
 Searching
 ---------
@@ -813,7 +874,7 @@ pass for a compound to be included in the result set. Each test should
 be a boolean expression. For example: "c("MW <= 400","RINGS \> 3")"
 would return all compounds with a molecular weight of 400 or less and
 more than 3 rings, assuming these features exist in the database. The
-syntax for each test is "<feature name\> <SQL operator\> <value\>".
+syntax for each test is "\<feature name\> \<SQL operator\> \<value\>".
 If you know SQL you can go beyond this basic syntax. These tests will
 simply be concatenated together with "AND" in-between them and tacked on
 the end of a WHERE clause of an SQL statement. So any SQL that will work
@@ -828,8 +889,7 @@ In this example we search for compounds with molecular weight less than
 300. We then fetch the matching compounds and show their molecular
 weight. 
 ```{r eval=TRUE, tidy=FALSE}
- lightIds <-
- findCompounds(conn,"MW",c("MW < 300")) 
+ lightIds <- findCompounds(conn,"MW",c("MW < 300")) 
  MW(getCompounds(conn,lightIds))
 
  #names of matching compounds: 
@@ -1139,11 +1199,15 @@ package recently. This function uses the native R graphics device for
 generating compound depictions. At this point this function is still in
 an experimental developmental stage but should become stable soon.  
 
+If you have *ChemmineOB* available you can use the *regenCoords*
+option to have OpenBabel regenerate the coordinates for the compound.
+This can sometimes produce better looking plots.
+
 Plot compound Structures with R's graphics device: 
 ```{r plotstruct2, eval=TRUE, tidy=FALSE}
  data(sdfsample)
  sdfset <- sdfsample
- plot(sdfset[1:4], print=FALSE) # 'print=TRUE' returns SDF summaries
+ plot(sdfset[1:4], regenCoords=TRUE,print=FALSE) # 'print=TRUE' returns SDF summaries
 ```
 
 
