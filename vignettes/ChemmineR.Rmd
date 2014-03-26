@@ -1,10 +1,11 @@
 <!--
+\usepackage[utf8]{inputenc}
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{ChemmineOB}
+%\VignetteIndexEntry{ChemmineR}
 -->
 
 ```{r echo=FALSE, results='hide',message=FALSE,warning=FALSE,error=FALSE}
- library(ChemmineOB) 
+ library(ChemmineR) 
  library(knitcitations)
 ```
 
