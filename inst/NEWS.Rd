@@ -1,6 +1,11 @@
 \name{NEWS}
 \title{ChemmineR News}
 
+\section{CHANGES IN VERSION 2.16.0}{
+
+   \subsection{NEW FEATURES}{
+	}
+}
 \section{CHANGES IN VERSION 2.14.0}{
 
    \subsection{NEW FEATURES}{

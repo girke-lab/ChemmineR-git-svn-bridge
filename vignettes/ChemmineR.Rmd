@@ -812,7 +812,7 @@ stored in the "ids" variable.
 
 Updates
 -------
-By default the *loadSdf*/*loadSmiles* functions will detect duplicate
+By default the *loadSdf* / *loadSmiles* functions will detect duplicate
 compound entries and only insert one of them. This means it is safe
 to run these functions on the same data set several times and you
 won't end up with duplicates. This allows the functions to be re-run
@@ -1482,6 +1482,18 @@ Compound similarity searching with *FPset*:
  fpSim(fpset[1], fpset, method="Tanimoto", cutoff=0.4, top=4) 
 ```
 
+Folding fingerprints:
+
+```{r eval=TRUE,tidy=FALSE}
+ fold(fpset) # fold each FP once
+ fold(fpset, count=2) #fold each FP twice
+ fold(fpset, bits=128) #fold each FP down to 128 bits
+ fold(fpset[[1]])  # fold an individual FP
+
+ fptype(fpset) # get type of FPs
+ numBits(fpset) # get the number of bits of each FP
+ foldCount(fold(fpset)) # the number of times an FP or FPset has been folded
+```
 
 Atom Pair Fingerprints
 ----------------------
