@@ -14,7 +14,8 @@
 	 # We don't actually load ChmmineRpp here as this is not advised according to ?.onAttach.
 	 # Instead we check and require it in .has.pp()
 	
-	options(.haveOB = 0)
+	#message("inside ChemmineR onLoad")
+	#options(.haveOB = NULL)
 }
 
 .db.header.size <- 16
@@ -997,18 +998,19 @@ db.explain <- function(desc)
 
 .haveOB <- function()
 {
-	if(!is.null(getOption('.haveOB'))){
-		# may need to to reset this to null in onLoad, run "check" to see
-		if(getOption('.haveOB')==0)
-			return(FALSE)
-		else if(getOption('.haveOB')==1)
-			return(TRUE)
-	}else if(suppressWarnings(require('ChemmineOB', quietly=T))) {
-		message("Using ChemmineOB")
-      options(.haveOB = 1)
+#	if(!is.null(getOption('.haveOB'))){
+#		# may need to to reset this to null in onLoad, run "check" to see
+#		if(getOption('.haveOB')==0)
+#			return(FALSE)
+#		else if(getOption('.haveOB')==1)
+#			return(TRUE)
+#	}else if(suppressWarnings(require('ChemmineOB', quietly=T))) {
+	if(suppressWarnings(require('ChemmineOB', quietly=T))) {
+	#	message("Using ChemmineOB")
+   #   options(.haveOB = 1)
 		return(TRUE)
-    }else{
-      options(.haveOB = 0)
+   }else{
+   #   options(.haveOB = 0)
 		return(FALSE)
 	}
 
