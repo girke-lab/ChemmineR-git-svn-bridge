@@ -13,6 +13,8 @@
 #    }
 	 # We don't actually load ChmmineRpp here as this is not advised according to ?.onAttach.
 	 # Instead we check and require it in .has.pp()
+	
+	options(.haveOB = 0)
 }
 
 .db.header.size <- 16
