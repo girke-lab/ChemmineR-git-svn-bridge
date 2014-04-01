@@ -1,4 +1,5 @@
 
+testDir = system.file("unitTests",package="ChemmineR")
 genRandFp = function(n,type=NULL) {
 	if(is.null(type))
 		new("FP",fp=sapply(runif(n),function(x) if(x>0.5) 1 else 0))
@@ -81,5 +82,20 @@ test.fpset <- function(){
 	fpset4 = new("FPset",fpma=data,type="randFP")
 	catfp1=c(fpset2,fpset2,fpset2)
 	checkEquals(length(catfp1),30)
+
+}
+
+test.import <- function(){
+
+	#test single molecule sdf files
+	singleMolFile = file.path(testDir,"singleMolecule.sdf")
+	singleMols = read.SDFset(singleMolFile)
+	checkEquals(length(singleMols),2)
+
+	#test mol file import
+	checkEquals(length(read.SDFset(file.path(testDir,"sample.mol"))),1)
+
+	#test sdf file import
+	checkEquals(length(read.SDFset(file.path(testDir,"sample.sdf"))),1)
 
 }

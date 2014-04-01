@@ -1,4 +1,5 @@
 
+testDir = system.file("unitTests",package="ChemmineR")
 test_aaa.clean <- function(){
 
 	unlink(c("test.db","test2.db","test1.db","test.sdf","test_desc.db",
@@ -261,7 +262,7 @@ test_ea.dupDescriptors <- function() {
 	# 41764092,41764082      41780498,41780494
    print("loading  duplicated descriptors")
 	conn = initDb("dup_test.db")
-	sdfs = read.SDFset("/home/khoran/ChemmineR/inst/unitTests/descriptor_dups.sdf")
+	sdfs = read.SDFset(file.path(testDir,"descriptor_dups.sdf"))
 	loadSdf(conn,sdfs,function(sdfset) data.frame(MW=MW(sdfset)),
 			  descriptors=function(sdfset) 
 				data.frame(descriptor_type="ap",descriptor=unlist(lapply(ap(sdf2ap(sdfset)),
