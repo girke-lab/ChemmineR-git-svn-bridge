@@ -29,7 +29,8 @@ read.SDFstr <- function(sdfstr) {
 
 		  #if the last non-empty line of mysdf is not "$$$$". Only search from the last "$$$$" found
 		  # to the end of the file
-		  if("$$$$" != Find(function(line) line !="", mysdf[index[length(index)]:length(mysdf)]
+		  start = if(length(index)==0) 1 else index[length(index)]
+		  if("$$$$" != Find(function(line) line !="", mysdf[start:length(mysdf)]
 								 ,right=TRUE)){
 			  # we have a MOL file, so just insert the $$$$ at the end
 			  mysdf <- c(mysdf,"$$$$")
