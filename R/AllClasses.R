@@ -25,6 +25,17 @@ read.SDFstr <- function(sdfstr) {
         }
         y <- regexpr("^\\${4,4}", mysdf, perl=TRUE) # identifies all fields that start with a '$$$$' sign
         index <- which(y!=-1)
+
+
+		  #if the last non-empty line of mysdf is not "$$$$". Only search from the last "$$$$" found
+		  # to the end of the file
+		  if("$$$$" != Find(function(line) line !="", mysdf[index[length(index)]:length(mysdf)]
+								 ,right=TRUE)){
+			  # we have a MOL file, so just insert the $$$$ at the end
+			  mysdf <- c(mysdf,"$$$$")
+			  index <- c(index,length(mysdf))
+		  }
+
         indexDF <- data.frame(start=c(1, index[-length(index)]+1), end=index)
         mysdf_list <- lapply(seq(along=indexDF[,1]), function(x) mysdf[seq(indexDF[x,1], indexDF[x,2])])
         if(class(mysdf_list) != "list") { mysdf_list <- list(as.vector(mysdf_list)) }
