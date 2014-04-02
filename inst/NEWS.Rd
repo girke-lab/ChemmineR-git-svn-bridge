@@ -7,7 +7,7 @@
 		\itemize{
 			\item SMARTS Search availible through ChemmineOB
 			\item Folding of FPset objects
-			\item Support SQL database updates by compound name
+			\item Support for SQL database updates by compound name
 			\item Coordinate re-generation with Open Babel through ChemmineOB
 		}
 	}
