@@ -4,6 +4,12 @@
 \section{CHANGES IN VERSION 2.16.0}{
 
    \subsection{NEW FEATURES}{
+		\itemize{
+			\item SMARTS Search availible through ChemmineOB
+			\item Folding of FPset objects
+			\item Support SQL database updates by compound name
+			\item Coordinate re-generation with Open Babel through ChemmineOB
+		}
 	}
 }
 \section{CHANGES IN VERSION 2.14.0}{
