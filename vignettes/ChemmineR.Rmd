@@ -1,3 +1,6 @@
+% ChemmineR
+% Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke 
+% `r format(Sys.time(),"%B %d, %Y")`
 <!--
 \usepackage[utf8]{inputenc}
 %\VignetteEngine{knitr::knitr}
@@ -9,14 +12,7 @@
  library(knitcitations)
 ```
 
-
-ChemmineR
-=========
-Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke 
-
 Email contact: thomas.girke@ucr.edu
-
-`r format(Sys.time(),"%B %d, %Y")`
 
 Introduction
 ============
