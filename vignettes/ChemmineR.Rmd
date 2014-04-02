@@ -1,3 +1,6 @@
+% ChemmineR
+% Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke 
+% `r format(Sys.time(),"%B %d, %Y")`
 <!--
 \usepackage[utf8]{inputenc}
 %\VignetteEngine{knitr::knitr}
@@ -8,15 +11,10 @@
  library(ChemmineR) 
  library(knitcitations)
 ```
-
-
-ChemmineR
-=========
-Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke 
+<font color='red'>Porting this vignette to knitr is causing some formatting issues. This will be
+ resolved soon.</font>
 
 Email contact: thomas.girke@ucr.edu
-
-`r format(Sys.time(),"%B %d, %Y")`
 
 Introduction
 ============
