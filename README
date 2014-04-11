@@ -1,0 +1,234 @@
+changelog
+        version 2.15.15 - 2.15.16
+                - fixed trailing character problem in importer
+
+        version 2.13.21 - 2.15.15
+        	- various updates
+
+	version 2.13.18 - 2.13.21
+                - vignette updates
+        
+        version 2.13.17
+                - introduced new SMIset class
+        
+	version 2.13.15 - 2.13.16
+                - ChemmineOB functions
+        
+	version 2.13.13 - 2.13.14
+                - vignette updates
+
+        version 2.13.12
+                - fixed atom align when writing SDFs
+		- support for plotting other bond types than 1-3
+
+        version 2.13.3 - 2.13.11
+                - updates of SQLite database
+
+	version 2.13.2
+		- fixed but in SDF importer
+	
+	version 2.11.10
+		- improved performance of jarvisPatrick function
+	
+	version 2.11.9
+		- fixed bug in jarvisPatrick function with pre-generated NN matrix
+	
+	version 2.11.8
+		- speed improvement of cmp.cluster with FPset objects
+	
+	version 2.11.7
+		- fixed division by zero error in fpSim 
+	
+	version 2.11.6
+		- fixed cmp.cluster support for FPset 
+
+	version 2.11.5
+		- added jarvisPatrick function
+	
+	version 2.11.4
+		- vignette updates 
+	
+        version 2.11.2-2.11.3
+		- added FP/FPset classes 
+		- vignette updates 
+
+	version 2.11.1
+		- fixed read.AP 
+	
+	version 2.9.23
+		- solved import problem with SciTegic SDFs
+	
+	version 2.9.22
+		- groups function will now always return matrix
+	
+	version 2.9.21
+		- support for restarting sdfStream at specific line position
+ 
+	version 2.9.20
+		- faster read.SDFindex by establishing a single file connection 
+
+	version 2.9.17-2.9.19
+		- vignette updates
+		- added NEWS file
+	
+        version 2.9.16
+		- atom pair fingerprint support
+	
+	version 2.9.15
+		- improved exception/error handling of sdf2ap
+                - added read.AP
+	
+        version 2.9.14
+		- vignette updates
+
+	version 2.9.13
+		- added streaming functionality for SD files by adding sdfStream and read.SDFindex
+		- updates to sdf2ap and validSDF
+		- SD file parsing supports now bond strings with three digit atom numbers
+	
+	version 2.9.12
+		- read.SDFstr accepts now character vector 
+	
+	version 2.9.11
+		- added terminal nitriles and acetylenes to group function
+	
+	version 2.9.4-2.9.10
+		- vignette changes
+	
+	version 2.9.3
+		- added write.SDFsplit function
+	
+	version 2.9.2
+		- fix for sdf2ap for molecules where no atom pairs can be returned by .gen_atom_pair 
+	
+	version 2.9.1
+		- added support for substructure viewing
+
+	version 2.7.2
+		- updated 'atomsubset' function
+	
+        version 2.7.1
+		- SDFset() constructor
+        
+	version 2.5.8
+		- corrected sim.R file 
+        
+	version 2.5.7
+		- updated 'atomsubset' function
+	
+	version 2.5.6
+		- added 'atomsubset' function for returning substructure from SDF/SDFset
+
+	version 2.5.5
+		- Documentation updates
+
+	version 2.5.4
+		- added 'rings' function for ring perception and aromaticity assignment  
+                - added 'groups' function for counting functional groups
+
+	version 2.5.3
+		- fixes for plotStruc/plot to show charges, disconnected
+                  atoms and missing hydrogens of non-C atoms
+
+	version 2.5.1 - 2.5.2
+		- Utilities for adding missing hydrogens: includes new 'bonds' function
+                  that is used by functions 'atomcount', 'MW', 'MF', 'atomcountMA'
+		
+        version 2.2.16 - 2.2.18
+                - Added conMA function to create connection matrices
+                - Documentation updates
+
+        version 2.2.15
+                - documentation updates
+		- renamed searchSub() to searchSim()
+		- wrapped web service code in man files with \dontrun{} 
+
+	version 2.2.14
+		- introduced support for ChemMine Web Tools including PubChem searches
+
+        version 2.2.12 - 2.2.13
+                - help file updates
+                - fix for SDF import to support Drug Bank data
+	
+        version 2.2.0 - 2.2.11
+		- added support for PubChem fingerprints
+	
+        version 2.1.5
+		- added validSDF function
+
+	version 2.1.4
+		- minor bug fixes
+	
+        version 2.1.3
+		- minor bug fixes
+        
+        version 2.1.2
+		- minor bug fixes
+
+	version 2.1.1
+		- introduced S4 classes for all object types
+		- added full support for processing SD files
+		- added compound depictions with R's graphics device
+	
+	version 1.2.4
+		- bug fix for 1.2.3
+
+	version 1.2.3
+		- enhance cluster visualization 
+
+	version 1.2.2
+		- minor bugfixes
+
+	version 1.2.1
+		- use ChemmineR Performance Pack (ChemmineRpp) when available
+
+	version 1.1.1
+		- updated Vignette
+		- sdf.visualize now accepts dataframe for argument 'extra'
+		- sdf.visualize now accepts names for reference.note
+		- cluster.sizestat now handles clustering result with multiple cutoffs
+
+	version 1.1.0
+		- enhanced cluster.visualize
+		- add db.subset
+
+	version 1.0.9
+		- check cmp.similarity arguments
+		- improved compound visualization: now allow a reference compound
+		- now search has built-in visualization
+
+	version 1.0.8
+		- sdf.visualize reads CIDs and allows extra description on
+		  compounds
+		- in cmp.cluster, is.similarity is now the default
+		- db.explain now returns value rather than printing it
+		- cluster.visualize now outputs to EPS and PDF
+
+	version 1.0.7
+		- document changes
+		- add `quite' options to many functions
+		- more robust parsing
+		- better handling of progress messages
+
+	version 1.0.6
+		- add sdf.visualize
+
+	version 1.0.5
+		- use readLines instead of scan in parsing MOL table
+
+	version 1.0.4
+		- fix unclosed I/O connections
+
+	version 1.0.3
+		- add cmp.duplicated
+		- rename 'cluster' to 'cmp.cluster'
+		- column names of clustering result now contain no space
+	
+	version 1.0.2
+		- cluster now accepts ... arguments for cmp.similarity
+
+	version 1.0.1
+		- add sdf.subset
+		- add db.explain
+		- add cluster.sizestat
+		- add cluster.visualize
