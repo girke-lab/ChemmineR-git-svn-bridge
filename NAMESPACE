@@ -1,7 +1,9 @@
 ## IMPORTS
-import(methods, graphics, stats, RCurl,DBI,digest)
+import(methods, graphics, stats, RCurl,DBI,digest,Rcpp)
 
 useDynLib(ChemmineR)
+
+#importFrom{Rcpp, evalCpp}
 
 ## EXPORTS
 ## S4 Classes
@@ -62,7 +64,7 @@ export(
     
     ## Fingerprint functions
     ## Source: sim.R
-    "fp2bit", "fpSim",
+    "fp2bit", "fpSim","fpSimFast",
 
     ## Web Tool functions
     ## Source: sim.R
