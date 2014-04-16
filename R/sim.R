@@ -1107,7 +1107,7 @@ fp2bit <- function(x, type=3, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
 }
 
 ## Fingerprint comparison and similarity search function 
-fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
+fpSimOrig <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
 	## Predefined similarity methods
 	if(class(method)=="character") {
 	 	if(method=="Tanimoto" | method=="tanimoto") method <- function(a,b,c,d) (c+addone)/(a+b+c+addone)
@@ -1159,6 +1159,54 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 	}
 }
 
+fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
+
+	if(class(method)=="character") {
+	 	if(method=="Tanimoto" | method=="tanimoto") 
+			method <- 0
+		else if(method=="Euclidean" | method=="euclidean") 
+			method <- 1
+		else if(method=="Tversky" | method=="tversky") 
+			method <- 2
+		else if(method=="Dice" | method=="dice") 
+			method <- 3
+		else 
+			stop("invalid method found: ",method)
+	}else
+		stop("invalid method found: ",method)
+
+
+
+	if(!any(c(is.vector(x), class(x)=="FP", class(x)=="FPset" & length(x)==1))) 
+		stop("x needs to be object of class FP, FPset of length one, or vector")
+   if(!any(c(is.vector(y), is.matrix(y), class(y)=="FP", class(y)=="FPset"))) 
+		stop("y needs to be object of class FP/FPset, vector or matrix")
+
+	## Convert FP/FPset inputs into vector/matrix format
+	if(class(x)=="FP") x <- as.numeric(x)
+	if(class(x)=="FPset") x <- as.numeric(x[[1]])
+	if(class(y)=="FP") y <- as.numeric(y)
+	if(class(y)=="FPset") y <- as.matrix(y)
+   
+
+
+	#x=.Call("similarity",c(1,0),matrix(c(1,0,0,0),2,2),0)
+	result=.Call("similarity",x,y,method,addone,alpha,beta)
+	names(result) = rownames(y)
+
+	if(sorted) {
+		result = sort(result, decreasing=TRUE)
+		if(top!="all")
+			result = result[1:top]
+	}
+	cutoffCount = length(result[result >= cutoff])
+	if( cutoffCount >= 1)
+		result[result >= cutoff]
+	else # make sure we don't lose all results do to cutoff
+		result
+	
+
+}
 ######################################
 ## Query ChemMine Web Tools Service ##
 ######################################

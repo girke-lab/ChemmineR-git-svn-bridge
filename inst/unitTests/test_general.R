@@ -34,7 +34,7 @@ test.genAPDescriptors <- function(){
 test.propOB <- function() {
 	data(sdfsample)
 	p = propOB(sdfsample[1:5])
-	print(p)
+	#print(p)
 	#checkEquals(ncol(p),15)
 	checkEquals(nrow(p),5)
    checkEquals(p$MW[2],MW(sdfsample[2])[[1]])
@@ -70,4 +70,23 @@ test.smartsSearchOB <- function(){
 	print(sdfid(sdfsample[1:5]))
 	checkEquals(as.vector(rotableBonds[1:5]),c(24,20,14,30,10))
 
+}
+test.fpSim <- function(){
+	data(apset)
+	fpset = desc2fp(apset)
+	dists = fpSim(fpset[[1]],fpset,top=6)
+	checkEqualsNumeric(dists, 
+							 c(1.0000000,0.4719101,0.4288499,0.4275229,0.4247423,0.4187380),
+							 tolerance = 0.0001)
+
+	for(m in c("tanimoto","euclidean","tversky","dice")){
+		sim = ChemmineR:::fpSimOrig(fpset[[1]],fpset,
+					method=m,cutoff=0.4,top=6)
+		simFast= fpSim(fpset[[1]],fpset,
+					method=m,cutoff=0.4,top=6)
+		#message("method: ",m)
+		#print(sim)
+		#print(simFast)
+		checkEqualsNumeric(sim,simFast,tolerance=0.00001)
+	}
 }
