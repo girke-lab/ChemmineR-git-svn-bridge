@@ -1107,7 +1107,7 @@ fp2bit <- function(x, type=3, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
 }
 
 ## Fingerprint comparison and similarity search function 
-fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
+fpSimOrig <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
 	## Predefined similarity methods
 	if(class(method)=="character") {
 	 	if(method=="Tanimoto" | method=="tanimoto") method <- function(a,b,c,d) (c+addone)/(a+b+c+addone)
@@ -1159,7 +1159,7 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 	}
 }
 
-fpSimFast <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
+fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
 
 	if(class(method)=="character") {
 	 	if(method=="Tanimoto" | method=="tanimoto") 

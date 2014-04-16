@@ -80,9 +80,9 @@ test.fpSim <- function(){
 							 tolerance = 0.0001)
 
 	for(m in c("tanimoto","euclidean","tversky","dice")){
-		sim = fpSim(fpset[[1]],fpset,
+		sim = ChemmineR:::fpSimOrig(fpset[[1]],fpset,
 					method=m,cutoff=0.4,top=6)
-		simFast= fpSimFast(fpset[[1]],fpset,
+		simFast= fpSim(fpset[[1]],fpset,
 					method=m,cutoff=0.4,top=6)
 		#message("method: ",m)
 		#print(sim)

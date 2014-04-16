@@ -64,7 +64,7 @@ export(
     
     ## Fingerprint functions
     ## Source: sim.R
-    "fp2bit", "fpSim","fpSimFast",
+    "fp2bit", "fpSim",
 
     ## Web Tool functions
     ## Source: sim.R

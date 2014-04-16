@@ -46,8 +46,6 @@ RcppExport SEXP similarity(SEXP queryS, SEXP targetsS,SEXP typeS,SEXP addoneS,SE
 	int beta = t3(0);
 		
 
-	double featureTime=0;
-	double computeTime =0;
 	for(int i=0; i < targets.nrow(); i++){
 		int *counts = features(query,targets,i);
 		
