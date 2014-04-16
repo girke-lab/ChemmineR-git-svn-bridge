@@ -1,7 +1,9 @@
 ## IMPORTS
-import(methods, graphics, stats, RCurl,DBI,digest)
+import(methods, graphics, stats, RCurl,DBI,digest,Rcpp)
 
 useDynLib(ChemmineR)
+
+#importFrom{Rcpp, evalCpp}
 
 ## EXPORTS
 ## S4 Classes
