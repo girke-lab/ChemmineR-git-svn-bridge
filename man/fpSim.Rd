@@ -3,8 +3,8 @@
 \title{
 Fingerprint Search 
 }
-\description{
-Search function for fingerprints, such as PubChem or atom pair fingerprints. Enables structure similarity comparisons, searching and clustering.
+\description{ Search function for fingerprints, such as PubChem or atom pair fingerprints.
+	Enables structure similarity comparisons, searching and clustering.
 }
 \usage{
 fpSim(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...)
@@ -19,8 +19,18 @@ Subject molecule(s) of class \code{numeric}, \code{matrix}, \code{FP} or \code{F
   \item{sorted}{
 return results sorted or unsorted
 }
-  \item{method}{
-Similarity coefficient to return. One can choose here from several predefined similarity measures: "Tanimoto" (default), "Euclidean", "Tversky" or "Dice". Alternatively, one can pass on any custom similarity function containing the arguments a, b, c and d. For instance, one can define "myfct <- function(a, b, c, d) c/(alpha*a + beta*b + c)" and then pass on \code{method=myfct}. The variable 'c' is the number of "on-bits" common in both compounds, 'd' is the number of "off-bits" common in both compounds, and 'a' and 'b' are the number of "on-bits" that are unique in one or the other compound, respectively.
+  \item{method}{ Similarity coefficient to return. One can choose here from several
+	  predefined similarity measures: "Tanimoto" (default), "Euclidean", "Tversky" or
+	  "Dice". Alternatively, one can pass on any custom similarity function containing the
+	  arguments a, b, c and d. For instance, one can define "myfct <- function(a, b, c, d)
+	  c/(alpha*a + beta*b + c)" and then pass on \code{method=myfct}. The variable 'c' is
+	  the number of "on-bits" common in both compounds, 'd' is the number of "off-bits"
+	  common in both compounds, and 'a' and 'b' are the number of "on-bits" that are unique
+	  in one or the other compound, respectively.
+
+	  The predefined methods will run a C++ version of this function which is about twice as
+	  fast as the R version. When a custom similarity function is given however, it will fall 
+	  back to using the R version. 
 }
   \item{addone}{
 Value to add to numerator and denominator of similarity coefficient to avoid devision by zero when fingerprint(s) contain only "off-bits" (zeros). Note: if \code{addone > 0} then fingerprints with no "on-bits" will receive the highest similarity score. Typically, this occurs only with extremely small molecules.
