@@ -1,5 +1,5 @@
 ## IMPORTS
-import(methods, graphics, stats, RCurl,DBI,digest,Rcpp)
+import(methods, graphics, stats, RCurl, rjson, DBI,digest,Rcpp)
 
 useDynLib(ChemmineR)
 
@@ -9,7 +9,7 @@ useDynLib(ChemmineR)
 ## S4 Classes
 ## Source: AllClasses.R
 exportClasses(
-    "SDFstr", "SDF", "SDFset", "SMI", "SMIset", "AP", "APset", "FP", "FPset"
+    "SDFstr", "SDF", "SDFset", "SMI", "SMIset", "AP", "APset", "FP", "FPset", "jobToken"
 )
 
 ## Methods
@@ -84,6 +84,9 @@ export(
 	 "forestSizePriorities",
 
     ## Large file/query utilites
-    "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction"
+    "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction",
+
+    ## Chemmine Tools
+    "status","browseJob","result","listCMTools","toolDetails","launchCMTool"
 )
 

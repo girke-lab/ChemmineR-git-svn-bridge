@@ -2318,4 +2318,18 @@ setMethod(f="plot", signature="SDFset",
 		if(print==TRUE) { return(SDFset2SDF(x)) }
 })
 
+## Object for referencing chemminetools jobs
+setClass("jobToken", representation=representation(
+    tool_name = "character",
+    jobId = "character"
+))
 
+## Show method for checking status of a submitted chemminetools job
+setMethod("show", signature=signature(
+    object="jobToken"),
+    function(object){
+        response <- status(object)
+        cat("tool name:\t", slot(object, "tool_name"), "\n")
+        cat("status:\t\t", response, "\n")
+    }
+)
