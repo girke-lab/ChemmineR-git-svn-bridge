@@ -7,7 +7,7 @@ Fingerprint Search
 	Enables structure similarity comparisons, searching and clustering.
 }
 \usage{
-fpSim(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...)
+fpSim(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1)
 }
 \arguments{
   \item{x}{
@@ -47,12 +47,6 @@ Only used when method="Tversky". Allows to specify the weighting variable 'alpha
   \item{beta}{
 Only used when method="Tversky". Allows to specify the weighting variable 'beta' of the Tversky index. 
 }
-\item{\dots}{
-arguments to be passed to/from other methods.
-}
-}
-\details{
-...
 }
 \value{
 Returns \code{numeric vector} with similarity coefficients as values and compound identifiers as names. 
@@ -64,9 +58,6 @@ PubChem fingerprint specification: ftp://ftp.ncbi.nih.gov/pubchem/specifications
 }
 \author{
 Thomas Girke
-}
-\note{
-...
 }
 
 \seealso{
