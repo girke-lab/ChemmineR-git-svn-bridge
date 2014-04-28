@@ -1159,7 +1159,7 @@ fpSimOrig <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, 
 	}
 }
 
-fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1, ...) {
+fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1) {
 
 	if(class(method)=="character") {
 	 	if(method=="Tanimoto" | method=="tanimoto") 
@@ -1173,7 +1173,9 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 		else 
 			stop("invalid method found: ",method)
 	}else
-		stop("invalid method found: ",method)
+		return(fpSimOrig(x,y,sorted=sorted,method=method,addone=addone,cutoff=cutoff,top=top,
+							  alpha=alpha, beta=beta))
+		#stop("invalid method type found: ",class(method))
 
 
 
@@ -1187,10 +1189,10 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 	if(class(x)=="FPset") x <- as.numeric(x[[1]])
 	if(class(y)=="FP") y <- as.numeric(y)
 	if(class(y)=="FPset") y <- as.matrix(y)
+	if(is.vector(y)) y <- t(as.matrix(y))
    
 
 
-	#x=.Call("similarity",c(1,0),matrix(c(1,0,0,0),2,2),0)
 	result=.Call("similarity",x,y,method,addone,alpha,beta)
 	names(result) = rownames(y)
 
@@ -1405,7 +1407,10 @@ propOB <- function(sdfSet){
 
 fingerprintOB <- function(sdfSet,fingerprintName){
 	.ensureOB()
-	fpset = new("FPset",fpma=fingerprint_OB(obmol(sdfSet),fingerprintName),
+   x = fingerprint_OB(obmol(sdfSet),fingerprintName)
+	if(is.vector(x)) x= t(as.matrix(x))
+
+	fpset = new("FPset",fpma=x,
 					type=fingerprintName)
 	cid(fpset) = cid(sdfSet)
 	fpset

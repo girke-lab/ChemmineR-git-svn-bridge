@@ -44,8 +44,10 @@ test.fingerprintOB <- function(){
 	if(require(ChemmineOB)){
 		data(sdfsample)
 		fp = fingerprintOB(sdfsample[1:5],"FP2")
-		print(fp)
 		checkEquals(fptype(fp),"FP2")
+		fpSingle = fingerprintOB(sdfsample[1],"FP2")
+		checkEquals(as.character(class(fpSingle)),"FPset")
+		checkEqualsNumeric(as.matrix(fpSingle[1]), as.matrix(fp[1]))
 	}
 }
 test.obmolRefs <- function() {

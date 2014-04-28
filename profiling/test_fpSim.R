@@ -35,7 +35,8 @@ if(!file.exists(fpsetDataName)){
 
 
 eval(fpset) #force evaluation
+fpset=c(fpset,fpset,fpset)
 message("starting test of ",length(fpset), " FPs")
-print(system.time(fpSim(fpset[[1]],fpset,addone=0,sorted=FALSE)))
-print(system.time(fpSimFast(fpset[[1]],fpset)))
+print(system.time(ChemmineR:::fpSimOrig(fpset[[1]],fpset)))
+#print(system.time(fpSim(fpset[[1]],fpset)))
 
