@@ -271,6 +271,11 @@ fingerprintOB(sdfset,"FP2")
 smartsSearchOB(sdfset[1:5],"[!$(*#*)&!D1]-!@[!$(*#*)&!D1]",uniqueMatches=FALSE)
 ```
 
+*exactMassOB*: Compute the monoisotopic (exact) mass of a set of compounds
+```{r eval=TRUE, tidy=FALSE}
+exactMassOB(sdfset[1:5])
+```
+
 Overview of Classes and Functions
 =================================
 

@@ -1419,6 +1419,10 @@ smartsSearchOB <- function(sdfset,smartsPattern,uniqueMatches=TRUE){
 	.ensureOB()
 	smartsSearch_OB(obmol(sdfset),smartsPattern,uniqueMatches)
 }
+exactMassOB <- function(sdfset){
+	.ensureOB()
+	exactMass_OB(obmol(sdfset))
+}
 
 
 #compounds should be items that can be passed into similarity

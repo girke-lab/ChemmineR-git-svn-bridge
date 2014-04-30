@@ -92,3 +92,10 @@ test.fpSim <- function(){
 		checkEqualsNumeric(sim,simFast,tolerance=0.00001)
 	}
 }
+test.exactMassOB <- function(){
+	data(sdfsample)
+	mass = exactMassOB(sdfsample[1:5])
+	checkEqualsNumeric(mass,c(456.2009,357.1801,
+									  370.1100,461.1733,
+									  318.1943),tolerance=0.00001)
+}
