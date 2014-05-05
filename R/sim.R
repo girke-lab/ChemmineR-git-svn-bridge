@@ -1245,6 +1245,8 @@ getIds <- function(cids) {
 
 # search PubChem through ChemMine Web Tools with smiles query
 searchString <- function(smiles) {
+	 if(class(smiles) == "SMIset")
+		 smiles = as.character(smiles)
     if(! class(smiles) == "character"){
         stop('reference compound must be a smiles string of class \"character\"')
     } 
