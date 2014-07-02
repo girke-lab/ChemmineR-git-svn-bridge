@@ -275,6 +275,26 @@ smartsSearchOB(sdfset[1:5],"[!$(*#*)&!D1]-!@[!$(*#*)&!D1]",uniqueMatches=FALSE)
 exactMassOB(sdfset[1:5])
 ```
 
+*regenerateCoords*: Re-compute the 2D coordinates of a compound using Open Babel. This can sometimes
+improve the quality of the compounds plot. See also the *regenCoords* option of the plot function.
+```{r eval=TRUE, tidy=FALSE}
+sdfset2 = regenerateCoords(sdfset[1:5])
+
+plot(sdfset[1], regenCoords=TRUE,print=FALSE)
+```
+
+*generate3DCoords*: Generate 3D coordinates for compounds with only 2D coordinates.
+```{r eval=TRUE, tidy=FALSE}
+sdf3D = generate3DCoords(sdfset[1])
+```
+
+*canonicalize*: Compute a canonicalized atom numbering. This allows compounds with the same molecular
+structure but different atom numberings to be compared properly.
+```{r eval=TRUE, tidy=FALSE}
+canonicalSdf= canonicalize(sdfset[1])
+```
+
+
 Overview of Classes and Functions
 =================================
 

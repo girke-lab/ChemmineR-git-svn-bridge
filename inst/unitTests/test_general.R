@@ -99,3 +99,20 @@ test.exactMassOB <- function(){
 									  370.1100,461.1733,
 									  318.1943),tolerance=0.00001)
 }
+test.3dCoords <-function(){
+	data(sdfsample)
+	sdf3d = generate3DCoords(sdfsample[1])
+
+	checkTrue(!any(atomblock(sdf3d)[[1]][,3]==0))
+	
+}
+test.canonicalize <- function(){
+	data(sdfsample)
+	cansdf = canonicalize(sdfsample[1])
+
+	bb=bondblock(cansdf)[[1]]
+
+	checkEqualsNumeric(bb[1,1:3],c(2,3,1))
+	checkEqualsNumeric(bb[2,1:3],c(2,4,1))
+
+}

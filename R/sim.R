@@ -1274,8 +1274,9 @@ sdf2smilesOB <- function(sdf) {
     } 
 
 	 if(.haveOB()){
-		 sdfstrList=as(as(sdf,"SDFstr"),"list")
-		 defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
+		 #sdfstrList=as(as(sdf,"SDFstr"),"list")
+		 #defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
+		 defs = sdfSet2definition(sdf)
 		 t=Reduce(rbind,strsplit(unlist(strsplit(convertFormat("SDF","SMI",defs),
 															  "\n",fixed=TRUE)),
 					 "\t",fixed=TRUE))
@@ -1337,21 +1338,34 @@ smiles2sdfOB <- function(smiles) {
 smiles2sdf <- smiles2sdfOB
 
 regenCoordsOB <- function(sdf){
+	applyOptions(sdf,data.frame(names="gen2D",args=""))
+}
+regenerateCoords <- regenCoordsOB
+
+generate3DCoordsOB <- function(sdf){
+	applyOptions(sdf,data.frame(names="gen3D",args=""))
+}
+generate3DCoords <- generate3DCoordsOB
+
+canonicalizeOB <- function(sdf){
+	applyOptions(sdf,data.frame(names="canonical",args=""))
+}
+canonicalize <- canonicalizeOB
+
+applyOptions <- function(sdf,options){
 	.ensureOB()
 
 	if(class(sdf) == "SDFset" || class(sdf)=="SDF"){
-		sdfstrList=as(as(sdf,"SDFstr"),"list")
-		defs = paste(Map(function(x) paste(x,collapse="\n"), sdfstrList),collapse="\n" )
-		sdfNew = definition2SDFset(convertFormat("SDF","SDF",defs))
+		defs = sdfSet2definition(sdf)
+		sdfNew = definition2SDFset(convertFormat("SDF","SDF",defs,options))
 		cid(sdfNew)=sdfid(sdf)
 		if(class(sdf)=="SDF")
 			sdfNew[[1]]
 		else
 			sdfNew
 	}else
-		stop("input to regenCoordsOB must be a SDFset or SDF object. Found ",class(sdf))
+		stop("input to applyOptions must be a SDFset or SDF object. Found ",class(sdf))
 }
-regenerateCoords <- regenCoordsOB
 
 # perform smiles to sdf conversion through ChemMine Web Tools
 smiles2sdfWeb <- function(smiles,limit=100) {
