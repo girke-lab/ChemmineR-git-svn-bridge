@@ -300,6 +300,11 @@ selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 definition2SDFset <- function(defs){
 	read.SDFset(unlist(strsplit(defs,"\n",fixed=TRUE)))
 }
+sdfSet2definition <- function(sdfset){
+		 paste(Map(function(x) paste(x,collapse="\n"), 
+					  as(as(sdfset,"SDFstr"),"list")),
+				 collapse="\n" )
+}
 
 loadSmiles <- function(conn, smileFile,...){
 	loadSdf(conn,smile2sdfFile(smileFile),...)
