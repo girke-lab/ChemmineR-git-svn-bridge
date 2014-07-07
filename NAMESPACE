@@ -61,6 +61,7 @@ export(
 	 "smiles2sdf","sdf2smiles",
 	 "propOB","fingerprintOB", "regenerateCoords",
 	 "smartsSearchOB","exactMassOB", "generate3DCoords","canonicalize",
+	 "canonicalNumbering",
     
     ## Fingerprint functions
     ## Source: sim.R

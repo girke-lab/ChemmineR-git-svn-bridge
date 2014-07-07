@@ -1352,6 +1352,14 @@ canonicalizeOB <- function(sdf){
 }
 canonicalize <- canonicalizeOB
 
+canonicalNumberingOB <- function(sdf){
+	.ensureOB()
+	results=canonicalNumbering_OB(obmol(sdf))
+	names(results) = cid(sdf)
+	results
+}
+canonicalNumbering <- canonicalNumberingOB
+
 applyOptions <- function(sdf,options){
 	.ensureOB()
 
