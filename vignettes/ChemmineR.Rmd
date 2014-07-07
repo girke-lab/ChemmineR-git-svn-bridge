@@ -294,6 +294,12 @@ structure but different atom numberings to be compared properly.
 canonicalSdf= canonicalize(sdfset[1])
 ```
 
+*canonicalNumbering*: Return a mapping from the original atom numbering to the 
+canonical atom number.
+```{r eval=TRUE, tidy=FALSE}
+mapping = canonicalNumbering(sdfset[1])
+```
+
 
 Overview of Classes and Functions
 =================================
