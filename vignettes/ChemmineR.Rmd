@@ -250,8 +250,13 @@ where the utility and usage of these functions is described.
 
 -   *convertFormat*: converts strings between two formats
 
--   *convertFormatFile*: converts files between two
-    formats
+-   *convertFormatFile*: converts files between two formats. This function can be used to enable ChemmineR to read in any
+format supported by Open Babel. For example, if you had an SML file you could do:
+```{r eval=FALSE, tidy=FALSE}
+convertFormatFile("SML","SDF","mycompound.sml","mycompound.sdf")
+sdfset=read.SDFset("mycompound.sdf")
+```
+
 
 *propOB*: generates several compound properties. See the man page for a current list of properties computed.
 ```{r eval=TRUE, tidy=FALSE}
