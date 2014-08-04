@@ -1,6 +1,6 @@
 
-debug = FALSE
-#debug = TRUE
+#debug = FALSE
+debug = TRUE
 
 dbOp<-function(dbExpr){
 	#print(as.character(substitute(dbExpr)))
@@ -600,7 +600,9 @@ deleteCompounds <- function(conn,compoundIds) {
 							paste(compoundIds,collapse=","),")"))
 }
 
-#TODO: document feature names must be lower case in the tests clause
+getAllCompoundIds <- function(conn){
+	dbGetQueryChecked(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")[[1]]
+}
 findCompounds <- function(conn,featureNames,tests){
 
 	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
@@ -706,7 +708,7 @@ getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissi
 				resultProcessor(rows[as.character(orderedIds),])
 			}
 		else
-			f=resultProcessor
+			resultProcessor
 
 		bufferResultSet(rs,f,1000)
 		dbClearResult(rs)
@@ -722,6 +724,59 @@ getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissi
 	}else{
 		return(as(sdfset,"SDFset"))
 	}
+}
+getCompoundFeatures <- function(conn,compoundIds, featureNames, filename=NA,
+										  keepOrder=FALSE, allowMissing=FALSE,batchSize=100000){
+
+	finalResult=data.frame()
+	processedCount=0
+
+	if(!is.na(filename))
+		f=file(filename,"w")
+
+	featureNames = tolower(featureNames)
+
+	featureTables = paste("feature_",featureNames,sep="")
+	batchByIndex(compoundIds,function(compoundIdSet){
+		tryCatch({
+			sql = paste("SELECT ",paste(c("compound_id",featureNames),collapse=","),
+						" FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
+						" USING(compound_id) WHERE compound_id in (",
+										  paste(compoundIdSet,collapse=","),")")
+
+			if(debug) print(paste("query sql:",sql))
+
+
+			result = dbGetQueryChecked(conn,sql)
+
+			if(keepOrder){
+				rownames(result) = result$compound_id
+				orderedIds = intersect(compoundIdSet,result$compound_id)
+				result = result[as.character(orderedIds),]
+			}
+			
+			if(!is.na(filename))
+				if(processedCount==0) #first time
+					write.table(result,file=f,row.names=FALSE,sep=",",quote=FALSE)
+				else
+					write.table(result,file=f,append=TRUE,col.names=FALSE,row.names=FALSE,sep=",",quote=FALSE)
+			else
+				finalResult <<- rbind(finalResult,result)
+
+			processedCount <<- processedCount + nrow(result)
+		},error=function(e){
+			stop(paste("error in findCompounds:",e$message))
+		})
+   },batchSize=batchSize)
+
+	if(!allowMissing && length(compoundIds) != processedCount) {
+		stop(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
+	}
+
+	if(!is.na(filename))
+		close(f)
+	else
+		finalResult
 }
 getCompoundNames <- function(conn, compoundIds,keepOrder=FALSE,allowMissing=FALSE){
 
