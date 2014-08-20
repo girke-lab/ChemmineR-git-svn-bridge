@@ -1296,14 +1296,14 @@ sdf2smilesOB <- function(sdf) {
 sdf2smiles <- sdf2smilesOB
 
 sdf2smilesWeb <- function(sdfset,limit=100){
-	message("class of sdfset: ",class(sdfset))
+	#message("class of sdfset: ",class(sdfset))
 	 if(length(sdfset) > limit)
 		 sdfset = sdfset[1:limit]
 
 	 smiles =c()
 	 for(i in seq(along=sdfset)){
 
-		message("class of sdfset[[]]: ",class(sdfset[[i]]))
+		#message("class of sdfset[[]]: ",class(sdfset[[i]]))
 		 sdf <- sdf2str(sdfset[[i]])
 		 sdf <- paste(sdf, collapse="\n")
 		 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]

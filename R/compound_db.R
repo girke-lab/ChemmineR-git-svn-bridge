@@ -282,12 +282,12 @@ selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 
 	indices = unique(allIndices)
 	#TODO: possibly pre-allocate result here, if performance is a problem
-	result=NA
+	result=NULL
 	batchByIndex(indices, function(indexBatch){
 			#print(paste("query:",genQuery(indexBatch)))
 			df = dbGetQuery(conn,genQuery(indexBatch))
 			#print(paste("got",paste(dim(df),collapse=" "),"results"))
-			result <<- if(is.na(result)) df else  rbind(result,df)
+			result <<- if(is.null(result)) df else  rbind(result,df)
 			#print(paste("total results so far: ",length(result)))
 	},batchSize)
 	#print(paste("final count: ",length(result)))
@@ -476,6 +476,7 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		#we do not assume names are unique, therefore if a checksum does not
 		#exist, then it is added as if it where a new compound
 		names(index)=checksums
+		if(debug){ message("checking for existing compounds: ")}
 		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 
