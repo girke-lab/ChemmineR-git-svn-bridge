@@ -1,6 +1,8 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <vector>
+#include <algorithm>
 /*
 #include <R.h>
 #include <Rinternals.h>
@@ -13,6 +15,7 @@
 //extern "C"{
 
 using namespace Rcpp;
+using namespace std;
 
 #define  TANIMOTO 0
 #define  EUCLIDIAN 1
@@ -111,7 +114,56 @@ int* features(NumericVector &query, NumericMatrix &targets, int targetRow){
 
 	return counts;
 }
+struct IndexedValue{
+	int index;
+	long long int value;
+	IndexedValue(){}
+	IndexedValue(int i, int v): index(i), value(v) {}
+};
 
+
+bool byValue (IndexedValue *a, IndexedValue *b){
+	return a->value < b->value;
+}
+bool byIndex (IndexedValue *a, IndexedValue *b){
+	return a->value < b->value;
+}
+RcppExport SEXP uniquifyAtomPairs(SEXP atomPairsS){
+	
+	NumericVector atomPairs(atomPairsS);
+	vector<IndexedValue*> aps(atomPairs.size());
+
+	for(int i=0; i < aps.size(); i++)
+		aps[i] = new IndexedValue(i,atomPairs[i]);
+	
+	sort(aps.begin(),aps.end(),byValue);
+
+	long long int lastValue = -1;
+	int dupCount=0;
+	for(int i=0; i < aps.size(); i++){
+
+		aps[i]->value = aps[i]->value << 7; // multiply by 2^7
+
+		if(lastValue == aps[i]->value) {//found dup
+			dupCount++;
+			aps[i]->value += dupCount;
+		}else{
+			dupCount=0;
+		}
+
+		lastValue = aps[i]->value;
+
+	}
+
+	//sort(aps.begin(),aps.end(),byValue);
+
+	for(int i=0; i < aps.size(); i++){
+		atomPairs(aps[i]->index) = aps[i]->value;
+		delete aps[i];
+	}
+
+	return atomPairs;
+}
 
 
 //}

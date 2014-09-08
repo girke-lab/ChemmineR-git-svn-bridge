@@ -8,12 +8,16 @@
 	Generates Atom Pair descriptors using a fast C function.
 }
 \usage{
-genAPDescriptors(sdf)
+genAPDescriptors(sdf,uniquePairs=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{sdf}{
 		A single SDF object.
+	}
+	\item{uniquePairs}{
+		When the same atom pair occurs more than once in a single compound, should the 
+		names be unique or not? Setting this to true will take slightly longer to compute.
 	}
 }
 \value{

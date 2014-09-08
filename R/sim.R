@@ -851,6 +851,10 @@ db.explain <- function(desc)
     return(vec)
 }
 
+.uniquifyAtomPairs <- function(desc) {
+	.Call("uniquifyAtomPairs",desc)
+}
+
 .progress_bar_int_cnt <- 0
 .progress_bar <- function(label=NULL) {
     progress <- c("|", "/", "-", "\\")
@@ -1404,24 +1408,20 @@ times = new.env()
 times$descT = 0
 times$facT = 0
 times$vecT = 0
-genAPDescriptors <- function(sdf){
-  #.factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
+times$uniqueT = 0
+genAPDescriptors <- function(sdf,uniquePairs=TRUE){
 
-	t=Sys.time()
+	# t=Sys.time()
 	d=.Call("genAPDescriptor",sdf)
-	times$descT <- times$descT + (Sys.time() - t)
+	# times$descT <- times$descT + (Sys.time() - t)
 
-	t=Sys.time()
-	f=as.factor(d)
-	times$facT <- times$facT + (Sys.time() - t)
+	# t=Sys.time()
+	d= .uniquifyAtomPairs(d)
+	# itimes$uniqueT <- times$uniqueT + (Sys.time() - t)
 
-	t=Sys.time()
-	v= .factor_to_vector(f)
-	times$vecT <- times$vecT + (Sys.time() - t)
-
-	v
-
+	d
 }
+
 propOB <- function(sdfSet){
 	.ensureOB()
 	results = prop_OB(obmol(sdfSet))
