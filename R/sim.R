@@ -1415,9 +1415,11 @@ genAPDescriptors <- function(sdf,uniquePairs=TRUE){
 	d=.Call("genAPDescriptor",sdf)
 	# times$descT <- times$descT + (Sys.time() - t)
 
-	# t=Sys.time()
-	d= .uniquifyAtomPairs(d)
-	# itimes$uniqueT <- times$uniqueT + (Sys.time() - t)
+	if(uniquePairs){
+		# t=Sys.time()
+		d= .uniquifyAtomPairs(d)
+		# itimes$uniqueT <- times$uniqueT + (Sys.time() - t)
+	}
 
 	d
 }

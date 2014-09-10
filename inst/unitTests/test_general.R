@@ -20,13 +20,25 @@ test.genAPDescriptors <- function(){
 	
 	for(i in 1:100){
 		sdf = sdfsample[[i]]
-		desc = genAPDescriptors(sdf)
+		desc = genAPDescriptors(sdf) 
 		#print(head(desc));
 
 		oldDesc=ChemmineR:::.gen_atom_pair(ChemmineR:::SDF2apcmp(sdf))
                  
 		#print(oldDesc);
-		checkEqualsNumeric(desc,oldDesc)
+		compResult = desc==oldDesc
+		if(!all(compResult)){
+			message("descriptor mismatch")
+			print(oldDesc[!compResult])
+			print(desc[!compResult])
+			message("----------")
+			firstFalse = match(FALSE,compResult)
+			print(oldDesc[(firstFalse-5):(firstFalse+5)])
+			print(desc[(firstFalse-5):(firstFalse+5)])
+
+		}
+		checkTrue(all(compResult))
+		#checkEqualsNumeric(desc,oldDesc)
 	}
 }
 test.propOB <- function() {

@@ -117,8 +117,9 @@ int* features(NumericVector &query, NumericMatrix &targets, int targetRow){
 struct IndexedValue{
 	int index;
 	long long int value;
+	int dupCount;
 	IndexedValue(){}
-	IndexedValue(int i, int v): index(i), value(v) {}
+	IndexedValue(int i, int v): index(i), value(v),dupCount(0) {}
 };
 
 
@@ -136,29 +137,25 @@ RcppExport SEXP uniquifyAtomPairs(SEXP atomPairsS){
 	for(int i=0; i < aps.size(); i++)
 		aps[i] = new IndexedValue(i,atomPairs[i]);
 	
-	sort(aps.begin(),aps.end(),byValue);
+	stable_sort(aps.begin(),aps.end(),byValue);
 
 	long long int lastValue = -1;
 	int dupCount=0;
 	for(int i=0; i < aps.size(); i++){
 
-		aps[i]->value = aps[i]->value << 7; // multiply by 2^7
-
 		if(lastValue == aps[i]->value) {//found dup
 			dupCount++;
-			aps[i]->value += dupCount;
 		}else{
 			dupCount=0;
 		}
+		aps[i]->dupCount = dupCount;
 
 		lastValue = aps[i]->value;
 
 	}
 
-	//sort(aps.begin(),aps.end(),byValue);
-
 	for(int i=0; i < aps.size(); i++){
-		atomPairs(aps[i]->index) = aps[i]->value;
+		atomPairs(aps[i]->index) = (aps[i]->value << 7) + aps[i]->dupCount;
 		delete aps[i];
 	}
 
