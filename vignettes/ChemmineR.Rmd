@@ -10,10 +10,17 @@
 ```{r echo=FALSE, results='hide',message=FALSE,warning=FALSE,error=FALSE}
 library(ChemmineR) 
 library(knitcitations)
-RefManageR:::BibOptions(style="markdown")
+RefManageR:::BibOptions(style="markdown",no.print.fields=c("doi"))
 ```
-<font color='red'>Porting this vignette to knitr is causing some formatting issues. This will be
+<!--<font color='red'>Porting this vignette to knitr is causing some formatting issues. This will be
  resolved soon.</font>
+-->
+
+ChemmineR
+=========
+Yiqun Cao, Tyler Backman, Kevin Horan, Thomas Girke 
+
+Last update: `r format(Sys.time(),"%B %d, %Y")`
 
 Email contact: thomas.girke@ucr.edu
 
@@ -214,7 +221,7 @@ Plot molecule structure of one or many SDFs:
 
 
 ![Visualization webpage created by calling
-*sdf.visualize*.](visualizescreenshot.png )
+*sdf.visualize*.](visualizescreenshot-small.png )
 
 Structure similarity searching and clustering: 
 ```{r eval=FALSE, tidy=FALSE}
@@ -1299,7 +1306,7 @@ Plot structures using web service ChemMine Tools:
 
 
 ![Visualization webpage created by calling
-*sdf.visualize*.](visualizescreenshot.png )
+*sdf.visualize*.](visualizescreenshot-small.png )
 
 Add extra annotation as *vector*: 
 ```{r eval=FALSE, tidy=FALSE}
@@ -2117,7 +2124,19 @@ Foundation:
 
 References
 ===========
+
 ```{r biblio, echo=FALSE, results='asis'}
-   bibliography()
+	#hack to get rid of latex code returned by certain doi sites (e.g. crosscite.org)
+	fix = function(t)  gsub("\\$\\\\(l|r)brace\\$", "", t)
+	suppressWarnings({
+		sink(tempfile())
+		b<<-bibliography()
+		sink(NULL)
+	})
+
+	for(i in 1:length(b))
+		b[i]$title = fix(b[i]$title)
+	b
+
 ```
 
