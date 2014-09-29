@@ -995,3 +995,18 @@ updatePriorities <- function(conn,data){
 	}
 
 }
+
+
+
+DUD <- function(){
+	getDbConn("dud.db")
+}
+DrugBank <- function(){
+	getDbConn("drugbank.db")
+}
+getDbConn <- function(dbName) {
+	if(require("ChemmineDrugs"))
+		initDb(system.file(file.path("extdata",dbName),package="ChemmineDrugs",mustWork=TRUE))
+	else
+		error("The package 'ChemmineDrugs' must be installed to use this function")
+}

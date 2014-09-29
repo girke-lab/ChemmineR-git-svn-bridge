@@ -1562,7 +1562,7 @@ rings <- function(x, upper=Inf, type="all", arom=FALSE, inner=FALSE) {
 			myrings <- .rings(cyclist, upper+1) # Plus 'upper+1' is required because at this step all rings have duplicated atoms at ring closure
 			myrings <- lapply(myrings, function(x) x[-1]) # Removes duplicated atom at ring closure 
 			if(upper==Inf & inner==TRUE) myrings <- .is.inner(x=myrings) # Reduces myrings to inner rings only 
-                        if(arom==TRUE) {
+			if(arom==TRUE) {
 				myarom <- .is.arom(sdf=x, rings=myrings)
 				if(type=="all") return(list(RINGS=myrings, AROMATIC=myarom))
 				if(type=="arom") return(list(AROMATIC_RINGS=myrings[myarom]))

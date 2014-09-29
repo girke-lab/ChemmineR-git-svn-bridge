@@ -87,6 +87,9 @@ export(
     ## Large file/query utilites
     "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction",
 
+	##ChemmineDrugs functions
+	 "DUD","DrugBank",
+
     ## Chemmine Tools
     "status","browseJob","result","listCMTools","toolDetails","launchCMTool"
 )
