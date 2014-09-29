@@ -21,7 +21,5 @@ DrugBank()
 }
 
 \examples{
-	\dontrun{
-		dbConn = DrugBank()
-	}
+	dbConn = DrugBank()
 }

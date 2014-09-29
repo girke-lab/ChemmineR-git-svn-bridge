@@ -860,7 +860,10 @@ stored in the "ids" variable.
  # and counts for RINGS and AROMATIC, as computed by rings, which 
  # returns a data frame itself. 
  ids<-loadSdf(conn,sdfsample, function(sdfset) 
- data.frame(MW = MW(sdfset), rings(sdfset,type="count",upper=6, arom=TRUE)) ) 
+					 data.frame(rings(sdfset,type="count",upper=6, arom=TRUE),propOB(sdfset)) ) 
+
+ #list features in the database:
+ print(listFeatures(conn))
 ```
 
 Updates
@@ -925,7 +928,7 @@ Compounds can be searched for using the *findCompounds*
 function. This function takes a connection object, a vector of feature
 names used in the tests, and finally, a vector of tests that must all
 pass for a compound to be included in the result set. Each test should
-be a boolean expression. For example: "c("MW <= 400","RINGS \> 3")"
+be a boolean expression. For example: 'c("MW <= 400","RINGS \> 3")'
 would return all compounds with a molecular weight of 400 or less and
 more than 3 rings, assuming these features exist in the database. The
 syntax for each test is "\<feature name\> \<SQL operator\> \<value\>".
@@ -940,15 +943,131 @@ also be fetched by name using the *findCompoundsByName*
 function.
 
 In this example we search for compounds with molecular weight less than
-300. We then fetch the matching compounds and show their molecular
-weight. 
-```{r eval=TRUE, tidy=FALSE}
- lightIds <- findCompounds(conn,"MW",c("MW < 300")) 
- MW(getCompounds(conn,lightIds))
+300.
 
- #names of matching compounds: 
- getCompoundNames(conn,lightIds) 
+_l
+
+```{r }
+results = findCompounds(conn,"mw",c("mw < 300"))
+message("found ",length(results))
 ```
+
+If more than one test is given, only compounds which satisfy all tests are found. So if we wanted
+to further restrict our search to compounds with 2 or more aromatic rings we could do:
+```{r }
+results = findCompounds(conn,c("mw","aromatic"),c("mw < 300","aromatic >= 2"))
+message("found ",length(results))
+```
+
+Remember that any feature used in some test must be listed in the second argument.
+
+String patterns can also be used. So if we wanted to match a substring of the molecular formula, say
+to find compounds with 21 carbon atoms, we could do:
+```{r }
+results = findCompounds(conn,"formula",c("formula like '%C21%'"))
+message("found ",length(results))
+```
+
+The "like" operator does a pattern match. There are two wildcard 
+operators that can be used with this operator. The "%" will match any stretch of characters while the "?"
+will match any single character. So the above expression would match a formula like "C21H28N4O6".
+
+Valid comparison operators are: 
+
+ - <,    <=,   > ,   >=
+ - =,    ==,   !=,   <>,   IS,   IS NOT,   IN,   LIKE 
+
+The boolean operators "AND" and "OR" can also be used to create more complex expressions within a single test.
+
+If you just want to fetch every compound in the database you can use the *getAllCompoundIds* function:
+```{r }
+allIds = getAllCompoundIds(conn)
+message("found ",length(allIds))
+```
+
+Using Search Results
+-----------------------
+Once you have a list of compound ids from the *findCompounds* function, you can either
+fetch the compound names, or the whole set of compounds as an SDFset. 
+
+```{r }
+
+#get the names of the compounds:
+names = getCompoundNames(conn,results)
+
+#if the name order is important set keepOrder=TRUE 
+#It will take a little longer though
+names = getCompoundNames(conn,results,keepOrder=TRUE) 
+
+
+# get the whole set of compounds
+sdfset = getCompounds(conn,results)
+#in order:
+sdfset = getCompounds(conn,results,keepOrder=TRUE)
+#write results directly to a file:
+sdfset = getCompounds(conn,results,filename=file.path(tempdir(),"results.sdf"))
+```
+
+Using the *getCompoundFeatures* function, you can get a set of feature values 
+as a data frame:
+```{r}
+getCompoundFeatures(conn,results[1:5],c("mw","logp","formula"))
+
+#write results directly to a CSV file (reduces memory usage):
+getCompoundFeatures(conn,results[1:5],c("mw","logp","formula"),filename="features.csv")
+
+#maintain input order in output:
+print(results[1:5])
+getCompoundFeatures(conn,results[1:5],c("mw","logp","formula"),keepOrder=TRUE)
+```
+
+Pre-Built Databases
+--------------------
+We have pre-built SQLite databases for the Drug Bank and DUD datasets. They can be found in 
+the ChemmineDrugs annotation package. Connections to these databases can be fetched from the
+functions *DrugBank* and *DUD* to get the corresponding database. Any of the above functions can
+then be used to query the database.
+
+The DUD dataset was downloaded from [here](http://dude.docking.org/db/subsets/all/all.tar.gz). A description
+can be found [here](http://dude.docking.org/). 
+
+The Drug Bank data set is version 4.1. It can be downloaded [here](http://www.drugbank.ca/system/downloads/current/structures/all.sdf.zip)
+
+The following features are included:
+
+ - **aromatic**: Number of aromatic rings
+ - **cansmi**: Canonical SMILES sting
+ - **cansmins**:
+ - **formula**: Molecular formula
+ - **hba1**:
+ - **hba2**:
+ - **hbd**:
+ - **inchi**: INCHI string
+ - **logp**:
+ - **mr**:
+ - **mw**: Molecular weight
+ - **ncharges**:
+ - **nf**:
+ - **r2nh**:
+ - **r3n**:
+ - **rcch**:
+ - **rcho**:
+ - **rcn**:
+ - **rcooh**:
+ - **rcoor**:
+ - **rcor**:
+ - **rings**:
+ - **rnh2**:
+ - **roh**:
+ - **ropo3**:
+ - **ror**:
+ - **title**:
+ - **tpsa**:
+
+The DUD database additionally includes:
+
+ - **target_name**: Name of the target
+ - **type**: either "active" or "decoy"
 
 
 Working with SDF/SDFset Classes
