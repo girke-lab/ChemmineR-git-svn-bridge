@@ -945,7 +945,6 @@ function.
 In this example we search for compounds with molecular weight less than
 300.
 
-_l
 
 ```{r }
 results = findCompounds(conn,"mw",c("mw < 300"))
@@ -1001,11 +1000,11 @@ names = getCompoundNames(conn,results,keepOrder=TRUE)
 
 
 # get the whole set of compounds
-sdfset = getCompounds(conn,results)
+compounds = getCompounds(conn,results)
 #in order:
-sdfset = getCompounds(conn,results,keepOrder=TRUE)
+compounds = getCompounds(conn,results,keepOrder=TRUE)
 #write results directly to a file:
-sdfset = getCompounds(conn,results,filename=file.path(tempdir(),"results.sdf"))
+compounds = getCompounds(conn,results,filename=file.path(tempdir(),"results.sdf"))
 ```
 
 Using the *getCompoundFeatures* function, you can get a set of feature values 
@@ -1126,16 +1125,22 @@ data blocks:
  atomblock(sdf); sdf[[2]];
  sdf[["atomblock"]] # All three methods return the same component
 
- header(sdfset[1:4]) atomblock(sdfset[1:4])
- bondblock(sdfset[1:4]) datablock(sdfset[1:4]) header(sdfset[[1]])
- atomblock(sdfset[[1]]) bondblock(sdfset[[1]]) datablock(sdfset[[1]]) 
+ header(sdfset[1:4]) 
+ atomblock(sdfset[1:4])
+ bondblock(sdfset[1:4]) 
+ datablock(sdfset[1:4])  
+ header(sdfset[[1]])
+ atomblock(sdfset[[1]]) 
+ bondblock(sdfset[[1]]) 
+ datablock(sdfset[[1]]) 
 ```
 
 
 Replacement Methods: 
 ```{r eval=FALSE, tidy=FALSE}
- sdfset[[1]][[2]][1,1] <- 999 atomblock(sdfset)[1] <-
- atomblock(sdfset)[2] datablock(sdfset)[1] <- datablock(sdfset)[2] 
+ sdfset[[1]][[2]][1,1] <- 999 
+ atomblock(sdfset)[1] <- atomblock(sdfset)[2] 
+ datablock(sdfset)[1] <- datablock(sdfset)[2] 
 ```
 
 
