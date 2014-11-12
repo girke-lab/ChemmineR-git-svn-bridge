@@ -16,6 +16,8 @@ test.formatConversions <- function() {
 
 test.genAPDescriptors <- function(){
 
+	DEACTIVATED("removed old version of function")
+
 	data(sdfsample)
 	
 	for(i in 1:100){
