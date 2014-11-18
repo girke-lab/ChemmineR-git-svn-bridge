@@ -128,3 +128,16 @@ test.canonicalize <- function(){
 	checkEqualsNumeric(bb[2,1:3],c(2,4,1))
 
 }
+test.parseV3000 <- function() {
+
+	sdfset2 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.v2k.sdf")
+	sdfset3 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.sdf")  
+
+
+	checkEquals(sdfid(sdfset2[[1]]),sdfid(sdfset3[[1]]))
+	checkTrue( all(atomblock(sdfset2[[1]])[,1:3] == atomblock(sdfset3[[1]])))
+	checkTrue( all(bondblock(sdfset2[[1]])[,1:3] == bondblock(sdfset3[[1]])))
+	checkTrue( all(datablock(sdfset2[[1]]) == datablock(sdfset3[[1]])))
+
+
+}

@@ -148,11 +148,19 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 ## SDFstr Parser Function
 .sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
-	if(length(countpos)==0) { countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) }
-	if(length(countpos)==0) { countpos <- 4 }
-	if(length(countpos)>1) { countpos <- 4 }
+	if(length(countpos)==0)  
+		countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) 
+	if(length(countpos)==0 || length(countpos)>1) 
+		 countpos <- 4 
+
 	countline <- sdf[countpos]
-        if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) { countline <- "  0  0" } # Create dummy countline if it contains non-numeric values 
+
+	if(length(grep("V3000$",countline))!=0) # we have a V3000 formatted file
+		return(.parseV3000(sdf,datablock,tail2vec))
+
+   if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) 
+		countline <- "  0  0"  # Create dummy countline if it contains non-numeric values 
+
 	Natom <- as.numeric(substring(countline, 1, 3))
 	Nbond <- as.numeric(substring(countline, 4, 6))
 	start <- c(header=1, atom=countpos+1, bond=countpos+Natom+1, extradata=countpos+Natom+Nbond+1)
@@ -203,18 +211,6 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 	}
 	bondblock <- bb2matrix(ct=sdf[index["bond",1]:index["bond",2]])
 	
-	## SDF name/value block
-	ex2vec <- function(extradata=sdf[index["extradata",1]:index["extradata",2]]) {
-                exstart <- grep("^>", extradata)
-		if(length(exstart)==0) { 
-                        exvec <- vector("character", length=0) 
-                } else {
-                    names(exstart) <- gsub("^>.*<|>", "", extradata[exstart])
-                    exindex <- cbind(start=exstart, end=c(exstart[-1], length(extradata))-1) # Changed 'length(extradata)+1' to 'length(extradata)' on Mar 22, 2014
-		    exvec <- sapply(rownames(exindex), function(x) paste(extradata[(exindex[x,1]+1):(exindex[x,2]-1)], collapse=" __ "))
-		}
-                return(exvec)
-	}
 	
 	if(tail2vec==TRUE) {
 		extradata <- ex2vec(extradata=sdf[index["extradata",1]:index["extradata",2]])
@@ -230,7 +226,121 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 	}
 	return(sdf)
 }
+## SDF name/value block
+ex2vec <- function(extradata) {
+                exstart <- grep("^>", extradata)
+		if(length(exstart)==0) { 
+                        exvec <- vector("character", length=0) 
+                } else {
+                    names(exstart) <- gsub("^>.*<|>", "", extradata[exstart])
+                    exindex <- cbind(start=exstart, end=c(exstart[-1], length(extradata))-1) # Changed 'length(extradata)+1' to 'length(extradata)' on Mar 22, 2014
+		    exvec <- sapply(rownames(exindex), function(x) paste(extradata[(exindex[x,1]+1):(exindex[x,2]-1)], collapse=" __ "))
+		}
+                return(exvec)
+	}
 
+.parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
+	#message("found V3000 formatted compound")
+
+	exactMatch = function(pattern) 
+						function(line) 
+							length(grep(pattern,line,fixed=TRUE))!=0
+
+	ctabPos = Position(exactMatch("BEGIN CTAB"),sdf)
+	if(is.na(ctabPos)){
+		warning("No CTAB block found in ",sdf[1],", guessing at header length")
+		header = sdf[1:4]
+	}else
+		header = sdf[1:(ctabPos-1)]
+	
+	if(length(header)==4) 
+		names(header) <- c("Molecule_Name", "Source", "Comment", "Counts_Line")	
+
+	countLinePos = Position(exactMatch("COUNTS"), sdf)
+	if(is.na(countLinePos)){
+		warning("No COUNTS line found in ",sdf[1])
+		counts=c(0,0)
+	}else{
+		counts = as.numeric(strsplit(sdf[countLinePos],"\\s+")[[1]][c(4,5)])
+	}
+	#message("class of counts: ",class(counts))
+	#print(counts)
+
+	#message("parsing atomblock")
+	atomPos = Position(exactMatch("BEGIN ATOM"),sdf)
+	if(is.na(atomPos)){
+		warning("No ATOM block found in ",sdf[1]," returning a dummy atom block")
+		atomblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+	}else{
+		#message("atomPos: ",atomPos," class: ",class(atomPos))
+		atomEndPos =if(counts[1]!=0 && exactMatch("END ATOM")(sdf[atomPos+counts[1]+1]) ){
+			atomPos+counts[1]+1
+		}else{ #Just search for it
+			endPos = Position(exactMatch("END ATOM"),sdf[atomPos:length(sdf)])
+			if(is.na(endPos)){
+				warning("Could not find the end of the ATOM block in ",sdf[1])
+				atomPos + 1 #assume and emtpy atom block
+			}else
+				endPos
+		}
+
+		data = Reduce(rbind,Map(function(line) {
+				strsplit(line,"\\s+")[[1]][3:7]
+			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
+		atomblock = data[,3:5]
+		mode(atomblock)="numeric"
+		#print(atomblock)
+		colnames(atomblock) = paste("C",1:3,sep="")
+		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
+	}
+	#message("parsing bond block")
+	bondPos = Position(exactMatch("BEGIN BOND"),sdf)
+	if(is.na(bondPos)){
+		warning("No BOND block found in ",sdf[1]," returning a dummy bond block")
+		bondblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+	}else{
+		bondEndPos =if(counts[2]!=0 && exactMatch("END BOND")(sdf[bondPos+counts[2]+1])){
+			bondPos+counts[2]+1
+		}else{ #Just search for it
+			endPos = Position(exactMatch("END BOND"),sdf[bondPos:length(sdf)])
+			if(is.na(endPos)){
+				warning("Could not find the end of the BOND block in ",sdf[1])
+				bondPos + 1 #assume and emtpy atom block
+			}else
+				endPos
+		}
+
+		data = Reduce(rbind,Map(function(line) {
+				strsplit(line,"\\s+")[[1]][3:6]
+			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
+		bondblock = data[,c(3,4,2)]
+		mode(bondblock)="numeric"
+		colnames(bondblock) = paste("C",1:3,sep="")
+		rownames(bondblock) = 1:nrow(bondblock) # see if this is required
+	}
+
+	#message("parsing extra data")
+	endPos = Position(exactMatch("M  END"),sdf)
+	if(is.na(endPos)){
+		warning("no END tag found in ",sdf[1])
+		extradata = vector("character",length=0)
+	}else{
+		if(endPos+2 < length(sdf))
+			extradata = if(tail2vec==TRUE) ex2vec(sdf[(endPos+1):length(sdf)])
+							else sdf[(endPos+1):length(sdf)]
+		else
+			extradata = vector("character",length=0)
+	}
+
+	## Assemble components in object of class SDF
+	if(datablock==TRUE) {
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock, datablock=extradata)
+	} else {
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock)
+	}
+	return(sdf)
+
+}
 ## Accessor methods for SDF class
 setGeneric(name="sdf2list", def=function(x) standardGeneric("sdf2list"))
 setMethod(f="sdf2list", signature="SDF", definition=function(x) {return(list(header=header(x), atomblock=atomblock(x), bondblock=bondblock(x), datablock=datablock(x)))}) 
