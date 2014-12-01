@@ -140,13 +140,22 @@ setClass("ExternalReference")
 setClassUnion("ExternalReferenceOrNULL",members=c("ExternalReference","NULL"))
 setClass("SDF", representation(header="character", atomblock="matrix", 
 										 bondblock="matrix", datablock="character",
-										 obmolRef="ExternalReferenceOrNULL"),
-			prototype=list(obmolRef=NULL))
-										# obmolRef="_p_OpenBabel__OBMol"))
+										 obmolRef="ExternalReferenceOrNULL",
+										 version="character"),
+			prototype=list(obmolRef=NULL,version="V2000"))
 
 ## Convert SDFstr to SDF Class
 ## SDFstr Parser Function
+
+v2kTimes = new.env()
+v2kTimes$header = 0
+v2kTimes$atom = 0
+v2kTimes$bond = 0
+v2kTimes$data = 0
+
+
 .sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
+	t=Sys.time()
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
 	if(length(countpos)==0)  
 		countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) 
@@ -169,7 +178,9 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 	## Header block
 	header <- sdf[index["header",1]:index["header",2]]
 	if(length(header)==4) names(header) <- c("Molecule_Name", "Source", "Comment", "Counts_Line")	
+	v2kTimes$header <- v2kTimes$header + (Sys.time() - t)
 	
+	t=Sys.time()
 	## Atom block
 	ab2matrix <- function(ct=sdf[index["atom",1]:index["atom",2]]) {
 		if((index["atom","end"] - index["atom","start"]) < 1) {
@@ -179,7 +190,7 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 		        ctlist <- strsplit(ct, " {1,}")
 			# ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
 		        ctma <- tryCatch(matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE), warning=function(w) NULL)
-		        if(length(ctma)==0) { # If rows in atom block are of variable length, use alternative/slower approach
+		        if(TRUE || length(ctma)==0) { # If rows in atom block are of variable length, use alternative/slower approach
 				maxcol <- max(sapply(ctlist, length))
 				ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
 				for(i in seq(along=ctma[,1])) ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
@@ -192,7 +203,9 @@ setClass("SDF", representation(header="character", atomblock="matrix",
                 return(ctma)
 	}
 	atomblock <- ab2matrix(ct=sdf[index["atom",1]:index["atom",2]])
+	v2kTimes$atom<- v2kTimes$atom+ (Sys.time() - t)
 	
+	t=Sys.time()
 	## Bond block
 	bb2matrix <- function(ct=sdf[index["bond",1]:index["bond",2]]) {
 		#if((index["bond","end"] - index["bond","start"]) < 1) {
@@ -210,13 +223,16 @@ setClass("SDF", representation(header="character", atomblock="matrix",
                 return(ctma)
 	}
 	bondblock <- bb2matrix(ct=sdf[index["bond",1]:index["bond",2]])
+	v2kTimes$bond<- v2kTimes$bond + (Sys.time() - t)
 	
 	
+	t=Sys.time()
 	if(tail2vec==TRUE) {
 		extradata <- ex2vec(extradata=sdf[index["extradata",1]:index["extradata",2]])
 	} else {	
 		extradata <- sdf[index["extradata",1]:index["extradata",2]]
 	}
+	v2kTimes$data<- v2kTimes$data+ (Sys.time() - t)
 
 	## Assemble components in object of class SDF
 	if(datablock==TRUE) {
@@ -239,6 +255,13 @@ ex2vec <- function(extradata) {
                 return(exvec)
 	}
 
+v3kTimes = new.env()
+v3kTimes$header = 0
+v3kTimes$atom = 0
+v3kTimes$atomCore = 0
+v3kTimes$bond = 0
+v3kTimes$data = 0
+
 .parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
 	#message("found V3000 formatted compound")
 
@@ -246,6 +269,9 @@ ex2vec <- function(extradata) {
 						function(line) 
 							length(grep(pattern,line,fixed=TRUE))!=0
 
+
+
+	t=Sys.time()
 	ctabPos = Position(exactMatch("BEGIN CTAB"),sdf)
 	if(is.na(ctabPos)){
 		warning("No CTAB block found in ",sdf[1],", guessing at header length")
@@ -261,11 +287,14 @@ ex2vec <- function(extradata) {
 		warning("No COUNTS line found in ",sdf[1])
 		counts=c(0,0)
 	}else{
-		counts = as.numeric(strsplit(sdf[countLinePos],"\\s+")[[1]][c(4,5)])
+		#counts = as.numeric(strsplit(sdf[countLinePos],"\\s+")[[1]][c(4,5)])
+		counts = as.numeric(cstrsplit(sdf[countLinePos])[c(4,5)])
 	}
 	#message("class of counts: ",class(counts))
 	#print(counts)
+	v3kTimes$header <- v3kTimes$header + (Sys.time() - t)
 
+	t=Sys.time()
 	#message("parsing atomblock")
 	atomPos = Position(exactMatch("BEGIN ATOM"),sdf)
 	if(is.na(atomPos)){
@@ -284,15 +313,25 @@ ex2vec <- function(extradata) {
 				endPos
 		}
 
+t2=Sys.time()
+		
 		data = Reduce(rbind,Map(function(line) {
-				strsplit(line,"\\s+")[[1]][3:7]
+				#strsplit(line,"\\s+")[[1]][3:7]
+				cstrsplit(line)[3:7]
 			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
+v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 		atomblock = data[,3:5]
 		mode(atomblock)="numeric"
 		#print(atomblock)
 		colnames(atomblock) = paste("C",1:3,sep="")
 		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
 	}
+	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
+
+
+
+
+	t=Sys.time()
 	#message("parsing bond block")
 	bondPos = Position(exactMatch("BEGIN BOND"),sdf)
 	if(is.na(bondPos)){
@@ -311,32 +350,39 @@ ex2vec <- function(extradata) {
 		}
 
 		data = Reduce(rbind,Map(function(line) {
-				strsplit(line,"\\s+")[[1]][3:6]
+				#strsplit(line,"\\s+")[[1]][3:6]
+				cstrsplit(line)[3:6]
 			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
 		bondblock = data[,c(3,4,2)]
 		mode(bondblock)="numeric"
 		colnames(bondblock) = paste("C",1:3,sep="")
 		rownames(bondblock) = 1:nrow(bondblock) # see if this is required
 	}
+	v3kTimes$bond<- v3kTimes$bond+ (Sys.time() - t)
+
 
 	#message("parsing extra data")
+	t=Sys.time()
 	endPos = Position(exactMatch("M  END"),sdf)
 	if(is.na(endPos)){
 		warning("no END tag found in ",sdf[1])
 		extradata = vector("character",length=0)
 	}else{
-		if(endPos+2 < length(sdf))
+		if(endPos+2 < length(sdf)){
 			extradata = if(tail2vec==TRUE) ex2vec(sdf[(endPos+1):length(sdf)])
 							else sdf[(endPos+1):length(sdf)]
+		}
 		else
 			extradata = vector("character",length=0)
 	}
+	v3kTimes$data <- v3kTimes$data + (Sys.time() - t)
 
 	## Assemble components in object of class SDF
 	if(datablock==TRUE) {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock, datablock=extradata)
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock,
+					  datablock=extradata,version="V3000")
 	} else {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock)
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock,version="V3000")
 	}
 	return(sdf)
 
@@ -2439,3 +2485,20 @@ setMethod("show", signature=signature(
         cat("status:\t\t", response, "\n")
     }
 )
+
+cstrsplit <- function(line) .Call(cstrsplitSym,line)
+#cstrsplit <- cxxfunction(signature(l="character"),includes='
+#					#include <R.h>
+#					#include <boost/algorithm/string.hpp>
+#								',body='
+#					std::vector<std::string> strs;
+#					const char *line = CHAR(STRING_ELT(l,0));
+#					boost::split(strs, line, boost::is_any_of("\t "),boost::token_compress_on);
+#
+#					he
+#					CharacterVector output2(strs.begin(),strs.end());
+#					return output2;
+#
+#					',plugin="Rcpp")
+
+	

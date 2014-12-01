@@ -14,4 +14,4 @@ Suggests: RSQLite, scatterplot3d, gplots, fmcsR,snow, RPostgreSQL, BiocStyle,kni
 Enhances: ChemmineOB, ChemmineDrugs
 URL: http://manuals.bioinformatics.ucr.edu/home/chemminer
 VignetteBuilder: knitr
-LinkingTo: Rcpp
+LinkingTo: Rcpp, BH

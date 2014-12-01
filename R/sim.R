@@ -1,3 +1,8 @@
+cstrsplitSym=NA
+.onLoad <- function(libname,pkgname) {
+
+	cstrsplitSym <<- getNativeSymbolInfo("cstrsplit")
+}
 
 .db.header.size <- 16
 # supported elements
