@@ -255,6 +255,37 @@ ex2vec <- function(extradata) {
                 return(exvec)
 	}
 
+
+findPositions = function(sdf){
+
+	patterns = c("BEGIN CTAB","COUNTS","BEGIN ATOM","END ATOM", 
+					 "BEGIN bBOND", "END BOND","M  END")
+
+	tagPositions = lapply(patterns,function(pattern) grep(pattern,sdf,fixed=TRUE))
+	tagPositions[which(lapply(tagPositions,length)==0)] = -1 # ensure unlist does not remove undefined entries
+	tagPositions = unlist(tagPositions)
+
+
+#	tagPositions=rep(-1,length(patterns))
+#	for(i in seq(along=sdf)){
+#			 for(pi in seq(along=patterns)){
+#				#if(substring(sdf[i],8,length(patterns[pi])) == patterns[pi]){
+#				#if(exactMatch(patterns[pi],sdf[i])){
+#				if(length(grep(patterns[pi],sdf[i],fixed=TRUE))!=0){
+#					tagPositions[pi] = i
+#					break
+#				 }
+#			 }
+#		 }
+	unfound = which(tagPositions == -1)
+	if(length(unfound) != 0){ # some tags are missing
+		warning("malformed SDF V3000 file, could not find tags ",
+				  paste("\"",patterns[unfound],"\"",sep="",collapse=","))
+	}
+
+	tagPositions
+
+}
 v3kTimes = new.env()
 v3kTimes$header = 0
 v3kTimes$atom = 0
@@ -264,17 +295,38 @@ v3kTimes$data = 0
 
 .parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
 	#message("found V3000 formatted compound")
+	sdfLength = length(sdf)
 
 	exactMatch = function(pattern) 
 						function(line) 
 							length(grep(pattern,line,fixed=TRUE))!=0
 
-
-
 	t=Sys.time()
-	ctabPos = Position(exactMatch("BEGIN CTAB"),sdf)
-	if(is.na(ctabPos)){
-		warning("No CTAB block found in ",sdf[1],", guessing at header length")
+	# find all postions in one pass
+	patterns = c("BEGIN CTAB","COUNTS","BEGIN ATOM","END ATOM", "BEGIN BOND",
+					 "END BOND","M  END")
+	tagPositions=rep(-1,length(patterns))
+	for(i in seq(along=sdf)){
+			 for(pi in seq(along=patterns)){
+				#message("looking for pattern ",patterns[pi]," pi=",pi)
+				if(exactMatch(patterns[pi])(sdf[i])){
+					tagPositions[pi] = i
+					break
+				 }
+			 }
+		 }
+	unfound = which(tagPositions == -1)
+	if(length(unfound) != 0){ # some tags are missing
+		warning("malformed SDF V3000 file, could not find tags ",
+				  paste("\"",patterns[unfound],"\"",sep="",collapse=","))
+	}
+
+	#message("tagPositions: ")
+	#print(tagPositions)
+
+	#ctabPos = Position(exactMatch("BEGIN CTAB"),sdf)
+	ctabPos = tagPositions[1]
+	if(ctabPos == -1){
 		header = sdf[1:4]
 	}else
 		header = sdf[1:(ctabPos-1)]
@@ -282,9 +334,9 @@ v3kTimes$data = 0
 	if(length(header)==4) 
 		names(header) <- c("Molecule_Name", "Source", "Comment", "Counts_Line")	
 
-	countLinePos = Position(exactMatch("COUNTS"), sdf)
-	if(is.na(countLinePos)){
-		warning("No COUNTS line found in ",sdf[1])
+	#countLinePos = Position(exactMatch("COUNTS"), sdf)
+	countLinePos = tagPositions[2]
+	if(countLinePos == -1){
 		counts=c(0,0)
 	}else{
 		#counts = as.numeric(strsplit(sdf[countLinePos],"\\s+")[[1]][c(4,5)])
@@ -296,21 +348,27 @@ v3kTimes$data = 0
 
 	t=Sys.time()
 	#message("parsing atomblock")
-	atomPos = Position(exactMatch("BEGIN ATOM"),sdf)
-	if(is.na(atomPos)){
+	#atomPos = Position(exactMatch("BEGIN ATOM"),sdf)
+	atomPos = tagPositions[3]
+	if(atomPos == -1){
 		warning("No ATOM block found in ",sdf[1]," returning a dummy atom block")
 		atomblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
 	}else{
 		#message("atomPos: ",atomPos," class: ",class(atomPos))
-		atomEndPos =if(counts[1]!=0 && exactMatch("END ATOM")(sdf[atomPos+counts[1]+1]) ){
-			atomPos+counts[1]+1
-		}else{ #Just search for it
-			endPos = Position(exactMatch("END ATOM"),sdf[atomPos:length(sdf)])
-			if(is.na(endPos)){
+		#atomEndPos =if(counts[1]!=0 && exactMatch("END ATOM")(sdf[atomPos+counts[1]+1]) ){
+		#	atomPos+counts[1]+1
+		#}else{ #Just search for it
+		#	endPos = Position(exactMatch("END ATOM"),sdf[atomPos:length(sdf)])
+		#	if(is.na(endPos)){
+		#		warning("Could not find the end of the ATOM block in ",sdf[1])
+		#		atomPos + 1 #assume and emtpy atom block
+		#	}else
+		#		endPos
+		#}
+		atomEndPos = tagPositions[4]
+		if(atomEndPos == -1){
 				warning("Could not find the end of the ATOM block in ",sdf[1])
-				atomPos + 1 #assume and emtpy atom block
-			}else
-				endPos
+				atomEndPos = atomPos + 1 #assume and emtpy atom block
 		}
 
 t2=Sys.time()
@@ -333,20 +391,26 @@ v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 
 	t=Sys.time()
 	#message("parsing bond block")
-	bondPos = Position(exactMatch("BEGIN BOND"),sdf)
-	if(is.na(bondPos)){
+	#bondPos = Position(exactMatch("BEGIN BOND"),sdf)
+	bondPos = tagPositions[5]
+	if(bondPos == -1){
 		warning("No BOND block found in ",sdf[1]," returning a dummy bond block")
 		bondblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
 	}else{
-		bondEndPos =if(counts[2]!=0 && exactMatch("END BOND")(sdf[bondPos+counts[2]+1])){
-			bondPos+counts[2]+1
-		}else{ #Just search for it
-			endPos = Position(exactMatch("END BOND"),sdf[bondPos:length(sdf)])
-			if(is.na(endPos)){
-				warning("Could not find the end of the BOND block in ",sdf[1])
-				bondPos + 1 #assume and emtpy atom block
-			}else
-				endPos
+	  #bondEndPos =if(counts[2]!=0 && exactMatch("END BOND")(sdf[bondPos+counts[2]+1])){
+	  #	bondPos+counts[2]+1
+	  #}else{ #Just search for it
+	  #	endPos = Position(exactMatch("END BOND"),sdf[bondPos:length(sdf)])
+	  #	if(is.na(endPos)){
+	  #		warning("Could not find the end of the BOND block in ",sdf[1])
+	  #		bondPos + 1 #assume and emtpy atom block
+	  #	}else
+	  #		endPos
+	  #}
+		bondEndPos = tagPositions[6]
+		if(bondEndPos == -1){
+	  		warning("Could not find the end of the BOND block in ",sdf[1])
+	  		bondEndPos = bondPos + 1 #assume and emtpy atom block
 		}
 
 		data = Reduce(rbind,Map(function(line) {
@@ -363,14 +427,15 @@ v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 
 	#message("parsing extra data")
 	t=Sys.time()
-	endPos = Position(exactMatch("M  END"),sdf)
-	if(is.na(endPos)){
+	#endPos = Position(exactMatch("M  END"),sdf)
+	endPos = tagPositions[7]
+	if(endPos == -1){
 		warning("no END tag found in ",sdf[1])
 		extradata = vector("character",length=0)
 	}else{
-		if(endPos+2 < length(sdf)){
-			extradata = if(tail2vec==TRUE) ex2vec(sdf[(endPos+1):length(sdf)])
-							else sdf[(endPos+1):length(sdf)]
+		if(endPos+2 < sdfLength){
+			extradata = if(tail2vec==TRUE) ex2vec(sdf[(endPos+1):sdfLength])
+							else sdf[(endPos+1):sdfLength]
 		}
 		else
 			extradata = vector("character",length=0)
