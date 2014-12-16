@@ -259,7 +259,7 @@ ex2vec <- function(extradata) {
 findPositions = function(sdf){
 
 	patterns = c("BEGIN CTAB","COUNTS","BEGIN ATOM","END ATOM", 
-					 "BEGIN bBOND", "END BOND","M  END")
+					 "BEGIN BOND", "END BOND","M  END")
 
 	tagPositions = lapply(patterns,function(pattern) grep(pattern,sdf,fixed=TRUE))
 	tagPositions[which(lapply(tagPositions,length)==0)] = -1 # ensure unlist does not remove undefined entries
@@ -281,7 +281,7 @@ v3kTimes$atomCore = 0
 v3kTimes$bond = 0
 v3kTimes$data = 0
 
-.parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
+.parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE,extendedAttributes=FALSE) {
 	#message("found V3000 formatted compound")
 	sdfLength = length(sdf)
 
@@ -325,18 +325,28 @@ v3kTimes$data = 0
 t2=Sys.time()
 		
 		data = Reduce(rbind,Map(function(line) {
-				cstrsplit(line)[3:7]
+				#cstrsplit(line)[3:7]
+				parts = cstrsplit(line)
+				attrs = if(extendedAttributes && length(parts) > 8)
+								paste(parts[9:length(parts)],collapse=" ")
+						  else ""
+				#print(paste(parts[9:length(parts)],collapse=" "))
+				data.frame(num=parts[3],atom=parts[4],
+							  x=parts[5],y=parts[6],z=parts[7],
+							  attributes = attrs,stringsAsFactors=FALSE )
+
 			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
-v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
-		atomblock = data[,3:5]
+		if(extendedAttributes)
+			extAtomAttrs = parseAttributes(data$attributes)
+		#print(extAtomAttrs)
+		v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
+		atomblock = as.matrix(data[,3:5])
 		mode(atomblock)="numeric"
 		#print(atomblock)
 		colnames(atomblock) = paste("C",1:3,sep="")
-		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
+		rownames(atomblock) = paste(data$atom,data$num,sep="_")
 	}
 	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
-
-
 
 
 	t=Sys.time()
@@ -353,12 +363,24 @@ v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 		}
 
 		data = Reduce(rbind,Map(function(line) {
-				cstrsplit(line)[3:6]
+				#cstrsplit(line)[3:6]
+				parts = cstrsplit(line)
+				attrs=  if(extendedAttributes && length(parts) > 6)
+								paste(parts[7:length(parts)],collapse=" ")
+						  else ""
+
+				data.frame(index=parts[3],type=parts[4],atom1=parts[5],atom2=parts[6],
+							  attributes = attrs, stringsAsFactors=FALSE)
+
 			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
-		bondblock = data[,c(3,4,2)]
+		if(extendedAttributes)
+			extBondAttrs = parseAttributes(data$attributes)
+		#bondblock = data[,c(3,4,2)]
+		bondblock = as.matrix(data[,c(3,4,2)])
 		mode(bondblock)="numeric"
 		colnames(bondblock) = paste("C",1:3,sep="")
-		rownames(bondblock) = 1:nrow(bondblock) # see if this is required
+		#rownames(bondblock) = 1:nrow(bondblock) 
+		rownames(bondblock) = data$index
 	}
 	v3kTimes$bond<- v3kTimes$bond+ (Sys.time() - t)
 
@@ -380,14 +402,51 @@ v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 	v3kTimes$data <- v3kTimes$data + (Sys.time() - t)
 
 	## Assemble components in object of class SDF
-	if(datablock==TRUE) {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock,
-					  datablock=extradata,version="V3000")
-	} else {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock,version="V3000")
+	className = "SDF"
+	args = list( header=header, atomblock=atomblock, bondblock=bondblock,version="V3000")
+	if(datablock==TRUE) 
+		args = c(args,datablock=list(extradata))
+	
+	if(extendedAttributes==TRUE) {
+		className = "ExtSDF"
+		args = c(args,extendedAtomAttributes =list(extAtomAttrs),
+					extendedBondAttributes = list(extBondAttrs) )
 	}
+	#message("className: ",className," args: ")
+	#print(str(args))
+
+	sdf = do.call("new",c(className,args))
+
 	return(sdf)
 
+}
+trim <- function(str) gsub("^\\s+|\\s+$","",str)
+parseAttributes <- function(attributes){
+	#message("attributes: ")
+	#print(attributes)
+	starts = gregexpr("\\s[a-zA-Z0-9]*=",attributes)
+	sapply(seq(along=attributes),function(i) {
+			 if(attributes[i]=="")
+				 list()
+			 else{
+				 starts[[i]][length(starts[[i]])+1] = nchar(attributes[i])
+				 #message("starts[[",i,"]]:")
+				 #print(starts[[i]])
+				 sapply(1:(length(starts[[i]])-1),function(j){
+						pair = unlist(strsplit(
+											  substring(attributes[i],starts[[i]][j],starts[[i]][j+1])
+											  ,"=",fixed=TRUE) )
+						#print(pair)
+						if(length(pair) != 2)
+							warning("bad key value pair found:
+									  ",substring(attributes[i],starts[[i]][j],starts[[i]][j+1]))
+						l=list()
+						l[[trim(pair[1])]] = trim(pair[2])
+						l
+				
+				})
+			 }
+	 })
 }
 ## Accessor methods for SDF class
 setGeneric(name="sdf2list", def=function(x) standardGeneric("sdf2list"))
@@ -511,6 +570,42 @@ setAs(from="list", to="SDF",
 		new("SDF", bondblock=from$bondblock, header=from$header, atomblock=from$atomblock, datablock=from$datablock)
 })
 
+################################################# 
+##  ExtSDF
+################################################# 
+
+setClass("ExtSDF",representation(extendedAtomAttributes="list",
+											extendedBondAttributes="list"),contains="SDF")
+
+setGeneric(name="getAtomAttr", def=function(x,atomId,tag) standardGeneric("getAtomAttr"))
+setMethod(f="getAtomAttr", signature="ExtSDF",definition = 
+			 function(x,atomId,tag) x@extendedAtomAttributes[[atomId]][[tag]])
+
+setGeneric(name="getBondAttr", def=function(x,bondId,tag) standardGeneric("getBondAttr"))
+setMethod(f="getBondAttr", signature="ExtSDF",definition = 
+			 function(x,bondId,tag) x@extendedBondAttributes[[bondId]][[tag]])
+setMethod(f="show", signature="ExtSDF",                
+   definition=function(object) {
+		callNextMethod(object)
+		nonEmptyAtoms = which(sapply(object@extendedAtomAttributes,
+											  function(x) length(x)!=0))
+		message("<<Extended Atom Attributes>>")
+		count = min(5,length(nonEmptyAtoms))
+		for(i in nonEmptyAtoms[seq(1,count,length.out=count)]){
+			message("Atom ",i)
+			print(object@extendedAtomAttributes[[i]])
+		}
+
+		nonEmptyBonds = which(sapply(object@extendedBondAttributes,
+											  function(x) length(x)!=0))
+		message("<<Extended Bond Attributes>>")
+		count = min(5,length(nonEmptyBonds))
+		for(i in nonEmptyBonds[seq(1,count,length.out=count)]){
+			message("Bond ",i)
+			print(object@extendedBondAttributes[[i]])
+		}
+	})
+ 
 ################################################# 
 ## (3) Class and Method Definitions for SDFset ##
 #################################################
@@ -2488,7 +2583,8 @@ setMethod("show", signature=signature(
     }
 )
 
-cstrsplit <- function(line) .Call(cstrsplitSym,line)
+#cstrsplit <- function(line) .Call(cstrsplitSym,line)
+cstrsplit <- function(line) .Call("cstrsplit",line)
 #cstrsplit <- cxxfunction(signature(l="character"),includes='
 #					#include <R.h>
 #					#include <boost/algorithm/string.hpp>
