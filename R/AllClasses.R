@@ -322,29 +322,22 @@ v3kTimes$data = 0
 				atomEndPos = atomPos + 1 #assume and emtpy atom block
 		}
 
-t2=Sys.time()
 		
 		data = Reduce(rbind,Map(function(line) {
-				#cstrsplit(line)[3:7]
 				parts = cstrsplit(line)
 				attrs = if(extendedAttributes && length(parts) > 8)
 								paste(parts[9:length(parts)],collapse=" ")
 						  else ""
-				#print(paste(parts[9:length(parts)],collapse=" "))
-				data.frame(num=parts[3],atom=parts[4],
-							  x=parts[5],y=parts[6],z=parts[7],
-							  attributes = attrs,stringsAsFactors=FALSE )
-
+				c(parts[3:7],attrs)
 			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
 		if(extendedAttributes)
-			extAtomAttrs = parseAttributes(data$attributes)
+			extAtomAttrs = parseAttributes(data[,6])
 		#print(extAtomAttrs)
-		v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
 		atomblock = as.matrix(data[,3:5])
 		mode(atomblock)="numeric"
 		#print(atomblock)
 		colnames(atomblock) = paste("C",1:3,sep="")
-		rownames(atomblock) = paste(data$atom,data$num,sep="_")
+		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
 	}
 	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
 
@@ -362,25 +355,22 @@ t2=Sys.time()
 	  		bondEndPos = bondPos + 1 #assume and emtpy atom block
 		}
 
+t2=Sys.time()
 		data = Reduce(rbind,Map(function(line) {
-				#cstrsplit(line)[3:6]
-				parts = cstrsplit(line)
-				attrs=  if(extendedAttributes && length(parts) > 6)
-								paste(parts[7:length(parts)],collapse=" ")
-						  else ""
-
-				data.frame(index=parts[3],type=parts[4],atom1=parts[5],atom2=parts[6],
-							  attributes = attrs, stringsAsFactors=FALSE)
-
+				cstrsplit(line)[3:6]
+			#	parts = cstrsplit(line)
+			#	attrs=  if(extendedAttributes && length(parts) > 6)
+			#					paste(parts[7:length(parts)],collapse=" ")
+			#			  else ""
+			#	c(parts[3:6],attrs)
 			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
-		if(extendedAttributes)
-			extBondAttrs = parseAttributes(data$attributes)
-		#bondblock = data[,c(3,4,2)]
-		bondblock = as.matrix(data[,c(3,4,2)])
+v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
+		#if(extendedAttributes)
+			#extBondAttrs = parseAttributes(data[,5])
+		bondblock = data[,c(3,4,2)]
 		mode(bondblock)="numeric"
 		colnames(bondblock) = paste("C",1:3,sep="")
-		#rownames(bondblock) = 1:nrow(bondblock) 
-		rownames(bondblock) = data$index
+		rownames(bondblock) = data[,1]
 	}
 	v3kTimes$bond<- v3kTimes$bond+ (Sys.time() - t)
 
@@ -2583,8 +2573,7 @@ setMethod("show", signature=signature(
     }
 )
 
-#cstrsplit <- function(line) .Call(cstrsplitSym,line)
-cstrsplit <- function(line) .Call("cstrsplit",line)
+cstrsplit <- function(line) .Call(cstrsplitSym,line)
 #cstrsplit <- cxxfunction(signature(l="character"),includes='
 #					#include <R.h>
 #					#include <boost/algorithm/string.hpp>
