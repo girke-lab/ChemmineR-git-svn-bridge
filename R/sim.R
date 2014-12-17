@@ -626,95 +626,10 @@ cmp.search <- function(db, query, type=1, cutoff=0.5, return.score=FALSE, quiet=
     ## ThG: end of lines
 }
 
-# view sdfs in ChemMine
-.sdf.visualize.max.files = 100
-sdf.visualize <- function(db, cmps, extra=NULL, reference.sdf=NULL,
-reference.note=NULL, browse=TRUE, quiet=TRUE)
-{
-    ## ThG: added for compatability with new S4 classes APset/AP ##
-    if(class(db)=="SDF") db <- as(db, "SDFset")
-    if(missing(cmps) & class(db)=="SDFset") cmps <- cid(db) # turns cmps into optional argument for SDFset class
-    ## ThG: end of lines ##
-    if (length(cmps) > 100)
-        stop(paste('\n\tYou cannot visualize more than 100 compounds.\n',
-            '\tYou supplied ', length(cmps), ' compounds.\n',
-            '\tSending too many compounds will take a long time and too much\n',
-            '\tresources on the server, or it could crash your browser.\n',
-            sep=''))
-
-    # read the reference file if there is any
-    if (!is.null(reference.sdf))
-        reference.sdf <- .read.one.sdf(reference.sdf)
-
-    if (!is.null(extra) && length(extra) != length(cmps))
-        stop(paste('\n\tthe indices and the extra information have",
-            " different lengths.\n',
-            '\tYou supplied ', length(cmps), ' compounds.\n',
-            '\t`extra\' has a length of ', length(extra),
-            sep=''))
-    
-    ## ThG: added for compatability with new S4 classes APset/AP ##
-    if(class(db)=="SDFset") {
-    	sdfstr <- as(db, "SDFstr")
-	sdfs <- paste(paste(unlist(as(sdfstr, "list")), collapse="\n"), "\n", sep="")
-	cids <- cmps
-    } else {
-    	sdfs <- sdf.subset(db, cmps)
-    	cids <- db$cids[cmps]
-    }
-    ## ThG: end of lines ##
-    
-    # build query
-    query <- list(sdf=sdfs, cids=paste(cids, collapse="\1"))
-    if (! is.null(extra)) {
-        # if an entry in extra is a data frame, format it
-        .extra <- c()
-        for (i in extra) {
-            if (class(i) == 'data.frame' || class(i) == 'matrix')
-                .extra <- c(.extra, .data.frame.to.str(i))
-            else
-                .extra <- c(.extra, paste(as.character(i)))
-        }
-        query <- c(query, list(extra=paste(.extra, collapse="\1")))
-        if (! is.null(names(extra)))
-            query <- c(query, list(names=paste(names(extra), collapse="\1")))
-    }
-    if (! is.null(reference.sdf)) {
-        query <- c(query, list(referencesdf=reference.sdf))
-        if (! is.null(reference.note)) {
-            if (class(reference.note) == 'list' &&
-                length(reference.note) == 1) {
-                    if (! is.null(names(reference.note)))
-                        query <- c(query,
-                            list(referencenotename=names(reference.note)))
-                    reference.note <- reference.note[[1]]
-            }
-            if (class(reference.note) == 'data.frame' ||
-                class(reference.note) == 'matrix')
-                query <- c(query, 
-                    list(referencenote=.data.frame.to.str(reference.note)))
-            else
-                query <- c(query, 
-                    list(referencenote=paste(as.character(reference.note))))
-        }
-    }
-
-    # sending
-    if (! quiet) cat('sending SDF to ChemMine\n')
-    response <- .postToHost("bioweb.ucr.edu",
-        "/ChemMineV2/chemminer/postsdfs", query)
-    # reading response
-    ref <- gsub(
-    '.*\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.(.*)\\.\\.\\.\\.\\.\\.\\.\\.\\.\\..*',
-    '\\1', response)
-    if (! quiet)
-        cat("starting your browser (use `options(browser=\"...\")' to", 
-            "customize browser)\n")
-    url <- paste(
-        c("http://bioweb.ucr.edu/ChemMineV2/chemminer/viewsdfs?", ref),
-        collapse='')
-    if (browse) browseURL(url)
-    return(url)
+# view sdfs in ChemMine Tools
+sdf.visualize(sdf){
+    job <- launchCMTool("sdf.visualize", sdf)
+    return(browseJob(job))
 }
 
 # segment SDFs. given indices of selected compounds, return the concatenation
