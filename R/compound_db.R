@@ -282,12 +282,12 @@ selectInBatches <- function(conn, allIndices,genQuery,batchSize=100000){
 
 	indices = unique(allIndices)
 	#TODO: possibly pre-allocate result here, if performance is a problem
-	result=NA
+	result=NULL
 	batchByIndex(indices, function(indexBatch){
 			#print(paste("query:",genQuery(indexBatch)))
 			df = dbGetQuery(conn,genQuery(indexBatch))
 			#print(paste("got",paste(dim(df),collapse=" "),"results"))
-			result <<- if(is.na(result)) df else  rbind(result,df)
+			result <<- if(is.null(result)) df else  rbind(result,df)
 			#print(paste("total results so far: ",length(result)))
 	},batchSize)
 	#print(paste("final count: ",length(result)))
@@ -476,6 +476,7 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		#we do not assume names are unique, therefore if a checksum does not
 		#exist, then it is added as if it where a new compound
 		names(index)=checksums
+		if(debug){ message("checking for existing compounds: ")}
 		existingByChecksum = findCompoundsByX(conn,"definition_checksum",checksums,allowMissing=TRUE,
 														 extraFields = c("definition_checksum","name"))
 
@@ -600,7 +601,9 @@ deleteCompounds <- function(conn,compoundIds) {
 							paste(compoundIds,collapse=","),")"))
 }
 
-#TODO: document feature names must be lower case in the tests clause
+getAllCompoundIds <- function(conn){
+	dbGetQueryChecked(conn,"SELECT compound_id FROM compounds WHERE format!='junk' ")[[1]]
+}
 findCompounds <- function(conn,featureNames,tests){
 
 	# SELECT compound_id FROM compounds join f1 using(compound_id) join f2 using(compound_id)
@@ -706,7 +709,7 @@ getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissi
 				resultProcessor(rows[as.character(orderedIds),])
 			}
 		else
-			f=resultProcessor
+			resultProcessor
 
 		bufferResultSet(rs,f,1000)
 		dbClearResult(rs)
@@ -722,6 +725,59 @@ getCompounds <- function(conn,compoundIds,filename=NA,keepOrder=FALSE,allowMissi
 	}else{
 		return(as(sdfset,"SDFset"))
 	}
+}
+getCompoundFeatures <- function(conn,compoundIds, featureNames, filename=NA,
+										  keepOrder=FALSE, allowMissing=FALSE,batchSize=100000){
+
+	finalResult=data.frame()
+	processedCount=0
+
+	if(!is.na(filename))
+		f=file(filename,"w")
+
+	featureNames = tolower(featureNames)
+
+	featureTables = paste("feature_",featureNames,sep="")
+	batchByIndex(compoundIds,function(compoundIdSet){
+		tryCatch({
+			sql = paste("SELECT ",paste(c("compound_id",featureNames),collapse=","),
+						" FROM compounds JOIN ",paste(featureTables,collapse=" USING(compound_id) JOIN "),
+						" USING(compound_id) WHERE compound_id in (",
+										  paste(compoundIdSet,collapse=","),")")
+
+			if(debug) print(paste("query sql:",sql))
+
+
+			result = dbGetQueryChecked(conn,sql)
+
+			if(keepOrder){
+				rownames(result) = result$compound_id
+				orderedIds = intersect(compoundIdSet,result$compound_id)
+				result = result[as.character(orderedIds),]
+			}
+			
+			if(!is.na(filename))
+				if(processedCount==0) #first time
+					write.table(result,file=f,row.names=FALSE,sep=",",quote=FALSE)
+				else
+					write.table(result,file=f,append=TRUE,col.names=FALSE,row.names=FALSE,sep=",",quote=FALSE)
+			else
+				finalResult <<- rbind(finalResult,result)
+
+			processedCount <<- processedCount + nrow(result)
+		},error=function(e){
+			stop(paste("error in findCompounds:",e$message))
+		})
+   },batchSize=batchSize)
+
+	if(!allowMissing && length(compoundIds) != processedCount) {
+		stop(paste("not all compounds found,",length(compoundIds),"given but",processedCount,"found"))
+	}
+
+	if(!is.na(filename))
+		close(f)
+	else
+		finalResult
 }
 getCompoundNames <- function(conn, compoundIds,keepOrder=FALSE,allowMissing=FALSE){
 
@@ -938,4 +994,19 @@ updatePriorities <- function(conn,data){
 		stop("database ",class(conn)," unsupported")
 	}
 
+}
+
+
+
+DUD <- function(){
+	getDbConn("dud.db")
+}
+DrugBank <- function(){
+	getDbConn("drugbank.db")
+}
+getDbConn <- function(dbName) {
+	if(require("ChemmineDrugs"))
+		initDb(system.file(file.path("extdata",dbName),package="ChemmineDrugs",mustWork=TRUE))
+	else
+		error("The package 'ChemmineDrugs' must be installed to use this function")
 }

@@ -18,7 +18,7 @@ findCompounds(conn, featureNames, tests)
    }
   \item{featureNames}{
      A list of all feature names used in any test.
-   }
+  }
   \item{tests}{
      A vector of filters that must all be true for a compound to be returned. For example:
      c("MW <= 400","RINGS > 3") would return all compounds with a molecular weight of 400 or

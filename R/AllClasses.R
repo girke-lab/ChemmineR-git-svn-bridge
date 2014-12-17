@@ -806,16 +806,17 @@ setClass("AP", representation(AP="numeric"))
 setClass("APset", representation(AP="list", ID="character"))
 
 ## Create instance of APset form SDFset 
-sdf2ap <- function(sdfset, type="AP") {
+sdf2ap <- function(sdfset, type="AP",uniquePairs=TRUE) {
         if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
         if(class(sdfset)=="SDF") {
 	         if(type=="AP") {
                 	#return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
-                	return(new("AP", AP=genAPDescriptors(sdfset)))
+                	return(new("AP",
+										AP=genAPDescriptors(sdfset,uniquePairs)))
         	   }
 	         if(type=="character") {
                 	#return(paste(.gen_atom_pair(SDF2apcmp(sdfset)), collapse=", "))
-                	return(paste(genAPDescriptors(sdfset), collapse=", "))
+                	return(paste(genAPDescriptors(sdfset,uniquePairs), collapse=", "))
         	   }
 	     }
         if(class(sdfset)=="SDFset") {
@@ -823,7 +824,7 @@ sdf2ap <- function(sdfset, type="AP") {
                 exception <- FALSE
                 for(i in seq(along=aplist)) {
                         #tmp <- try(.gen_atom_pair(SDF2apcmp(sdfset[[i]])), silent=TRUE)
-                        tmp <- try(genAPDescriptors(sdfset[[i]]))
+                        tmp <- try(genAPDescriptors(sdfset[[i]],uniquePairs))
                         if(length(tmp) > 0 & class(tmp)!="try-error") {
                                 aplist[[i]] <- tmp
                         } else if(length(tmp) == 0 & class(tmp)!="try-error") {
@@ -1561,7 +1562,7 @@ rings <- function(x, upper=Inf, type="all", arom=FALSE, inner=FALSE) {
 			myrings <- .rings(cyclist, upper+1) # Plus 'upper+1' is required because at this step all rings have duplicated atoms at ring closure
 			myrings <- lapply(myrings, function(x) x[-1]) # Removes duplicated atom at ring closure 
 			if(upper==Inf & inner==TRUE) myrings <- .is.inner(x=myrings) # Reduces myrings to inner rings only 
-                        if(arom==TRUE) {
+			if(arom==TRUE) {
 				myarom <- .is.arom(sdf=x, rings=myrings)
 				if(type=="all") return(list(RINGS=myrings, AROMATIC=myarom))
 				if(type=="arom") return(list(AROMATIC_RINGS=myrings[myarom]))

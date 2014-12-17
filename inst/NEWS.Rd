@@ -1,5 +1,15 @@
 \name{NEWS}
 \title{ChemmineR News}
+\section{CHANGES IN VERSION 2.18.0}{
+
+   \subsection{NEW FEATURES}{
+		\itemize{
+			\item Faster atompair generation
+			\item Support for viewing features from SQL database
+			\item Added function to generate 3D coordinates
+		}
+	}
+}
 
 \section{CHANGES IN VERSION 2.16.0}{
 

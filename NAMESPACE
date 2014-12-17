@@ -61,6 +61,7 @@ export(
 	 "smiles2sdf","sdf2smiles",
 	 "propOB","fingerprintOB", "regenerateCoords",
 	 "smartsSearchOB","exactMassOB", "generate3DCoords","canonicalize",
+	 "canonicalNumbering",
     
     ## Fingerprint functions
     ## Source: sim.R
@@ -81,10 +82,13 @@ export(
     "getCompoundNames","findCompoundsByName","addNewFeatures",
     "listFeatures", "jarvisPatrick_c", "genAPDescriptors",
 	 "addDescriptorType", "setPriorities", "randomPriorities",
-	 "forestSizePriorities",
+	 "forestSizePriorities","getAllCompoundIds","getCompoundFeatures",
 
     ## Large file/query utilites
     "bufferLines","bufferResultSet","parBatchByIndex","batchByIndex","selectInBatches","dbTransaction",
+
+	##ChemmineDrugs functions
+	 "DUD","DrugBank",
 
     ## Chemmine Tools
     "status","browseJob","result","listCMTools","toolDetails","launchCMTool"

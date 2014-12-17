@@ -766,6 +766,10 @@ db.explain <- function(desc)
     return(vec)
 }
 
+.uniquifyAtomPairs <- function(desc) {
+	.Call("uniquifyAtomPairs",desc)
+}
+
 .progress_bar_int_cnt <- 0
 .progress_bar <- function(label=NULL) {
     progress <- c("|", "/", "-", "\\")
@@ -1211,14 +1215,14 @@ sdf2smilesOB <- function(sdf) {
 sdf2smiles <- sdf2smilesOB
 
 sdf2smilesWeb <- function(sdfset,limit=100){
-	message("class of sdfset: ",class(sdfset))
+	#message("class of sdfset: ",class(sdfset))
 	 if(length(sdfset) > limit)
 		 sdfset = sdfset[1:limit]
 
 	 smiles =c()
 	 for(i in seq(along=sdfset)){
 
-		message("class of sdfset[[]]: ",class(sdfset[[i]]))
+		#message("class of sdfset[[]]: ",class(sdfset[[i]]))
 		 sdf <- sdf2str(sdfset[[i]])
 		 sdf <- paste(sdf, collapse="\n")
 		 response <- postForm(paste(.serverURL, "runapp?app=sdf2smiles", sep=""), sdf=sdf)[[1]]
@@ -1267,6 +1271,14 @@ canonicalizeOB <- function(sdf){
 }
 canonicalize <- canonicalizeOB
 
+canonicalNumberingOB <- function(sdf){
+	.ensureOB()
+	results=canonicalNumbering_OB(obmol(sdf))
+	names(results) = cid(sdf)
+	results
+}
+canonicalNumbering <- canonicalNumberingOB
+
 applyOptions <- function(sdf,options){
 	.ensureOB()
 
@@ -1311,24 +1323,22 @@ times = new.env()
 times$descT = 0
 times$facT = 0
 times$vecT = 0
-genAPDescriptors <- function(sdf){
-  #.factor_to_vector(as.factor(.Call("genAPDescriptor",sdf)))
+times$uniqueT = 0
+genAPDescriptors <- function(sdf,uniquePairs=TRUE){
 
-	t=Sys.time()
+	# t=Sys.time()
 	d=.Call("genAPDescriptor",sdf)
-	times$descT <- times$descT + (Sys.time() - t)
+	# times$descT <- times$descT + (Sys.time() - t)
 
-	t=Sys.time()
-	f=as.factor(d)
-	times$facT <- times$facT + (Sys.time() - t)
+	if(uniquePairs){
+		# t=Sys.time()
+		d= .uniquifyAtomPairs(d)
+		# itimes$uniqueT <- times$uniqueT + (Sys.time() - t)
+	}
 
-	t=Sys.time()
-	v= .factor_to_vector(f)
-	times$vecT <- times$vecT + (Sys.time() - t)
-
-	v
-
+	d
 }
+
 propOB <- function(sdfSet){
 	.ensureOB()
 	results = prop_OB(obmol(sdfSet))

@@ -277,3 +277,31 @@ test_ea.dupDescriptors <- function() {
    dbDisconnect(conn)
 	
 }
+test_fa.getALlCompoundIds  <- function() {
+
+	conn = initDb("test2.db")
+	ids = getAllCompoundIds(conn)
+	message("found ",length(ids)," ids")
+	print(ids)
+	checkEqualsNumeric(length(ids),100)
+}
+test_ga.getCompoundFeatures <- function(){
+	conn = initDb("test2.db")
+	ids = getAllCompoundIds(conn)
+	message("fetching features: ")
+	features = getCompoundFeatures(conn,ids,c("mw","rings"))
+	checkEquals(nrow(features),100)
+	checkEquals(ncol(features),3)
+
+	features = getCompoundFeatures(conn,rev(ids),c("mw","rings"),keepOrder=TRUE)
+	checkEqualsNumeric(rev(ids),features$compound_id)
+
+	#should not find 444, which should raise an error
+	checkException(getCompoundFeatures(conn,c(ids,444),c("mw","rings")))
+
+	checkException(getCompoundFeatures(conn,ids[1:10],c("mw","non_existant_feature")))
+
+	#should not raise an error
+	getCompoundFeatures(conn,c(ids,444),c("mw","rings"),allowMissing=TRUE)
+
+}
