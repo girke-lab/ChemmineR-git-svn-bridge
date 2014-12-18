@@ -333,7 +333,7 @@ v3kTimes$data = 0
 		if(extendedAttributes)
 			extAtomAttrs = parseAttributes(data[,6])
 		#print(extAtomAttrs)
-		atomblock = as.matrix(data[,3:5])
+		atomblock = data[,3:5]
 		mode(atomblock)="numeric"
 		#print(atomblock)
 		colnames(atomblock) = paste("C",1:3,sep="")
@@ -355,18 +355,18 @@ v3kTimes$data = 0
 	  		bondEndPos = bondPos + 1 #assume and emtpy atom block
 		}
 
-t2=Sys.time()
+#t2=Sys.time()
 		data = Reduce(rbind,Map(function(line) {
-				cstrsplit(line)[3:6]
-			#	parts = cstrsplit(line)
-			#	attrs=  if(extendedAttributes && length(parts) > 6)
-			#					paste(parts[7:length(parts)],collapse=" ")
-			#			  else ""
-			#	c(parts[3:6],attrs)
+				#cstrsplit(line)[3:6]
+				parts = cstrsplit(line)
+				attrs=  if(extendedAttributes && length(parts) > 6)
+								paste(parts[7:length(parts)],collapse=" ")
+						  else ""
+				c(parts[3:6],attrs)
 			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
-v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
-		#if(extendedAttributes)
-			#extBondAttrs = parseAttributes(data[,5])
+#v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
+		if(extendedAttributes)
+			extBondAttrs = parseAttributes(data[,5])
 		bondblock = data[,c(3,4,2)]
 		mode(bondblock)="numeric"
 		colnames(bondblock) = paste("C",1:3,sep="")
