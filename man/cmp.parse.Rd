@@ -12,15 +12,16 @@ parse all compounds in the SDF file. To parse a single compound, use
 'cmp.parse1' instead.
 }
 \usage{
-cmp.parse(filename, quiet=FALSE, type="normal", dbname="")
+%cmp.parse(filename, quiet=FALSE, type="normal", dbname="")
+cmp.parse(filename)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{filename}{The file name of the SDF file}
-  \item{quiet}{Whether to silent the output of progress information}
-  \item{type}{Database type. Use the default value, or set to 'file-backed'
-  when the library is large. See below.}
-  \item{dbname}{Datbase name. Only used when the type is set to 'file-backed'.}
+  %\item{quiet}{Whether to silent the output of progress information}
+  %\item{type}{Database type. Use the default value, or set to 'file-backed'
+  %when the library is large. See below.}
+  %\item{dbname}{Datbase name. Only used when the type is set to 'file-backed'.}
 }
 \details{
 	The 'filename' can be a local file or an URL. It is interactive, and
