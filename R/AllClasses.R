@@ -785,18 +785,16 @@ SDF2apcmp <- function(SDF) {
 
 	cmp = list(atoms=atoms, bonds=list(u=u, v=v, t=t), n_atoms=n_atoms, n_bonds=n_bonds)
 
-	if(.has.pp()){
-	   # assume we have an SDF object, not an SDFset
-		sdfstr=as(as(SDF,"SDFstr"),"list")[[1]]
-		defs = paste(sdfstr,collapse="\n")
-		#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-		d <- Descriptors()
-		if (Descriptors_parse_sdf(self=d, sdf=defs) == 0) {
-			stop("SDF format not available or SDF not well-formatted!")
-			return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
-		}
-		cmp$desc_obj=d
+	# assume we have an SDF object, not an SDFset
+	sdfstr=as(as(SDF,"SDFstr"),"list")[[1]]
+	defs = paste(sdfstr,collapse="\n")
+	#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+	d <- Descriptors()
+	if (Descriptors_parse_sdf(self=d, sdf=defs) == 0) {
+		stop("SDF format not available or SDF not well-formatted!")
+		return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
 	}
+	cmp$desc_obj=d
 
 	return(cmp)
 }
@@ -810,12 +808,10 @@ sdf2ap <- function(sdfset, type="AP",uniquePairs=TRUE) {
         if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
         if(class(sdfset)=="SDF") {
 	         if(type=="AP") {
-                	#return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
                 	return(new("AP",
 										AP=genAPDescriptors(sdfset,uniquePairs)))
         	   }
 	         if(type=="character") {
-                	#return(paste(.gen_atom_pair(SDF2apcmp(sdfset)), collapse=", "))
                 	return(paste(genAPDescriptors(sdfset,uniquePairs), collapse=", "))
         	   }
 	     }
@@ -823,15 +819,14 @@ sdf2ap <- function(sdfset, type="AP",uniquePairs=TRUE) {
                 aplist <- as.list(seq(along=sdfset))
                 exception <- FALSE
                 for(i in seq(along=aplist)) {
-                        #tmp <- try(.gen_atom_pair(SDF2apcmp(sdfset[[i]])), silent=TRUE)
                         tmp <- try(genAPDescriptors(sdfset[[i]],uniquePairs))
                         if(length(tmp) > 0 & class(tmp)!="try-error") {
                                 aplist[[i]] <- tmp
                         } else if(length(tmp) == 0 & class(tmp)!="try-error") {
-                                aplist[[i]] <- 0 # Value to use if no atom pairs are returned by .gen_atom_pair
+                                aplist[[i]] <- 0 # Value to use if no atom pairs are returned 
                                 exception <- TRUE
                         } else if(class(tmp)=="try-error") {
-                                aplist[[i]] <- 1 # Value to use if error is returned by .gen_atom_pair
+                                aplist[[i]] <- 1 # Value to use if error is returned 
                                 exception <- TRUE
                         }
                 }

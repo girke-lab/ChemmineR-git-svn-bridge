@@ -1,22 +1,3 @@
-.onLoad <- function(libname, pkgname) 
-{
-
-	#dyn.load("/usr/lib/openbabel/2.2.3/mdlformat.so")
-	#pkgLib = file.path(libname,pkgname,"libs",paste(pkgname,"so",sep="."))
-	#dyn.load(pkgLib,now=FALSE)
-	#dyn.load("/home/khoran/raw_src/openbabel-2.3.2/build/lib/mdlformat.so")
-
-#    if (!is.null(getOption('disable.chemminer.performance.pack'))
-#            && getOption('disable.chemminer.performance.pack') == 1) {
-#        packageStartupMessage("ChemmineR Performance Pack is explicitly disabled.\n")
-#        options(.use.chemminer.pp = 0)
-#    }
-	 # We don't actually load ChmmineRpp here as this is not advised according to ?.onAttach.
-	 # Instead we check and require it in .has.pp()
-	
-	#message("inside ChemmineR onLoad")
-	#options(.haveOB = NULL)
-}
 
 .db.header.size <- 16
 # supported elements
@@ -134,193 +115,7 @@
     Ds=110,
     Rg=111)
 
-# read a sdf file and returns the atoms with bond list
-# argument: the filename, which can also be a connection
-# return: the list containing the vector of atoms and the vector of bonds
-# this is an internal function and is not intended to be used by users
-## ThG: function is not used by new S4 class system.
-.parse <- function(file_name, skip=3)
-{
-    if ("connection" %in% class(file_name))
-        con <- file_name
-    else
-        con <- file(file_name, open="r")
-    num_atoms <- 0
-    num_bonds <- 0
-    # read header line, skip a few lines (given in `skip')
-    if (skip > 1)
-        readLines(con=con, n=skip)
-    line <- readLines(con=con, n=1)
-    num_atoms <- as.integer(substr(line, 1, 3))
-    num_bonds <- as.integer(substr(line, 4, 6))
 
-    if (.has.pp()) {
-        buf <- paste(
-            '', '', '',
-            line, 
-            paste(readLines(con=con, n=num_atoms + num_bonds), collapse='\n'),
-            'M END\n$$$$\n',
-            sep="\n")
-        # close connection if it is opend here
-        if (! "connection" %in% class(file_name))
-            close(con)
-        d <- Descriptors()
-        if (Descriptors_parse_sdf(self=d, sdf=buf) == 0) {
-            cat("SDF not well-formatted!")
-            return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
-        }
-        return(list(n_atoms=num_atoms, n_bonds=num_bonds, desc_obj=d))
-    }
-
-    if (length(num_atoms) == 0 || num_atoms == 0)
-        return(list(atoms=vector(), bonds=list(u=vector(), v=vector()),
-            n_atoms=0, n_bonds=0))
-
-    # parse atom block
-    temp <- readLines(con=con, n=num_atoms)
-    atoms <- gsub(' ', '', substr(temp, 32, 34))
-
-    # parse bond block
-    # bonds <- array(0, c(num_bonds, 3))
-    temp <- readLines(con=con, n=num_bonds)
-    u <- as.integer(substr(temp, 1, 3))
-    v <- as.integer(substr(temp, 4, 6))
-    t <- as.integer(substr(temp, 7, 9))
-    bonds <- list(u=u, v=v, t=t)
-
-# return: a compound object:
-#   keys:
-#       'atoms': a vector of atoms
-#       'bonds': a list indexed by 'u', 'v', and 't'. Each entry will
-#       be a vector 
-
-    # close connection if it is opend here
-    if (! "connection" %in% class(file_name))
-        close(con)
-
-    return(list(atoms=atoms, bonds=bonds, n_atoms=num_atoms, n_bonds=num_bonds))
-}
-
-# generates distance matrix for every pair of atoms in compound. Distance is
-# the length of shortest path connecting them.
-# Returns the distance matrix giving distance between any 2 atoms in the
-# compound
-# this is an internal function and is not intended to be used by users
-.all_pairs_dist <- function(cmp)
-{
-    s <- length(cmp[['atoms']])
-    dis <- array(1024, c(s, s))
-    # for every edge, init the distance to 1
-    for (i in 1:length(cmp[['bonds']][['u']])) {
-        dis[cmp[['bonds']][['u']][i], cmp[['bonds']][['v']][i]] <- 1
-        dis[cmp[['bonds']][['v']][i], cmp[['bonds']][['u']][i]] <- 1
-    }
-    for (k in 1:s) {
-        for (i in 1:(s-1)) {
-        if (i != k)
-            for (j in (i + 1):s) {
-            if (j != k)
-                if (dis[i, k] + dis[k, j] < dis[i, j]) {
-                    dis[i, j] <- dis[i, k] + dis[k, j]
-                    dis[j, i] <- dis[i, j]
-                }
-            }
-        }
-    }
-
-    return(dis)
-}
-
-# generates atom descriptor for atom #i. Descriptor is encoded as a number.
-# this is an internal function and is not intended to be used by users
-# see also: .interpret_atom
-.gen_atom_desc <- function(cmp, i)
-{
-    neighbors <- 0 # neighbours (non hydrogens)
-    pi_electrons <- 0 # number of pi electrons
-    num_bonds <- length(cmp[['bonds']][['u']])
-
-    # for every bond, update atom properties
-    for (k in 1:num_bonds) {
-        if (cmp[['bonds']][['u']][k] == i || cmp[['bonds']][['v']][k] == i) {
-            if (cmp[['atoms']][ cmp[['bonds']][['u']][k] ] != 'H' &&
-                    cmp[['atoms']][ cmp[['bonds']][['v']][k] ] != 'H') {
-                neighbors <- neighbors + 1
-                # single to triple bonds
-                if (cmp[['bonds']][['t']][k] < 4)
-                    pi_electrons <- pi_electrons + cmp[['bonds']][['t']][k] - 1
-                # arromatic bonds
-                else
-                    pi_electrons <- pi_electrons + 0.5
-            }
-        }
-    }
-
-    pi_electrons <- floor(pi_electrons)
-    atom_desc <- .elements[[cmp[['atoms']][i]]] * 2^6 + neighbors * 2^3 +
-            pi_electrons
-    return(atom_desc)
-}
-
-# generate atom descriptors for each atom of the compound. 
-# this is an internal function and is not intended to be used by users
-.gen_all_atom_desc <- function(cmp)
-{
-    num_atoms <- length(cmp[['atoms']])
-    desc <- array()
-    for (i in 1:num_atoms) {
-        desc[[i]] <- .gen_atom_desc(cmp, i)
-    }
-    return(desc)
-}
-
-# generates atom pair descriptor for a compound. It will encode all atom pairs.
-# descriptor = atom descriptors + atom pair information
-# this is an internal function and is not intended to be used by users
-.gen_atom_pair <- function(cmp)
-{
-	 desc <- c()
-    if (.has.pp() && class(cmp$desc_obj) == "_p_Descriptors") {
-        if (is.null(cmp$desc_obj))
-            return(vector())
-        for (i in 1:Descriptors_get_len(self=cmp$desc_obj)) {
-            desc <- c(desc,
-                    Descriptors_get_descriptor(self=cmp$desc_obj, i=i-1))
-        }
-    }else{
-
-		 num_bonds <- length(cmp[['bonds']][['u']])
-		 if (num_bonds == 0)
-			  return(c())
-		 dis <- .all_pairs_dist(cmp)
-		 num_atoms <- length(cmp[['atoms']])
-		 tail <- 1
-
-		 a_desc <- .gen_all_atom_desc(cmp)
-		 # for every pair of atoms
-		 for (i in 1:num_atoms) {
-			  for (j in i:num_atoms) {
-					if (i != j && dis[i,j] < 128 && cmp[['atoms']][i] != 'H' &&
-							  cmp[['atoms']][j] != 'H') {
-						 # get the atom descriptor for the two atoms
-						 desc_i <- a_desc[[i]]
-						 desc_j <- a_desc[[j]]
-						 # construct descriptor for the atom pair
-						 if (desc_i >= desc_j)
-							  desc[tail] <- desc_i * 2^20 + dis[i,j] * 2^13 + desc_j
-						 else
-							  desc[tail] <- desc_j * 2^20 + dis[i,j] * 2^13 + desc_i
-						 tail <- tail + 1
-					}
-			  }
-		 }
-	 }
-    if (length(desc) == 0)
-        return(desc)
-    else 
-        # remove duplicated atom pair descriptors
-        return(.factor_to_vector(as.factor(desc)))
-}
 
 # similarity model
 # input: descriptors for two compounds. both are vectors
@@ -377,138 +172,9 @@ cmp.similarity <- function(a, b, mode=1, worst=0)
 {
     .cmp.similarity(a, b, mode=mode, worst=worst)
 }
+cmp.parse1 <- function(filename) sdf2ap(read.SDFset(filename))[[1]]
+cmp.parse <- function(filename) apset2descdb(sdf2ap(read.SDFset(filename)))
 
-# generate (atom pair) descriptor from sdf file encoding ONE compound. If the
-# file encodes many compounds, only the first one will be parsed. Use
-# cmp.parse/sdfs_to_desc to parse multiple compounds.
-# returns descriptor for one compound as vector.
-sdf_to_desc <- function(filename)
-{
-    cmp <- .parse(filename)
-    desc <- .gen_atom_pair(cmp)
-    if (.has.pp() && class(cmp$desc_obj) == "_p_Descriptors") 
-        delete_Descriptors(self=cmp$desc_obj)
-    desc
-}
-# alias
-cmp.parse1 <- sdf_to_desc
-
-# generate descriptors for all compounds in an sdf file
-# returns a list of descriptors of compounds. The list contains two names:
-# descdb: the descriptor db, itself being a vector of descriptors.
-# names: the names of compounds as a vector.
-sdfs_to_desc <- function(filename, quiet=FALSE, type="normal", dbname="")
-{
-#pp#    if (type == "file-backed") {
-#pp#        if (! .has.pp())
-#pp#            stop("file-backed parsing is only available with ChemmineR",
-#pp#            " Performance Pack package\n")
-#pp#        if (! suppressWarnings(require('ChemmineRpp', quietly=T))) 
-#pp#            stop('Error: cannot load ChemmineR Performance Pack package\n')
-#pp#        if ("connection" %in% class(filename) ||
-#pp#            length(grep('(ht|f)tp[s]://', filename)))
-#pp#            stop('file-backed parsing can only work with path to a local',
-#pp#                ' file.\n')
-#pp#        if (dbname == "")
-#pp#            stop("file-backed parsing requies `dbname' to be set to an",
-#pp#            " output filename without extension.\n")
-#pp#    }
-    # count compounds first
-    con <- file(filename, open="r")
-    cat("counting number of compounds in sdf...\n")
-    n_compounds <- 0
-    sdf_seg <- array()
-    cur_line <- 0
-    sdf_seg[[1]] <- 0
-    read_cid <- TRUE
-    cid_buf <- ''
-    cids <- array()
-    while (TRUE) {
-        line <- readLines(con, n=1)
-        cur_line <- cur_line + 1
-        if (length(line) == 0)
-            break;
-        if (line == "$$$$") {
-            n_compounds <- n_compounds + 1
-            sdf_seg[n_compounds + 1] <- cur_line
-            read_cid <- TRUE
-            cids[n_compounds] <- cid_buf
-        } else if (read_cid) {
-            cid_buf <- line
-            read_cid <- FALSE
-        }
-    }
-    cat(n_compounds, " compounds found\n")
-    close(con)
-
-    # real parsing
-    descdb <- list()
-    if (type != 'file-backed') {
-        con <- file(filename, open="r")
-        id <- 1
-        cur_line <- 0
-
-        for (id in 1:n_compounds) {
-            # parse
-            cmp <- .parse(con, skip=3)
-            # update db
-            descdb[[id]] <- .gen_atom_pair(cmp)
-            cur_line <- cur_line + 4 + cmp$n_atoms + cmp$n_bonds
-            if (! quiet) {
-                cid_p <- substr(cids[[id]], 1, 20)
-                if (cid_p == cids[[id]]) 
-                    msg <- paste("\r", id, "/", n_compounds, " parsed (", 
-                        cid_p, ")",
-                        " now at line ", cur_line,
-                        '                                                     ',
-                        sep='')
-                else
-                    msg <- paste("\r", id, "/", n_compounds, " parsed (", 
-                        cid_p, "...)",
-                        " just passed line ", cur_line,
-                        '                                                     ',
-                        sep='')
-                cat(substr(msg, 1, 79))
-            }
-            # proceed to next compound, which might not exist
-            temp <- readLines(con, n=sdf_seg[[id + 1]] - cur_line)
-            cur_line <- sdf_seg[[id + 1]]
-        }
-        cat("\nYou can use save(..., file='...', compress=TRUE)",
-            "to save the database\n")
-        close(con)
-    } 
-	 # no longer supported
-	 #else {
-    #    dbfile <- paste(dbname, '.cdb', sep='')
-    #    if (batch_parse(filename, dbfile) == 0) {
-    #        stop('Error in parsing using ChemmineR Performance Pack',
-    #            ' package. Check your input file.\n')
-    #    }
-    #    # indexing binary db
-    #    dbf <- file(dbfile, 'rb')
-    #    # skip header
-    #    seek(dbf, 16)
-    #    # read int size
-    #    intsize <- readBin(dbf, integer(), size=1)
-    #    for (id in 1:n_compounds) {
-    #        descdb[[id]] <- c("filedb:", dbname, seek(dbf))
-    #        d_size <- readBin(dbf, integer(), size=intsize)
-    #        seek(dbf, d_size * intsize, origin='current')
-    #    }
-    #    close(dbf)
-    #    cat("\nYour database has been generated and is backed by file",
-    #        dbfile, '\n')
-    #    cat("You can use save(..., file='...', compress=TRUE)", 
-    #        "to save the database\n")
-    #    cat("Also make sure", dbfile, "is not deleted or overwritten", 
-    #        "unless you do not need the database any more.\n")
-    #}
-    return(list(descdb=descdb, cids=cids, sdfsegs=sdf_seg,
-                source=filename, type=type))
-}
-# alias
-cmp.parse <- sdfs_to_desc
 
 # search db for similar compounds. `db' gives the database returned by
 # `cmp.parse' or `sdfs_to_desc'. `query' gives the descriptor of one compound,
@@ -629,7 +295,7 @@ cmp.search <- function(db, query, type=1, cutoff=0.5, return.score=FALSE, quiet=
 # view sdfs in ChemMine
 .sdf.visualize.max.files = 100
 sdf.visualize <- function(db, cmps, extra=NULL, reference.sdf=NULL,
-reference.note=NULL, browse=TRUE, quiet=TRUE)
+								  reference.note=NULL, browse=TRUE, quiet=TRUE)
 {
     ## ThG: added for compatability with new S4 classes APset/AP ##
     if(class(db)=="SDF") db <- as(db, "SDFset")
@@ -1002,19 +668,9 @@ db.explain <- function(desc)
 
 .haveOB <- function()
 {
-#	if(!is.null(getOption('.haveOB'))){
-#		# may need to to reset this to null in onLoad, run "check" to see
-#		if(getOption('.haveOB')==0)
-#			return(FALSE)
-#		else if(getOption('.haveOB')==1)
-#			return(TRUE)
-#	}else if(suppressWarnings(require('ChemmineOB', quietly=T))) {
 	if(suppressWarnings(require('ChemmineOB', quietly=T))) {
-	#	message("Using ChemmineOB")
-   #   options(.haveOB = 1)
 		return(TRUE)
    }else{
-   #   options(.haveOB = 0)
 		return(FALSE)
 	}
 
@@ -1029,33 +685,7 @@ db.explain <- function(desc)
 	if(!.haveOB())
 		stop(mesg)
 }
-.has.pp <- function()
-{
-	TRUE
-#	if(!is.null(getOption('.use.chemminer.pp'))){
-#		if(getOption('.use.chemminer.pp')==0)
-#			return(FALSE)
-#		else if(getOption('.use.chemminer.pp')==1){
-#			require('ChemmineRpp',quietly=TRUE) # its possible for this to be unloaded during the 'check' phase
-#			return(TRUE)
-#		}
-#	}
-#	else if(suppressWarnings(require('ChemmineRpp', quietly=T))) {
-#	   message("Using ChemmineR Performance Pack for calculation.",
-#      "Set `disable.chemminer.performance.pack' option to 1",
-#      "to disable the use of ChemmineR Performance Pack.\n")
-#      options(.use.chemminer.pp = 1)
-#		return(TRUE)
-#    }else{
-#      options(.use.chemminer.pp = 0)
-#		return(FALSE)
-#	}
-#
-#    #!is.null(getOption('.use.chemminer.pp')) &&
-#    #    getOption('.use.chemminer.pp') != 0
-}
 
-########### New Functions ###########
 
 ##############################################
 ## PubChem Fingerprint Similarity Searching ##
@@ -1406,8 +1036,6 @@ smiles2sdfWeb <- function(smiles,limit=100) {
 
 times = new.env()
 times$descT = 0
-times$facT = 0
-times$vecT = 0
 times$uniqueT = 0
 genAPDescriptors <- function(sdf,uniquePairs=TRUE){
 

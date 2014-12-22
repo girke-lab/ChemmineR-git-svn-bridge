@@ -1,4 +1,3 @@
-library(ChemmineR)
 library(ggplot2)
 
 default_node_policy = function() {
