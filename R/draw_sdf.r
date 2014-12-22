@@ -1,6 +1,4 @@
 library(ggplot2)
-library(grid)
-library(gridExtra)
 
 default_node_policy = function() {
 	return(c(	'N'='blue',
@@ -23,6 +21,8 @@ default_edge_policy = function() {
 	}
 
 concatenate_plots = function(sdf_list, filename='./test.jpg', ...) {
+	require(grid)
+	require(gridExtra)
 
 	image_list = list()
 	for (i in 1:length(sdf_list)) {
