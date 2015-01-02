@@ -182,6 +182,7 @@ v2kTimes$data = 0
 	
 	t=Sys.time()
 	## Atom block
+	## format: x y z <atom symbol> 
 	ab2matrix <- function(ct=sdf[index["atom",1]:index["atom",2]]) {
 		if((index["atom","end"] - index["atom","start"]) < 1) {
                         ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
@@ -308,6 +309,7 @@ v3kTimes$data = 0
 	#print(counts)
 	v3kTimes$header <- v3kTimes$header + (Sys.time() - t)
 
+
 	t=Sys.time()
 	#message("parsing atomblock")
 	atomPos = tagPositions[3]
@@ -325,18 +327,63 @@ v3kTimes$data = 0
 		
 		data = Reduce(rbind,Map(function(line) {
 				parts = cstrsplit(line)
-				attrs = if(extendedAttributes && length(parts) > 8)
+				#attrs = if(extendedAttributes && length(parts) > 8)
+				attrs = if(length(parts) > 8)
 								paste(parts[9:length(parts)],collapse=" ")
 						  else ""
 				c(parts[3:7],attrs)
 			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
-		if(extendedAttributes)
-			extAtomAttrs = parseAttributes(data[,6])
+		#if(extendedAttributes)
+		#	extAtomAttrs = parseAttributes(data[,6])
+		extAtomAttrs = parseAttributes(data[,6])
+
+
+		# we need to tranlate certain "Standard" attribute values from v3k back
+		# into the v2k format to make things consistent
+		#
+		# <mass difference>  MASS  v2k: offset from pt v3k: actual value
+		# <charge>   CHG           v2k: value of 1-7   v3k: actual charge value
+		# <atom stereo parity>  CFG
+		# <hydrogen count +1>   HCOUNT
+		# <stereo care box>  STBOX
+		# <valence>   VAL			v2k: 15 indicates 0  v3: -1 indicates 0
+		standardAttrs = matrix(0,nrow(data),7)
+		for(i in seq(along=extAtomAttrs)){ # for each atom
+			if(!is.null(extAtomAttrs[[i]]$MASS)){
+				mass = extAtomAttrs[[i]]$MASS
+				massDiff = mass - AW[data[i,2]]
+				standardAttrs[i,1] = massDiff
+			}
+			if(!is.null(extAtomAttrs[[i]]$CHG)){
+				chg= 4 - as.numeric(extAtomAttrs[[i]]$CHG)
+				if(chg == 4) # undo shift for 0 values
+					chg = 0
+				if(chg < 1 || chg > 7) 
+					chg = 0 # chg not in [1,7] => 0
+				standardAttrs[i,2] = chg 
+			}
+			if(!is.null(extAtomAttrs[[i]]$CFG)){
+				standardAttrs[i,3] = extAtomAttrs[[i]]$CFG
+			}
+			if(!is.null(extAtomAttrs[[i]]$HCOUNT)){
+				standardAttrs[i,4] = extAtomAttrs[[i]]$HCOUNT
+			}
+			if(!is.null(extAtomAttrs[[i]]$STBOX)){
+				standardAttrs[i,5] = extAtomAttrs[[i]]$STBOX
+			}
+			if(!is.null(extAtomAttrs[[i]]$VAL)){
+				val = extAtomAttrs[[i]]$VAL
+				if(val == -1) # means 0 in v3k
+					val = 15   # translate to 0 in v2k 
+				standardAttrs[i,6] = val
+			}
+		}
+
 		#print(extAtomAttrs)
-		atomblock = data[,3:5]
+		atomblock =cbind(data[,3:5],standardAttrs)
 		mode(atomblock)="numeric"
 		#print(atomblock)
-		colnames(atomblock) = paste("C",1:3,sep="")
+		colnames(atomblock) = paste("C",1:ncol(atomblock),sep="")
 		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
 	}
 	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
@@ -414,19 +461,19 @@ trim <- function(str) gsub("^\\s+|\\s+$","",str)
 parseAttributes <- function(attributes){
 	#message("attributes: ")
 	#print(attributes)
-	starts = gregexpr("\\s[a-zA-Z0-9]*=",attributes)
+	starts = gregexpr("(^|\\s)[a-zA-Z0-9]+=",attributes)
 	sapply(seq(along=attributes),function(i) {
 			 if(attributes[i]=="")
 				 list()
 			 else{
 				 starts[[i]][length(starts[[i]])+1] = nchar(attributes[i])
-				 #message("starts[[",i,"]]:")
-				 #print(starts[[i]])
+	#			 message("starts[[",i,"]]:")
+	#			 print(starts[[i]])
 				 sapply(1:(length(starts[[i]])-1),function(j){
 						pair = unlist(strsplit(
 											  substring(attributes[i],starts[[i]][j],starts[[i]][j+1])
 											  ,"=",fixed=TRUE) )
-						#print(pair)
+	#					print(pair)
 						if(length(pair) != 2)
 							warning("bad key value pair found:
 									  ",substring(attributes[i],starts[[i]][j],starts[[i]][j+1]))
@@ -1521,6 +1568,7 @@ makeUnique <- function(x, silent=FALSE) {
 atomcountMA <- function(x, ...) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
 	atomcountlist <- atomcount(x, ...) 	
+
 	columns <- unique(unlist(lapply(seq(along=atomcountlist), function(x) names(atomcountlist[[x]]))))
         myMA <- matrix(NA, length(atomcountlist), length(columns), dimnames=list(NULL, columns))
         for(i in seq(along=atomcountlist)) myMA[i, names(atomcountlist[[i]])] <- atomcountlist[[i]]
@@ -1530,11 +1578,8 @@ atomcountMA <- function(x, ...) {
 }
 
 ## (6.3.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
-data(atomprop); atomprop <- atomprop # Import MW data frame from /data into workspace.
 MW <- function(x, mw=atomprop, ...) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
-	## Create MW vector with atom symbols in name slot
-	AW <- mw$Atomic_weight; names(AW) <- mw$Symbol
 	
 	## Calculate MW
 	propma <- atomcountMA(x, ...)
