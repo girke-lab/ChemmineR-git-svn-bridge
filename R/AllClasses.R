@@ -327,7 +327,6 @@ v3kTimes$data = 0
 		
 		data = Reduce(rbind,Map(function(line) {
 				parts = cstrsplit(line)
-				#attrs = if(extendedAttributes && length(parts) > 8)
 				attrs = if(length(parts) > 8)
 								paste(parts[9:length(parts)],collapse=" ")
 						  else ""
@@ -379,11 +378,11 @@ v3kTimes$data = 0
 			}
 		}
 
-		#print(extAtomAttrs)
+    	#print(extAtomAttrs)
 		atomblock =cbind(data[,3:5],standardAttrs)
 		mode(atomblock)="numeric"
 		#print(atomblock)
-		colnames(atomblock) = paste("C",1:ncol(atomblock),sep="")
+		colnames(atomblock) = paste("C",1:10,sep="")
 		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
 	}
 	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
@@ -406,17 +405,38 @@ v3kTimes$data = 0
 		data = Reduce(rbind,Map(function(line) {
 				#cstrsplit(line)[3:6]
 				parts = cstrsplit(line)
-				attrs=  if(extendedAttributes && length(parts) > 6)
+				attrs=  if(length(parts) > 6)
 								paste(parts[7:length(parts)],collapse=" ")
 						  else ""
 				c(parts[3:6],attrs)
 			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
 #v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
-		if(extendedAttributes)
-			extBondAttrs = parseAttributes(data[,5])
-		bondblock = data[,c(3,4,2)]
+		extBondAttrs = parseAttributes(data[,5])  # +2.6s
+
+		# CFG  bond configuration(stereo)  change: 0 -> 0, 1-> 1, 2-> 4, 3->6
+		# empty slot
+		# TOPO  same
+		# RXCTR same
+		standardAttrs = matrix(0,nrow(data),4)  # +0.8s
+		for(i in seq(along=extBondAttrs)){  # +1.3s
+			if(!is.null(extBondAttrs[[i]]$CFG)){
+				cfg = extBondAttrs[[i]]$CFG
+				if(cfg == 2) cfg = 4
+				else if(cfg == 3) cfg = 6
+				standardAttrs[i,1] = cfg
+			}
+			if(!is.null(extBondAttrs[[i]]$TOPO)){
+				standardAttrs[i,3] = extBondAttrs[[i]]$TOPO
+			}
+			if(!is.null(extBondAttrs[[i]]$RXCTR)){
+				standardAttrs[i,4] = extBondAttrs[[i]]$RXCTR
+			}
+		}
+
+		bondblock = cbind(data[,c(3,4,2)],standardAttrs) # +0.5s
+		#bondblock = data[,c(3,4,2)]
 		mode(bondblock)="numeric"
-		colnames(bondblock) = paste("C",1:3,sep="")
+		colnames(bondblock) = paste("C",1:7,sep="")
 		rownames(bondblock) = data[,1]
 	}
 	v3kTimes$bond<- v3kTimes$bond+ (Sys.time() - t)
@@ -461,6 +481,12 @@ trim <- function(str) gsub("^\\s+|\\s+$","",str)
 parseAttributes <- function(attributes){
 	#message("attributes: ")
 	#print(attributes)
+
+	if(all(attributes=="")){
+		return(sapply(seq(along=attributes),function(i) list()))
+	}
+
+
 	starts = gregexpr("(^|\\s)[a-zA-Z0-9]+=",attributes)
 	sapply(seq(along=attributes),function(i) {
 			 if(attributes[i]=="")
@@ -1579,8 +1605,12 @@ atomcountMA <- function(x, ...) {
 
 ## (6.3.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
 MW <- function(x, mw=atomprop, ...) {
-        if(class(x)=="SDF") x <- as(x, "SDFset")
+   if(class(x)=="SDF") x <- as(x, "SDFset")
 	
+	## Create MW vector with atom symbols in name slot
+	AW <- mw$Atomic_weight
+	names(AW) <- mw$Symbol
+
 	## Calculate MW
 	propma <- atomcountMA(x, ...)
 	MW <- rowSums(t(t(propma) * AW[colnames(propma)]), na.rm = TRUE) 

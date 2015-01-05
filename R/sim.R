@@ -4,11 +4,9 @@ cstrsplitSym=NA
 	cstrsplitSym <<- getNativeSymbolInfo("cstrsplit")
 
 	data(atomprop)
-	atomprop <- atomprop # Import MW data frame from /data into workspace.
-
 	## Create MW vector with atom symbols in name slot
-	AW <- mw$Atomic_weight
-	names(AW) <- mw$Symbol
+	AW <- atomprop$Atomic_weight
+	names(AW) <- atomprop$Symbol
 }
 
 .db.header.size <- 16
