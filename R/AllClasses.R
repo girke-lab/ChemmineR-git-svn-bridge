@@ -348,30 +348,34 @@ v3kTimes$data = 0
 		# <valence>   VAL			v2k: 15 indicates 0  v3: -1 indicates 0
 		standardAttrs = matrix(0,nrow(data),7)
 		for(i in seq(along=extAtomAttrs)){ # for each atom
-			if(!is.null(extAtomAttrs[[i]]$MASS)){
-				mass = extAtomAttrs[[i]]$MASS
+			mass = extAtomAttrs[[i]]$MASS
+			if(!is.null(mass)){
 				massDiff = mass - AW[data[i,2]]
 				standardAttrs[i,1] = massDiff
 			}
-			if(!is.null(extAtomAttrs[[i]]$CHG)){
-				chg= 4 - as.numeric(extAtomAttrs[[i]]$CHG)
+			chg= extAtomAttrs[[i]]$CHG
+			if(!is.null(chg)){
+				chg= 4 - as.numeric(chg)
 				if(chg == 4) # undo shift for 0 values
 					chg = 0
 				if(chg < 1 || chg > 7) 
 					chg = 0 # chg not in [1,7] => 0
 				standardAttrs[i,2] = chg 
 			}
-			if(!is.null(extAtomAttrs[[i]]$CFG)){
-				standardAttrs[i,3] = extAtomAttrs[[i]]$CFG
+			cfg = extAtomAttrs[[i]]$CFG
+			if(!is.null(cfg)){
+				standardAttrs[i,3] = cfg
 			}
-			if(!is.null(extAtomAttrs[[i]]$HCOUNT)){
-				standardAttrs[i,4] = extAtomAttrs[[i]]$HCOUNT
+			hcount = extAtomAttrs[[i]]$HCOUNT
+			if(!is.null(hcount)){
+				standardAttrs[i,4] = hcount
 			}
-			if(!is.null(extAtomAttrs[[i]]$STBOX)){
-				standardAttrs[i,5] = extAtomAttrs[[i]]$STBOX
+			stbox = extAtomAttrs[[i]]$STBOX
+			if(!is.null(stbox)){
+				standardAttrs[i,5] = stbox
 			}
-			if(!is.null(extAtomAttrs[[i]]$VAL)){
-				val = extAtomAttrs[[i]]$VAL
+			val = extAtomAttrs[[i]]$val
+			if(!is.null(val)){
 				if(val == -1) # means 0 in v3k
 					val = 15   # translate to 0 in v2k 
 				standardAttrs[i,6] = val
@@ -419,17 +423,20 @@ v3kTimes$data = 0
 		# RXCTR same
 		standardAttrs = matrix(0,nrow(data),4)  # +0.8s
 		for(i in seq(along=extBondAttrs)){  # +1.3s
-			if(!is.null(extBondAttrs[[i]]$CFG)){
-				cfg = extBondAttrs[[i]]$CFG
+			cfg=extBondAttrs[[i]]$CFG
+			if(!is.null(cfg)){
+				#cfg = extBondAttrs[[i]]$CFG
 				if(cfg == 2) cfg = 4
 				else if(cfg == 3) cfg = 6
 				standardAttrs[i,1] = cfg
 			}
-			if(!is.null(extBondAttrs[[i]]$TOPO)){
-				standardAttrs[i,3] = extBondAttrs[[i]]$TOPO
+			topo=extBondAttrs[[i]]$TOPO
+			if(!is.null(topo)){
+				standardAttrs[i,3] = topo
 			}
-			if(!is.null(extBondAttrs[[i]]$RXCTR)){
-				standardAttrs[i,4] = extBondAttrs[[i]]$RXCTR
+			rxctr=extBondAttrs[[i]]$rxctr
+			if(!is.null(rxctr)){
+				standardAttrs[i,4] = rxctr
 			}
 		}
 
