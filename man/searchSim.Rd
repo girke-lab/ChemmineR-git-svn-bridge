@@ -6,7 +6,7 @@ PubChem Similarity (Fingerprint) Search
 }
 \description{
 Accepts one \code{SDFset} container
-and performs a >0.95 similarity PubChem fingerprint search, returning the 
+and performs a >0.9 similarity PubChem fingerprint search, returning up to 200 
 hits in an \code{SDFset} container. The ChemMine Tools web service
 is used as an intermediate, to translate queries from plain HTTP POST to
 a PubChem Power User Gateway (PUG) query. If the input object
