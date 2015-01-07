@@ -1241,7 +1241,6 @@ corresponding slot position in the *SDFset*.
  datablock(sdfset)[1:4] 
  test <- apply(propma[1:4,], 1, function(x) 
  data.frame(col=colnames(propma), value=x)) 
- sdf.visualize(sdfset[1:4], extra = test) 
 ```
 
 
@@ -1416,41 +1415,15 @@ Online with ChemMine Tools
 --------------------------
 
 Alternatively, one can visualize compound structures with a standard web
-browser using the online ChemMine Tools service. The service allows to
-display other information next to the structures using the extra
-argument of the *sdf.visualize* function. The following
-examples demonstrate, how one can plot and annotate structures by
-passing on extra data as vector of character strings, matrices or
-lists.  
+browser using the online ChemMine Tools service.
 
 Plot structures using web service ChemMine Tools: 
 ```{r eval=FALSE, tidy=FALSE}
  sdf.visualize(sdfset[1:4]) 
 ```
 
-
 ![Visualization webpage created by calling
 *sdf.visualize*.](visualizescreenshot-small.png )
-
-Add extra annotation as *vector*: 
-```{r eval=FALSE, tidy=FALSE}
- sdf.visualize(sdfset[1:4], extra=month.name[1:4]) 
-```
-
-
-Add extra annotation as *matrix*: 
-```{r eval=FALSE, tidy=FALSE}
- extra <- apply(propma[1:4,], 1, 
-					 function(x) data.frame(Property=colnames(propma), Value=x))
- sdf.visualize(sdfset[1:4], extra=extra) 
-```
-
-
-Add extra annotation as *list*: 
-```{r eval=FALSE, tidy=FALSE}
- sdf.visualize(sdfset[1:4], extra=bondblock(sdfset[1:4]))
-```
-
 
 Similarity Comparisons and Searching
 ====================================
@@ -1809,7 +1782,7 @@ argument in *cmp.search* to *TRUE*, the
 matching compounds and their scores can be visualized with a standard
 web browser. Depending on the *visualize.browse*
 argument, an URL will be printed or a webpage will be opened showing the
-structures of the matching compounds along with their scores.  
+structures of the matching compounds.
 
 View similarity search results in R's graphics device:
 
@@ -1824,7 +1797,7 @@ View similarity search results in R's graphics device:
 View results online with Chemmine Tools: 
 ```{r eval=FALSE, tidy=FALSE}
  similarities <- cmp.search(apset, apset[1], type=3, cutoff = 10)
- sdf.visualize(sdfset[similarities[,1]], extra=similarities[,3]) 
+ sdf.visualize(sdfset[similarities[,1]]) 
 ```
 
 

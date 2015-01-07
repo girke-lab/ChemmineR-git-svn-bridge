@@ -53,5 +53,6 @@ vignettes/doi2.bib
 vignettes/figure
 vignettes/final.Rmd.off
 vignettes/fix.sed
+vignettes/features.csv
 vignettes/test.db
 *.DS_Store
