@@ -143,5 +143,5 @@ searchSim <- function(sdf) {
         stop('reference compound must be a compound of class \"SDFset\"')
     } 
     jobToken <- launchCMTool('Fingerprint Search', sdf, 'Similarity Cutoff'=0.9, 'Max Compounds Returned'=200)
-    getIds(result(jobToken))
+    getIds(as.numeric(result(jobToken)))
 }
