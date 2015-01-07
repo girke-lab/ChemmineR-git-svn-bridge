@@ -54,3 +54,4 @@ vignettes/figure
 vignettes/final.Rmd.off
 vignettes/fix.sed
 vignettes/test.db
+*.DS_Store
