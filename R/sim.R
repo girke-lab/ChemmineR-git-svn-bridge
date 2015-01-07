@@ -257,18 +257,6 @@ cmp.search <- function(db, query, type=1, cutoff=0.5, return.score=FALSE, quiet=
     } else
         order <- 1:length(scores)
 
-    if (visualize) {
-        notes <- as.character(scores[order])
-        names(notes) <- rep("similarity", length(notes))
-        if (is.null(visualize.query))
-            url <- sdf.visualize(db, ids[order], extra=notes,
-                                    browse=visualize.browse)
-        else
-            url <- sdf.visualize(db, ids[order], reference.sdf=visualize.query,
-                extra=notes, browse=visualize.browse)
-        if (!visualize.browse)
-            print(url)
-    }
     ## ThG: modified/added for compatability with new S4 classes APset/AP
     if (return.score & dbtype=="list") {
         return(data.frame(ids=ids[order], scores=scores[order]))
@@ -290,97 +278,6 @@ cmp.search <- function(db, query, type=1, cutoff=0.5, return.score=FALSE, quiet=
 	}
      }
     ## ThG: end of lines
-}
-
-# view sdfs in ChemMine
-.sdf.visualize.max.files = 100
-sdf.visualize <- function(db, cmps, extra=NULL, reference.sdf=NULL,
-								  reference.note=NULL, browse=TRUE, quiet=TRUE)
-{
-    ## ThG: added for compatability with new S4 classes APset/AP ##
-    if(class(db)=="SDF") db <- as(db, "SDFset")
-    if(missing(cmps) & class(db)=="SDFset") cmps <- cid(db) # turns cmps into optional argument for SDFset class
-    ## ThG: end of lines ##
-    if (length(cmps) > 100)
-        stop(paste('\n\tYou cannot visualize more than 100 compounds.\n',
-            '\tYou supplied ', length(cmps), ' compounds.\n',
-            '\tSending too many compounds will take a long time and too much\n',
-            '\tresources on the server, or it could crash your browser.\n',
-            sep=''))
-
-    # read the reference file if there is any
-    if (!is.null(reference.sdf))
-        reference.sdf <- .read.one.sdf(reference.sdf)
-
-    if (!is.null(extra) && length(extra) != length(cmps))
-        stop(paste('\n\tthe indices and the extra information have",
-            " different lengths.\n',
-            '\tYou supplied ', length(cmps), ' compounds.\n',
-            '\t`extra\' has a length of ', length(extra),
-            sep=''))
-    
-    ## ThG: added for compatability with new S4 classes APset/AP ##
-    if(class(db)=="SDFset") {
-    	sdfstr <- as(db, "SDFstr")
-	sdfs <- paste(paste(unlist(as(sdfstr, "list")), collapse="\n"), "\n", sep="")
-	cids <- cmps
-    } else {
-    	sdfs <- sdf.subset(db, cmps)
-    	cids <- db$cids[cmps]
-    }
-    ## ThG: end of lines ##
-    
-    # build query
-    query <- list(sdf=sdfs, cids=paste(cids, collapse="\1"))
-    if (! is.null(extra)) {
-        # if an entry in extra is a data frame, format it
-        .extra <- c()
-        for (i in extra) {
-            if (class(i) == 'data.frame' || class(i) == 'matrix')
-                .extra <- c(.extra, .data.frame.to.str(i))
-            else
-                .extra <- c(.extra, paste(as.character(i)))
-        }
-        query <- c(query, list(extra=paste(.extra, collapse="\1")))
-        if (! is.null(names(extra)))
-            query <- c(query, list(names=paste(names(extra), collapse="\1")))
-    }
-    if (! is.null(reference.sdf)) {
-        query <- c(query, list(referencesdf=reference.sdf))
-        if (! is.null(reference.note)) {
-            if (class(reference.note) == 'list' &&
-                length(reference.note) == 1) {
-                    if (! is.null(names(reference.note)))
-                        query <- c(query,
-                            list(referencenotename=names(reference.note)))
-                    reference.note <- reference.note[[1]]
-            }
-            if (class(reference.note) == 'data.frame' ||
-                class(reference.note) == 'matrix')
-                query <- c(query, 
-                    list(referencenote=.data.frame.to.str(reference.note)))
-            else
-                query <- c(query, 
-                    list(referencenote=paste(as.character(reference.note))))
-        }
-    }
-
-    # sending
-    if (! quiet) cat('sending SDF to ChemMine\n')
-    response <- .postToHost("bioweb.ucr.edu",
-        "/ChemMineV2/chemminer/postsdfs", query)
-    # reading response
-    ref <- gsub(
-    '.*\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.(.*)\\.\\.\\.\\.\\.\\.\\.\\.\\.\\..*',
-    '\\1', response)
-    if (! quiet)
-        cat("starting your browser (use `options(browser=\"...\")' to", 
-            "customize browser)\n")
-    url <- paste(
-        c("http://bioweb.ucr.edu/ChemMineV2/chemminer/viewsdfs?", ref),
-        collapse='')
-    if (browse) browseURL(url)
-    return(url)
 }
 
 # segment SDFs. given indices of selected compounds, return the concatenation
@@ -848,60 +745,7 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 ######################################
 .serverURL <- "http://chemmine.ucr.edu/ChemmineR/"
 
-# get CIDs from PubChem through ChemMine Web Tools
-getIds <- function(cids) {
-    if(! class(cids) == "numeric"){
-        stop('reference compound ids must be of class \"numeric\"')
-    }
-	cids <- paste(cids, collapse=",")
-	# query server
-	response <- postForm(paste(.serverURL, "runapp?app=getIds", sep=""), cids=cids)[[1]]
-	if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-    if(grepl("linux", sessionInfo()$platform)) {
-        # temporary workaround for linux: save to file with curl and re-open
-        # related to R bug 14533 https://bugs.r-project.org/bugzilla3/show_bug.cgi?id=14533
-        temp <- tempfile()
-        command <- paste("curl", response, ">", temp, "2> /dev/null")
-        system(command)
-        z <- gzcon(file(temp, "rb"))
-        sdf <- read.SDFset(read.SDFstr(z))
-        close(z)
-        unlink(temp)
-    } else {
-        z <- gzcon(url(response))
-        sdf <- read.SDFset(read.SDFstr(z))
-        close(z)
-    }
-	return(sdf)
-}
-
-# search PubChem through ChemMine Web Tools with smiles query
-searchString <- function(smiles) {
-	 if(class(smiles) == "SMIset")
-		 smiles = as.character(smiles)
-    if(! class(smiles) == "character"){
-        stop('reference compound must be a smiles string of class \"character\"')
-    } 
-    response <- postForm(paste(.serverURL, "runapp?app=searchString", sep=""), smiles=smiles)[[1]]
-    if(grepl("^ERROR:", response)){
-        stop(response)
-    }
-	response <- as.numeric(strsplit(response, ",")[[1]])
-	return(getIds(response))
-}
-
-# search PubChem through ChemMine Web Tools with sdf query
-searchSim <- function(sdf) {
-    if(! class(sdf) == "SDFset"){
-        stop('reference compound must be a compound of class \"SDFset\"')
-    } 
-    smiles <- sdf2smiles(sdf)
-    return(searchString(smiles))
-}
-
-# perform sdf to smiles conversion through ChemMine Web Tools
+# perform sdf to smiles conversion
 sdf2smilesOB <- function(sdf) {
     if(! class(sdf) == "SDFset"){
         stop('reference compound must be a compound of class \"SDFset\"')
