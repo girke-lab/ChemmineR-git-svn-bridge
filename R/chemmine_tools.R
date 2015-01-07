@@ -113,6 +113,9 @@ launchCMTool <- function(tool_name, input = "", ...){
 
 # view sdfs in ChemMine Tools
 sdf.visualize <- function(sdf){
+    if(! class(sdf) == "SDFset"){
+        stop('input not of class \"SDFset\"')
+    } 
     job <- launchCMTool("sdf.visualize", sdf)
     browseJob(job)
 }
