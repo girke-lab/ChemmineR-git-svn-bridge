@@ -5,17 +5,28 @@ SD file to \code{SDFset}
 }
 \description{
 Imports one or many molecules from an SD/MOL file and stores it in an \code{SDFset} container. 
+Supports both the V2000 and V3000 formats.
 }
 \usage{
 read.SDFset(sdfstr = sdfstr, ...)
 }
 \arguments{
   \item{sdfstr}{
-path/name to an SD file; alternatively an \code{SDFstr} object can be provided
-}
+		path/name to an SD file; alternatively an \code{SDFstr} object can be provided
+  }
   \item{\dots}{
-option to pass on additional arguments
-}
+		option to pass on additional arguments. Possible arguments are: 
+
+		datablock: true or false, whether to include the data fields or not.
+		Defaults to TRUE.
+
+		tail2vec: true or false, whether to return data feilds as a vector or not. 
+		Defaults to TRUE.
+
+		extendedAttributes: true or false, whether to parse the extended attributes available on the
+		V3000 format. Defaults to FALSE.
+
+	}
 }
 \details{
 ...

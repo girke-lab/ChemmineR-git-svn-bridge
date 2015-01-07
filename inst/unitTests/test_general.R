@@ -136,7 +136,14 @@ test.parseV3000 <- function() {
 	compareSdfVersions = function(v2k,v3k){
 		checkEquals(sdfid(v2k),sdfid(v3k))
 
-		checkTrue( all(atomblock(v2k)[,1:3] == atomblock(v3k)))
+		#message("v2k: ",nrow(atomblock(v2k)),"x",ncol(atomblock(v2k)))
+		#message("v3k: ",nrow(atomblock(v3k)),"x",ncol(atomblock(v3k)))
+		#print(head(atomblock(v2k)))
+		#print(head(atomblock(v3k)))
+		toCompare = c(1:5,7:10) #exclude colum 6
+		checkTrue( all(atomblock(v2k)[,toCompare] ==
+							atomblock(v3k)[,toCompare]))
+
 #		cmp = bondblock(v2k)[,1:3] == bondblock(v3k)
 #		if(! all(cmp)){
 #			mismatched = which(cmp==FALSE)
@@ -153,7 +160,7 @@ test.parseV3000 <- function() {
 	}
 	for(i in seq(along=sdfset2)){
 		#if(!(i  %in% c(38,39,89))){ # this differ in acceptable ways
-			#message("testing ",i, " id: ",sdfid(sdfset2[i]))
+		#	message("testing ",i, " id: ",sdfid(sdfset2[i]))
 			compareSdfVersions(sdfset2[[i]],sdfset3[[i]])
 		#}
 	}

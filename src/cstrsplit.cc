@@ -1,16 +1,10 @@
 
-
 #include <Rcpp.h>
 
 using namespace Rcpp;
 
-
-
 #include <R.h>
 #include <boost/algorithm/string.hpp>
-
-
-//extern "C" {
 
 
 RcppExport SEXP cstrsplit( SEXP l ){
@@ -23,5 +17,3 @@ RcppExport SEXP cstrsplit( SEXP l ){
   return output;
 
 }
-
-//}

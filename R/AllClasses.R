@@ -154,7 +154,7 @@ v2kTimes$bond = 0
 v2kTimes$data = 0
 
 
-.sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
+.sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE,extendedAttributes=FALSE ) {
 	t=Sys.time()
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
 	if(length(countpos)==0)  
@@ -165,7 +165,7 @@ v2kTimes$data = 0
 	countline <- sdf[countpos]
 
 	if(length(grep("V3000$",countline))!=0) # we have a V3000 formatted file
-		return(.parseV3000(sdf,datablock,tail2vec))
+		return(.parseV3000(sdf,datablock,tail2vec,extendedAttributes))
 
    if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) 
 		countline <- "  0  0"  # Create dummy countline if it contains non-numeric values 
@@ -185,23 +185,31 @@ v2kTimes$data = 0
 	## format: x y z <atom symbol> 
 	ab2matrix <- function(ct=sdf[index["atom",1]:index["atom",2]]) {
 		if((index["atom","end"] - index["atom","start"]) < 1) {
-                        ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
-                } else {
-                        ct <- gsub("^ {1,}", "", ct)
-		        ctlist <- strsplit(ct, " {1,}")
-			# ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
-		        ctma <- tryCatch(matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE), warning=function(w) NULL)
-		        if(TRUE || length(ctma)==0) { # If rows in atom block are of variable length, use alternative/slower approach
-				maxcol <- max(sapply(ctlist, length))
-				ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
-				for(i in seq(along=ctma[,1])) ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
+			ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+		} else {
+			ct <- gsub("^ {1,}", "", ct)
+			ctlist <- strsplit(ct, " {1,}")
+			ctma <- tryCatch(matrix(unlist(ctlist), 
+											ncol=length(ctlist[[1]]), 
+											nrow=length(ct), 
+											byrow=TRUE), 
+								  warning=function(w) NULL)
+			# If rows in atom block are of variable length, use alternative/slower approach
+			if(length(ctma)==0) { 
+			  maxcol <- max(sapply(ctlist, length))
+			  ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
+			  for(i in seq(along=ctma[,1])) 
+				  ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
 			}
 			myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
-		        # Ncol <- length(ctlist[[1]])
-		        Ncol <- length(ctma[1, , drop = FALSE])
-			ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
+		   # Ncol <- length(ctlist[[1]])
+		   Ncol <- length(ctma[1, , drop = FALSE])
+			ctma <- matrix(as.numeric(ctma[,-4]), 
+								nrow=length(ct), 
+								ncol=Ncol-1, 
+								dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
 		}
-                return(ctma)
+		return(ctma)
 	}
 	atomblock <- ab2matrix(ct=sdf[index["atom",1]:index["atom",2]])
 	v2kTimes$atom<- v2kTimes$atom+ (Sys.time() - t)
@@ -386,7 +394,7 @@ v3kTimes$data = 0
 		atomblock =cbind(data[,3:5],standardAttrs)
 		mode(atomblock)="numeric"
 		#print(atomblock)
-		colnames(atomblock) = paste("C",1:10,sep="")
+		colnames(atomblock) = paste("C",c(1:3,5:11),sep="")
 		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
 	}
 	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)

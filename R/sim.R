@@ -1,9 +1,12 @@
 cstrsplitSym=NA
 .onLoad <- function(libname,pkgname) {
 
+	#message("libname: ",libname)
+	#message("pkgname: ",pkgname)
 	cstrsplitSym <<- getNativeSymbolInfo("cstrsplit")
 
-	data(atomprop)
+	require(utils)
+	data(atomprop,package=pkgname)
 	## Create MW vector with atom symbols in name slot
 	AW <- atomprop$Atomic_weight
 	names(AW) <- atomprop$Symbol
