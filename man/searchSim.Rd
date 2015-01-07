@@ -40,7 +40,7 @@ Tyler Backman
 \examples{
 \dontrun{
 ## get a sample compound
-data(sdfsample); sdfset <- sdfsample[1]
+data(sdfsample); sdfset <- sdfsample[2]
 ## search a compound on PubChem
 compounds <- searchSim(sdfset)}
 }
