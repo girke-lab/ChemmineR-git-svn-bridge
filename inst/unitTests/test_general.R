@@ -130,6 +130,7 @@ test.canonicalize <- function(){
 }
 test.parseV3000 <- function() {
 
+	DEACTIVATED("requires local files")
 	sdfset2 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.v2k.sdf")
 	sdfset3 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.sdf")  
 
