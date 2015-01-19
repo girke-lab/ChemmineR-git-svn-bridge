@@ -1,4 +1,3 @@
-library(ChemmineR)
 library(ggplot2)
 library(grid)
 library(gridExtra)
@@ -102,7 +101,6 @@ handle_text = function(sdf, plot_target, alpha_node = 1.0, numbered = FALSE, fon
 	node_frame = data.frame(node_frame)
 	
 	# add coloration editing here
-	print(node_frame)
 	if (node_background_color != FALSE) {
 		# presumably it's a color...
 		plot_target = plot_target + geom_point(data = node_frame, aes(x=C1, y = C2), color = node_background_color, size = font_size + 1)
