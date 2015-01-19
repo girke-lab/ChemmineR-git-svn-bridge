@@ -2,7 +2,7 @@
 \alias{draw_sdf}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Tries to draw an sdf object in the 2D plane.
+Draws an sdf object in the 2D plane.
 }
 \description{
 Tries to draw an sdf object in the 2D plane. Permits customization of bond colors and atom colors.
@@ -36,6 +36,9 @@ Upward shift of atom text. Upward shit is in SDF units, not ggplot units.
   \item{bgcolor}{
 An rgb(r,g,b,alpha) or similar object. produces a background of the specified color.
 }
+  \item{node_background_color}{
+ A common color as a text string (e.g. 'white', 'pink') or an rgb(r,g,b,alpha).  Draws a filled circle of the color specified before drawing text over each node.
+}
   \item{bgraster}{
 A readPNG object or a path to an object that can be understood using readPNG. Will be used as background.
 }
@@ -53,7 +56,7 @@ A second SDF object to run fmcsR on.
 }
 }
 \details{
-Requires ggplot2. Additional features require grid, gridExtra, fmcsR, or png. Reasonably fast.
+Requires ggplot2. Additional features require grid, gridExtra, fmcsR, or png. Most matrix operations vectorized.
 }
 \value{
 %%  ~Describe the value returned
@@ -84,47 +87,8 @@ John A. Sharifi
 ##--	or do  help(data=index)  for the standard data sets.
 
 library(ChemmineR) 		# if not already imported
-source('draw_sdf.r') 	# if not already imported
 data(sdfsample)
-draw_sdf(sdfsample[[1]], alpha_edge = 0.25, font_size = 5)
-draw_sdf(sdfample[[10]], filename = './file_one.png', fmcsR_sdf = sdfsample[[2]])
-
-## The function is currently defined as
-function (sdf, filename = "test.jpg", alpha_edge = 0.5, alpha_node = 1, 
-    numbered = FALSE, font_size = 5, node_vertical_offset = 0, 
-    bgcolor = rgb(1, 1, 1, 1), bgraster = NULL, node_policy = default_node_policy(), 
-    edge_policy = default_edge_policy(), bond_dist_offset = 0.05, 
-    fmcsR_sdf = NULL) 
-{
-    if (length(sdf) > 1) {
-        return(concatenate_plots(sdf, filename, alpha_edge, alpha_node, 
-            numbered, font_size, node_vertical_offset, bgcolor, 
-            bgraster, node_policy, edge_policy, fmcsR_sdf))
-    }
-    plot_target = ggplot(data = data.frame(0), aes())
-    if (!is.null(bgraster)) {
-        plot_target = handle_raster(plot_target, bgraster)
-    }
-    fmcs_result = NULL
-    if (!is.null(fmcsR_sdf)) {
-        require(fmcsR)
-        fmcs_result = fmcs(sdf, fmcsR_sdf)
-        fmcs_result = fmcs_result@mcs1$mcs1$CMP1_fmcs_1
-    }
-    plot_target = handle_segs(sdf, plot_target, alpha_edge, edge_policy, 
-        bond_dist_offset, fmcs_result)
-    plot_target = handle_text(sdf, plot_target, alpha_node, numbered, 
-        font_size, node_vertical_offset, node_policy, fmcs_result)
-    plot_target = plot_target + theme(panel.background = element_rect(fill = bgcolor, 
-        color = "black"))
-    plot_target = plot_target + theme(legend.position = "none")
-    plot_target = plot_target + theme(axis.title.x = element_blank())
-    plot_target = plot_target + theme(axis.title.y = element_blank())
-    if (!is.null(filename)) {
-        ggsave(filename = filename, plot = plot_target)
-    }
-    return(plot_target)
-  }
+draw_sdf(sdfsample[[1]])
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
