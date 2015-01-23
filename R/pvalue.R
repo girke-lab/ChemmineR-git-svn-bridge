@@ -1,6 +1,5 @@
 
 genParameters = function(fpset,distance = fpSim,... ) {
-
 	if( ! inherits(fpset,"FPset"))
 		stop("fpset must be an instance of FPset")
 	if(length(fpset) == 0)
