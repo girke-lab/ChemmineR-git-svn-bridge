@@ -7,6 +7,7 @@ genParameters = function(fpset,distance = fpSim,... ) {
 
 	totalBitCount = numBits(fpset[1])
 	N=length(fpset)
+	K=0.5  # used to shift the mean towards 0 to stabalize varience computation
 
 	size=totalBitCount+2
 	parameters = data.frame(count=rep(0,size),avg=rep(0,size),varience=rep(0,size),
@@ -18,23 +19,29 @@ genParameters = function(fpset,distance = fpSim,... ) {
 	for(i in seq(along=fpset)){
 		distances = distance(fpset[[i]],fpset,...)
 		numBitsSet= setBitCounts[i]+1
-		stats$count[numBitsSet]= stats$count[numBitsSet]+ length(distances)
-		stats$sums[numBitsSet]= stats$sums[numBitsSet]+ sum(distances)
-		stats$squares[numBitsSet]= stats$squares[numBitsSet]+ sum(distances^2)
+
+		n=length(distances)
+		sums=sum(distances-K)
+		squares= sum((distances-K)^2)
+		#print(c(n,sums,squares))
+
+		stats$count[numBitsSet]= stats$count[numBitsSet] + n
+		stats$sums[numBitsSet]= stats$sums[numBitsSet] + sums
+		stats$squares[numBitsSet]= stats$squares[numBitsSet] + squares
 
 		#for quries with bit counts with no stats
 
 		#message(numBitsSet," ",stats$count[numBitsSet]," ",length(distances))
-		stats$count[size]= stats$count[size]+ stats$count[numBitsSet]
-		stats$sums[size]= stats$sums[size]+ stats$sums[numBitsSet]
-		stats$squares[size]= stats$squares[size]+ stats$squares[numBitsSet]
+		stats$count[size]= stats$count[size] + n
+		stats$sums[size]= stats$sums[size] + sums
+		stats$squares[size]= stats$squares[size] + squares
 	}
 	message("stats: ")
-	print(stats[40,])
-	print(stats[367,])
+	print(stats[41,])
+	print(stats[368,])
 
 	for(i in 1:(totalBitCount+2)){
-		avg =stats$sums[i] / stats$count[i]
+		avg =stats$sums[i] / stats$count[i] + K
 		varience = (stats$squares[i] - (stats$sums[i]^2/stats$count[i]))/stats$count[i]
 
 		parameters$count[i] = stats$count[i]
