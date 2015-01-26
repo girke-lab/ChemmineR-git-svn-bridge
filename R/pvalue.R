@@ -8,7 +8,8 @@ genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
 
 	totalBitCount = numBits(fpset[1])
 	N=length(fpset)
-	sampleSize=N*sqrt(sampleFraction)
+	sampleSize=floor(N*sqrt(sampleFraction))
+	#message("sample size: ",sampleSize,"^2")
 	K=0.5  # used to shift the mean towards 0 to stabalize varience computation
 
 	size=totalBitCount+2
@@ -20,16 +21,15 @@ genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
 	querySetIndecies = sample.int(N,sampleSize)
 	targetSetIndecies = sample.int(N,sampleSize)
 	targetFpSet = fpset[targetSetIndecies]
-	setBitCounts = apply(as.matrix(fpset[querySetIndecies]),c(1),function(fp) sum(fp))
 
 	for(i in querySetIndecies){
-		distances = distance(fpset[[i]],targetFpSet,...)
-		numBitsSet= setBitCounts[i]+1
+		distances = distance(fpset[[i]],targetFpSet,sorted=FALSE,...)
+		numBitsSet= sum(as.numeric(fpset[[i]])) + 1
 
 		n=length(distances)
 		sums=sum(distances-K)
 		squares= sum((distances-K)^2)
-		#print(c(n,sums,squares))
+		#print(c(i,n,sums,squares,as.numeric(numBitsSet)))
 
 		stats$count[numBitsSet]= stats$count[numBitsSet] + n
 		stats$sums[numBitsSet]= stats$sums[numBitsSet] + sums
@@ -42,9 +42,9 @@ genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
 		stats$sums[size]= stats$sums[size] + sums
 		stats$squares[size]= stats$squares[size] + squares
 	}
-	message("stats: ")
-	print(stats[41,])
-	print(stats[368,])
+	#message("stats: ")
+	#print(stats[41,])
+	#print(stats[368,])
 
 	for(i in 1:(totalBitCount+2)){
 		avg =stats$sums[i] / stats$count[i] + K

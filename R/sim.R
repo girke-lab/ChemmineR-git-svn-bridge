@@ -769,19 +769,25 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 		titles = 1:4
 		names(titles)=colnames(scores)
 		if(sorted){
-			scores = scores[order(scores[,titles[scoreType]]),]
+			if(titles[scoreType] <=2 ) #similarity or zscore, bigger is better
+				scores = scores[order(-scores[,titles[scoreType]]),]
+			else
+				scores = scores[order(scores[,titles[scoreType]]),]
 			if(top!="all")
 				scores = scores[1:top,]
 		}
 
-		if(scoreType <=2 ) #similarity or zscore, bigger is better
-			cutScores = scores[scores[,titles[scoreType]]>= cutoff,]
-		else   # e or p values, lower is better
-			cutScores = scores[scores[,titles[scoreType]]<= cutoff,]
-		if( nrow(cutScores) >= 1)
-			cutScores
-		else # make sure we don't lose all results do to cutoff
-			scores
+		if(!missing(cutoff)){
+			if(titles[scoreType] <=2 ) #similarity or zscore, bigger is better
+				cutScores = scores[scores[,titles[scoreType]]>= cutoff,]
+			else   # e or p values, lower is better
+				cutScores = scores[scores[,titles[scoreType]]<= cutoff,]
+
+			# make sure we don't lose all results do to cutoff
+			if( nrow(cutScores) >= 1)
+				scores = cutScores
+		}
+		scores
 	}
 	else{
 
