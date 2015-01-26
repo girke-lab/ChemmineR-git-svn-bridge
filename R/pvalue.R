@@ -1,5 +1,6 @@
 
-genParameters = function(fpset,distance = fpSim,... ) {
+#sample fraction of all pairwise distances
+genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
 	if( ! inherits(fpset,"FPset"))
 		stop("fpset must be an instance of FPset")
 	if(length(fpset) == 0)
@@ -7,17 +8,22 @@ genParameters = function(fpset,distance = fpSim,... ) {
 
 	totalBitCount = numBits(fpset[1])
 	N=length(fpset)
+	sampleSize=N*sqrt(sampleFraction)
 	K=0.5  # used to shift the mean towards 0 to stabalize varience computation
 
 	size=totalBitCount+2
 	parameters = data.frame(count=rep(0,size),avg=rep(0,size),varience=rep(0,size),
 									alpha=rep(0,size),beta=rep(0,size))
 
-	setBitCounts = apply(as.matrix(fpset),c(1),function(fp) sum(fp))
 	stats = data.frame(count=rep(0,size),sums=rep(0,size),squares=rep(0,size))
 
-	for(i in seq(along=fpset)){
-		distances = distance(fpset[[i]],fpset,...)
+	querySetIndecies = sample.int(N,sampleSize)
+	targetSetIndecies = sample.int(N,sampleSize)
+	targetFpSet = fpset[targetSetIndecies]
+	setBitCounts = apply(as.matrix(fpset[querySetIndecies]),c(1),function(fp) sum(fp))
+
+	for(i in querySetIndecies){
+		distances = distance(fpset[[i]],targetFpSet,...)
 		numBitsSet= setBitCounts[i]+1
 
 		n=length(distances)
@@ -54,32 +60,32 @@ genParameters = function(fpset,distance = fpSim,... ) {
 	parameters
 }
 
-scoredDistance = function(query,db,parameters,distance=fpSim,...){
-
-	distances= distance(query,db,...)
-
-	numBitsSet = sum(as.numeric(query))+1
-
-	N = parameters$count[numBitsSet]
-	if(N==0){ # no stats collected for this number of bits so use global values
-		warning("no parameters avaliable for fingerprints with ",numBitsSet-1," bits set, using global parameters")
-		numBitsSet=nrow(parameters) #global stats are last element of parameters
-		N = parameters$count[numBitsSet]
-	}
-
-	message("using stats for ",numBitsSet-1," bits")
-	print(parameters[numBitsSet,])
-	
-   avg = parameters$avg[numBitsSet]
-	varience = parameters$varience[numBitsSet]
-	alpha = parameters$alpha[numBitsSet]
-	beta = parameters$beta[numBitsSet]
-
-	Reduce(rbind,Map(function(i){
-			 zscore = (distances[i] - avg) / sqrt(varience)
-			 evalue = N*(1-pbeta(distances[i],alpha,beta))
-			 pvalue = 1-exp(-evalue)
-			 data.frame(distance=distances[i],zscore=zscore,evalue=evalue,pvalue=pvalue)
-		},seq(along=distances)))
-
-}
+#scoredDistance = function(query,db,parameters,distance=fpSim,...){
+#
+#	distances= distance(query,db,...)
+#
+#	numBitsSet = sum(as.numeric(query))+1
+#
+#	N = parameters$count[numBitsSet]
+#	if(N==0){ # no stats collected for this number of bits so use global values
+#		warning("no parameters avaliable for fingerprints with ",numBitsSet-1," bits set, using global parameters")
+#		numBitsSet=nrow(parameters) #global stats are last element of parameters
+#		N = parameters$count[numBitsSet]
+#	}
+#
+#	message("using stats for ",numBitsSet-1," bits")
+#	print(parameters[numBitsSet,])
+#	
+#   avg = parameters$avg[numBitsSet]
+#	varience = parameters$varience[numBitsSet]
+#	alpha = parameters$alpha[numBitsSet]
+#	beta = parameters$beta[numBitsSet]
+#
+#	Reduce(rbind,Map(function(i){
+#			 zscore = (distances[i] - avg) / sqrt(varience)
+#			 evalue = N*(1-pbeta(distances[i],alpha,beta))
+#			 pvalue = 1-exp(-evalue)
+#			 data.frame(distance=distances[i],zscore=zscore,evalue=evalue,pvalue=pvalue)
+#		},seq(along=distances)))
+#
+#}

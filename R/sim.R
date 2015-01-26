@@ -703,7 +703,9 @@ fpSimOrig <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, 
 	}
 }
 
-fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1) {
+fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", 
+						addone=1, cutoff=0, top="all", alpha=1, beta=1,
+						parameters=NULL,scoreType="similarity") {
 
 	if(class(method)=="character") {
 	 	if(method=="Tanimoto" | method=="tanimoto") 
@@ -740,16 +742,60 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top=
 	result=.Call("similarity",x,y,method,addone,alpha,beta)
 	names(result) = rownames(y)
 
-	if(sorted) {
-		result = sort(result, decreasing=TRUE)
-		if(top!="all")
-			result = result[1:top]
+	if(!is.null(parameters)){
+		numBitsSet = sum(x)+1
+
+		N = parameters$count[numBitsSet]
+		if(N==0){ # no stats collected for this number of bits so use global values
+			warning("no parameters avaliable for fingerprints with ",numBitsSet-1," bits set, using global parameters")
+			numBitsSet=nrow(parameters) #global stats are last element of parameters
+			N = parameters$count[numBitsSet]
+		}
+
+		#message("using stats for ",numBitsSet-1," bits")
+		#print(parameters[numBitsSet,])
+		
+		avg = parameters$avg[numBitsSet]
+		varience = parameters$varience[numBitsSet]
+		alpha = parameters$alpha[numBitsSet]
+		beta = parameters$beta[numBitsSet]
+
+		scores = Reduce(rbind,Map(function(i){
+				 zscore = (result[i] - avg) / sqrt(varience)
+				 evalue = N*(1-pbeta(result[i],alpha,beta))
+				 pvalue = 1-exp(-evalue)
+				 data.frame(similarity=result[i],zscore=zscore,evalue=evalue,pvalue=pvalue)
+			},seq(along=result)))
+		titles = 1:4
+		names(titles)=colnames(scores)
+		if(sorted){
+			scores = scores[order(scores[,titles[scoreType]]),]
+			if(top!="all")
+				scores = scores[1:top,]
+		}
+
+		if(scoreType <=2 ) #similarity or zscore, bigger is better
+			cutScores = scores[scores[,titles[scoreType]]>= cutoff,]
+		else   # e or p values, lower is better
+			cutScores = scores[scores[,titles[scoreType]]<= cutoff,]
+		if( nrow(cutScores) >= 1)
+			cutScores
+		else # make sure we don't lose all results do to cutoff
+			scores
 	}
-	cutoffCount = length(result[result >= cutoff])
-	if( cutoffCount >= 1)
-		result[result >= cutoff]
-	else # make sure we don't lose all results do to cutoff
-		result
+	else{
+
+		if(sorted) {
+			result = sort(result, decreasing=TRUE)
+			if(top!="all")
+				result = result[1:top]
+		}
+		cutResult = result[result >= cutoff]
+		if( length(cutResult) >= 1)
+			cutResult
+		else # make sure we don't lose all results do to cutoff
+			result
+	}
 	
 
 }
