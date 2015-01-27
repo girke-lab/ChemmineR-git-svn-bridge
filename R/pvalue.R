@@ -1,6 +1,6 @@
 
 #sample fraction of all pairwise distances
-genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
+genParameters = function(fpset,similarity= fpSim,sampleFraction=1,... ) {
 	if( ! inherits(fpset,"FPset"))
 		stop("fpset must be an instance of FPset")
 	if(length(fpset) == 0)
@@ -23,7 +23,7 @@ genParameters = function(fpset,distance = fpSim,sampleFraction=1,... ) {
 	targetFpSet = fpset[targetSetIndecies]
 
 	for(i in querySetIndecies){
-		distances = distance(fpset[[i]],targetFpSet,sorted=FALSE,...)
+		distances = similarity(fpset[[i]],targetFpSet,sorted=FALSE,...)
 		numBitsSet= sum(as.numeric(fpset[[i]])) + 1
 
 		n=length(distances)

@@ -7,7 +7,9 @@ Fingerprint Search
 	Enables structure similarity comparisons, searching and clustering.
 }
 \usage{
-fpSim(x, y, sorted=TRUE, method="Tanimoto", addone=1, cutoff=0, top="all", alpha=1, beta=1)
+fpSim(x, y, sorted=TRUE, method="Tanimoto", 
+		addone=1, cutoff=0, top="all", alpha=1, beta=1,
+		parameters=NULL,scoreType="similarity")
 }
 \arguments{
   \item{x}{
@@ -47,6 +49,15 @@ Only used when method="Tversky". Allows to specify the weighting variable 'alpha
   \item{beta}{
 Only used when method="Tversky". Allows to specify the weighting variable 'beta' of the Tversky index. 
 }
+	\item{parameters}{
+		Parameters for computing Z-scores, E-values, and p-values. Pass this data if you want these
+		scores returned. This data can be generated with the \code{\link{genParameters}} function.
+	}
+	\item{scoreType}{
+		If using the \code{parameters} argument, this argument specified which type of score the
+		\code{cutoff} argument should be applied to. It should be one of "similarity" (default),
+		"zscore", "evalue", or "pvalue".
+	}
 }
 \value{
 Returns \code{numeric vector} with similarity coefficients as values and compound identifiers as names. 
