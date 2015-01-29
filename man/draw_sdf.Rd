@@ -10,6 +10,7 @@ Draws an sdf object in the 2D plane using ggplot2 library. Permits customization
 \usage{
 draw_sdf(sdf, filename = "test.jpg", alpha_edge = 0.5, alpha_node = 1, numbered = FALSE, font_size = 5, node_vertical_offset = 0, node_background_color = FALSE, bgcolor = rgb(1, 1, 1, 1), bgraster = NULL, node_policy = default_node_policy(), edge_policy = default_edge_policy(), bond_dist_offset = 0.05, fmcsR_sdf = NULL)
 }
+
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{sdf}{
@@ -66,21 +67,12 @@ Requires ggplot2. Additional features require grid, gridExtra, fmcsR, or png. Mo
 %% ...
 Returns a ggplot2 object. Calling draw_sdf(...) rather than assigning it will result in R trying to print a ggplot2 object.
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 John A. Sharifi
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 ##---- Should be DIRECTLY executable !! ----
 ##-- ==>  Define data, use random,
