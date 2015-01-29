@@ -549,24 +549,52 @@ processAndLoad <- function(conn,names,defs,sdfset,featureFn,descriptors,updateBy
 		
 	}
 }
-setPriorities <- function(conn,priorityFn,descriptorIds=c()){
+setPriorities <- function(conn,priorityFn,descriptorIds=c(),cl=NULL,connSource=NULL){
 
 	if(length(descriptorIds) == 0)
-		rows=dbGetQuery(conn,"SELECT * FROM compounds_grouped_by_descriptors")
+		compoundGroups = dbGetQuery(conn,"SELECT * FROM compounds_grouped_by_descriptors")
 	else{
-		rows = selectInBatches(conn,descriptorIds, function(ids)
+		compoundGroups = selectInBatches(conn,descriptorIds, function(ids)
 						paste("SELECT * FROM compounds_grouped_by_descriptors ",
 											 " WHERE descriptor_id IN
 											 (",paste(ids,collapse=","),")") )
 	}
-	dbTransaction(conn,	
-		for(i in seq(along=rows$compound_ids)){
-			compIds = unlist(strsplit(rows$compound_ids[i],",",fixed="TRUE"))
-			priorities = priorityFn(conn,compIds)
-			priorities$descriptor_id = rep(rows$descriptor_id[i],nrow(priorities))
-			updatePriorities(conn,priorities)
-		}
-	)
+	message("setting priorities for ",nrow(compoundGroups)," groups.")
+	#message("compound groups: ")
+	#print(compoundGroups)
+
+	processIds = function(indexes,conn){
+		for(i in indexes){
+			dbTransaction(conn,	{
+				compIds = unlist(strsplit(compoundGroups$compound_ids[i],",",fixed="TRUE"))
+				priorities = priorityFn(conn,compIds)
+				priorities$descriptor_id = rep(compoundGroups$descriptor_id[i],nrow(priorities))
+				updatePriorities(conn,priorities)} )
+			}
+
+	}
+	if(is.null(cl)){
+			processIds(seq(along=compoundGroups$compound_ids),conn)
+			#for(i in seq(along=rows$compound_ids)){
+				#compIds = unlist(strsplit(rows$compound_ids[i],",",fixed="TRUE"))
+				#priorities = priorityFn(conn,compIds)
+				#priorities$descriptor_id = rep(rows$descriptor_id[i],nrow(priorities))
+				#updatePriorities(conn,priorities)
+			#}
+	}else{
+		if(is.null(connSource)) stop("A connSource function must be given to use a cluster")
+
+		clusterExport(cl,"compoundGroups",envir=environment())
+
+		parBatchByIndex(seq(along=compoundGroups$compound_ids),function(ids,jobId){
+					conn=connSource()
+					processIds(ids,conn)
+					dbDisconnect(conn)
+			},identity,cl)	
+	}
+
+
+
 }
 randomPriorities <- function(conn,compIds){
 	data.frame(compound_id = compIds,priority=1:length(compIds))
@@ -982,6 +1010,7 @@ insertDescriptorType <- function(conn,data){
 	}
 }
 updatePriorities <- function(conn,data){
+	#message("updatePriorities (1-10): ")
 	#print(data[1:10,])
 	if(inherits(conn,"SQLiteConnection")){
 		dbGetPreparedQuery(conn,"UPDATE compound_descriptors SET priority = :priority WHERE compound_id=:compound_id AND

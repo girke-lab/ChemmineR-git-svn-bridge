@@ -20,6 +20,9 @@
 	data set. If the priorities were set at some point in between these
 	then it would not see all the compounds for that one descriptor.
 
+	If a SNOW cluster and connection source function are given, it will
+	run in parallel.
+
 	Some pre-defined functions that can be use for \code{priorityFn}
 	are:
 
@@ -33,7 +36,7 @@
 }
 
 \usage{
-setPriorities(conn, priorityFn,descriptorIds=c())
+setPriorities(conn,priorityFn,descriptorIds=c(),cl=NULL,connSource=NULL){
 forestSizePriorities(conn,compIds)
 randomPriorities(conn,compIds)
 }
@@ -60,6 +63,13 @@ randomPriorities(conn,compIds)
 			for updating priorities after adding new compounds
 			to an existing database.
 	}
+	\item{cl}{
+		A SNOW cluster on which to run jobs on.
+	}
+	\item{connSource}{
+		A function to create a new database connection with. This will be run once for each new job
+		created. It must return a newly created connection, not a reference to an existing connection.
+	}
 	\item{compIds}{
 	  The compound_id values for each group.
 	}
@@ -67,7 +77,7 @@ randomPriorities(conn,compIds)
 }
 \value{
 	For \code{setPriorities}, no value is returned.
-	\code{randomPriories} and \code{forestSizePriorities} return
+	\code{randomPriorities} and \code{forestSizePriorities} return
 	a data.frame with columns "compound_id" and "priority".
 }
 \author{
