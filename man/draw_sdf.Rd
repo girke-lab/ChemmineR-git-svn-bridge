@@ -8,7 +8,7 @@ draw_sdf
 Draws an sdf object in the 2D plane using ggplot2 library. Permits customization of bond colors and atom colors.
 }
 \usage{
-draw_sdf(sdf, filename = "test.jpg", alpha_edge = 0.5, alpha_node = 1, numbered = FALSE, font_size = 5, node_vertical_offset = 0, bgcolor = rgb(1, 1, 1, 1), bgraster = NULL, node_policy = default_node_policy(), edge_policy = default_edge_policy(), bond_dist_offset = 0.05, fmcsR_sdf = NULL)
+draw_sdf(sdf, filename = "test.jpg", alpha_edge = 0.5, alpha_node = 1, numbered = FALSE, font_size = 5, node_vertical_offset = 0, node_background_color = FALSE, bgcolor = rgb(1, 1, 1, 1), bgraster = NULL, node_policy = default_node_policy(), edge_policy = default_edge_policy(), bond_dist_offset = 0.05, fmcsR_sdf = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
