@@ -140,19 +140,36 @@ setClass("ExternalReference")
 setClassUnion("ExternalReferenceOrNULL",members=c("ExternalReference","NULL"))
 setClass("SDF", representation(header="character", atomblock="matrix", 
 										 bondblock="matrix", datablock="character",
-										 obmolRef="ExternalReferenceOrNULL"),
-			prototype=list(obmolRef=NULL))
-										# obmolRef="_p_OpenBabel__OBMol"))
+										 obmolRef="ExternalReferenceOrNULL",
+										 version="character"),
+			prototype=list(obmolRef=NULL,version="V2000"))
 
 ## Convert SDFstr to SDF Class
 ## SDFstr Parser Function
-.sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE, ...) {
+
+v2kTimes = new.env()
+v2kTimes$header = 0
+v2kTimes$atom = 0
+v2kTimes$bond = 0
+v2kTimes$data = 0
+
+
+.sdfParse <- function(sdf, datablock=TRUE, tail2vec=TRUE,extendedAttributes=FALSE ) {
+	t=Sys.time()
 	countpos <- grep("V\\d\\d\\d\\d$", sdf, perl=TRUE)
-	if(length(countpos)==0) { countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) }
-	if(length(countpos)==0) { countpos <- 4 }
-	if(length(countpos)>1) { countpos <- 4 }
+	if(length(countpos)==0)  
+		countpos <- grep("V {0,}\\d\\d\\d\\d$", sdf, perl=TRUE) 
+	if(length(countpos)==0 || length(countpos)>1) 
+		 countpos <- 4 
+
 	countline <- sdf[countpos]
-        if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) { countline <- "  0  0" } # Create dummy countline if it contains non-numeric values 
+
+	if(length(grep("V3000$",countline))!=0) # we have a V3000 formatted file
+		return(.parseV3000(sdf,datablock,tail2vec,extendedAttributes))
+
+   if(nchar(gsub("\\d| ", "", substring(countline, 1, 6))) != 0) 
+		countline <- "  0  0"  # Create dummy countline if it contains non-numeric values 
+
 	Natom <- as.numeric(substring(countline, 1, 3))
 	Nbond <- as.numeric(substring(countline, 4, 6))
 	start <- c(header=1, atom=countpos+1, bond=countpos+Natom+1, extradata=countpos+Natom+Nbond+1)
@@ -161,30 +178,43 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 	## Header block
 	header <- sdf[index["header",1]:index["header",2]]
 	if(length(header)==4) names(header) <- c("Molecule_Name", "Source", "Comment", "Counts_Line")	
+	v2kTimes$header <- v2kTimes$header + (Sys.time() - t)
 	
+	t=Sys.time()
 	## Atom block
+	## format: x y z <atom symbol> 
 	ab2matrix <- function(ct=sdf[index["atom",1]:index["atom",2]]) {
 		if((index["atom","end"] - index["atom","start"]) < 1) {
-                        ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
-                } else {
-                        ct <- gsub("^ {1,}", "", ct)
-		        ctlist <- strsplit(ct, " {1,}")
-			# ctma <- matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE)
-		        ctma <- tryCatch(matrix(unlist(ctlist), ncol=length(ctlist[[1]]), nrow=length(ct), byrow=TRUE), warning=function(w) NULL)
-		        if(length(ctma)==0) { # If rows in atom block are of variable length, use alternative/slower approach
-				maxcol <- max(sapply(ctlist, length))
-				ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
-				for(i in seq(along=ctma[,1])) ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
+			ctma <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+		} else {
+			ct <- gsub("^ {1,}", "", ct)
+			ctlist <- strsplit(ct, " {1,}")
+			ctma <- tryCatch(matrix(unlist(ctlist), 
+											ncol=length(ctlist[[1]]), 
+											nrow=length(ct), 
+											byrow=TRUE), 
+								  warning=function(w) NULL)
+			# If rows in atom block are of variable length, use alternative/slower approach
+			if(length(ctma)==0) { 
+			  maxcol <- max(sapply(ctlist, length))
+			  ctma <- matrix(0, nrow=length(ct), ncol=maxcol)
+			  for(i in seq(along=ctma[,1])) 
+				  ctma[i, 1:length(ctlist[[i]])] <- ctlist[[i]]
 			}
 			myrownames <- paste(ctma[,4], 1:length(ctma[,4]), sep="_")
-		        # Ncol <- length(ctlist[[1]])
-		        Ncol <- length(ctma[1, , drop = FALSE])
-			ctma <- matrix(as.numeric(ctma[,-4]), nrow=length(ct), ncol=Ncol-1, dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
+		   # Ncol <- length(ctlist[[1]])
+		   Ncol <- length(ctma[1, , drop = FALSE])
+			ctma <- matrix(as.numeric(ctma[,-4]), 
+								nrow=length(ct), 
+								ncol=Ncol-1, 
+								dimnames=list(myrownames, paste("C", c(1:3, 5:Ncol), sep="")))	
 		}
-                return(ctma)
+		return(ctma)
 	}
 	atomblock <- ab2matrix(ct=sdf[index["atom",1]:index["atom",2]])
+	v2kTimes$atom<- v2kTimes$atom+ (Sys.time() - t)
 	
+	t=Sys.time()
 	## Bond block
 	bb2matrix <- function(ct=sdf[index["bond",1]:index["bond",2]]) {
 		#if((index["bond","end"] - index["bond","start"]) < 1) {
@@ -202,9 +232,27 @@ setClass("SDF", representation(header="character", atomblock="matrix",
                 return(ctma)
 	}
 	bondblock <- bb2matrix(ct=sdf[index["bond",1]:index["bond",2]])
+	v2kTimes$bond<- v2kTimes$bond + (Sys.time() - t)
 	
-	## SDF name/value block
-	ex2vec <- function(extradata=sdf[index["extradata",1]:index["extradata",2]]) {
+	
+	t=Sys.time()
+	if(tail2vec==TRUE) {
+		extradata <- ex2vec(extradata=sdf[index["extradata",1]:index["extradata",2]])
+	} else {	
+		extradata <- sdf[index["extradata",1]:index["extradata",2]]
+	}
+	v2kTimes$data<- v2kTimes$data+ (Sys.time() - t)
+
+	## Assemble components in object of class SDF
+	if(datablock==TRUE) {
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock, datablock=extradata)
+	} else {
+		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock)
+	}
+	return(sdf)
+}
+## SDF name/value block
+ex2vec <- function(extradata) {
                 exstart <- grep("^>", extradata)
 		if(length(exstart)==0) { 
                         exvec <- vector("character", length=0) 
@@ -215,22 +263,269 @@ setClass("SDF", representation(header="character", atomblock="matrix",
 		}
                 return(exvec)
 	}
-	
-	if(tail2vec==TRUE) {
-		extradata <- ex2vec(extradata=sdf[index["extradata",1]:index["extradata",2]])
-	} else {	
-		extradata <- sdf[index["extradata",1]:index["extradata",2]]
+
+
+findPositions = function(sdf){
+
+	patterns = c("BEGIN CTAB","COUNTS","BEGIN ATOM","END ATOM", 
+					 "BEGIN BOND", "END BOND","M  END")
+
+	tagPositions = lapply(patterns,function(pattern) grep(pattern,sdf,fixed=TRUE))
+	tagPositions[which(lapply(tagPositions,length)==0)] = -1 # ensure unlist does not remove undefined entries
+	tagPositions = unlist(tagPositions)
+
+	unfound = which(tagPositions == -1)
+	if(length(unfound) != 0){ # some tags are missing
+		warning("malformed SDF V3000 file, could not find tags ",
+				  paste("\"",patterns[unfound],"\"",sep="",collapse=","))
 	}
+
+	tagPositions
+
+}
+v3kTimes = new.env()
+v3kTimes$header = 0
+v3kTimes$atom = 0
+v3kTimes$atomCore = 0
+v3kTimes$bond = 0
+v3kTimes$data = 0
+
+.parseV3000 <- function(sdf, datablock=TRUE, tail2vec=TRUE,extendedAttributes=FALSE) {
+	#message("found V3000 formatted compound")
+	sdfLength = length(sdf)
+
+	t=Sys.time()
+	tagPositions=findPositions(sdf)
+
+
+	ctabPos = tagPositions[1]
+	if(ctabPos == -1){
+		header = sdf[1:4]
+	}else
+		header = sdf[1:(ctabPos-1)]
+	
+	if(length(header)==4) 
+		names(header) <- c("Molecule_Name", "Source", "Comment", "Counts_Line")	
+
+	countLinePos = tagPositions[2]
+	if(countLinePos == -1){
+		counts=c(0,0)
+	}else{
+		counts = as.numeric(cstrsplit(sdf[countLinePos])[c(4,5)])
+	}
+	#message("class of counts: ",class(counts))
+	#print(counts)
+	v3kTimes$header <- v3kTimes$header + (Sys.time() - t)
+
+
+	t=Sys.time()
+	#message("parsing atomblock")
+	atomPos = tagPositions[3]
+	if(atomPos == -1){
+		warning("No ATOM block found in ",sdf[1]," returning a dummy atom block")
+		atomblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+	}else{
+		#message("atomPos: ",atomPos," class: ",class(atomPos))
+		atomEndPos = tagPositions[4]
+		if(atomEndPos == -1){
+				warning("Could not find the end of the ATOM block in ",sdf[1])
+				atomEndPos = atomPos + 1 #assume and emtpy atom block
+		}
+
+		
+		data = Reduce(rbind,Map(function(line) {
+				parts = cstrsplit(line)
+				attrs = if(length(parts) > 8)
+								paste(parts[9:length(parts)],collapse=" ")
+						  else ""
+				c(parts[3:7],attrs)
+			}, sdf[(atomPos+1):(atomEndPos-1)]))  #TODO: check for empty range
+		#if(extendedAttributes)
+		#	extAtomAttrs = parseAttributes(data[,6])
+		extAtomAttrs = parseAttributes(data[,6])
+
+
+		# we need to tranlate certain "Standard" attribute values from v3k back
+		# into the v2k format to make things consistent
+		#
+		# <mass difference>  MASS  v2k: offset from pt v3k: actual value
+		# <charge>   CHG           v2k: value of 1-7   v3k: actual charge value
+		# <atom stereo parity>  CFG
+		# <hydrogen count +1>   HCOUNT
+		# <stereo care box>  STBOX
+		# <valence>   VAL			v2k: 15 indicates 0  v3: -1 indicates 0
+		standardAttrs = matrix(0,nrow(data),7)
+		for(i in seq(along=extAtomAttrs)){ # for each atom
+			mass = extAtomAttrs[[i]]$MASS
+			if(!is.null(mass)){
+				massDiff = mass - AW[data[i,2]]
+				standardAttrs[i,1] = massDiff
+			}
+			chg= extAtomAttrs[[i]]$CHG
+			if(!is.null(chg)){
+				chg= 4 - as.numeric(chg)
+				if(chg == 4) # undo shift for 0 values
+					chg = 0
+				if(chg < 1 || chg > 7) 
+					chg = 0 # chg not in [1,7] => 0
+				standardAttrs[i,2] = chg 
+			}
+			cfg = extAtomAttrs[[i]]$CFG
+			if(!is.null(cfg)){
+				standardAttrs[i,3] = cfg
+			}
+			hcount = extAtomAttrs[[i]]$HCOUNT
+			if(!is.null(hcount)){
+				standardAttrs[i,4] = hcount
+			}
+			stbox = extAtomAttrs[[i]]$STBOX
+			if(!is.null(stbox)){
+				standardAttrs[i,5] = stbox
+			}
+			val = extAtomAttrs[[i]]$val
+			if(!is.null(val)){
+				if(val == -1) # means 0 in v3k
+					val = 15   # translate to 0 in v2k 
+				standardAttrs[i,6] = val
+			}
+		}
+
+    	#print(extAtomAttrs)
+		atomblock =cbind(data[,3:5],standardAttrs)
+		mode(atomblock)="numeric"
+		#print(atomblock)
+		colnames(atomblock) = paste("C",c(1:3,5:11),sep="")
+		rownames(atomblock) = paste(data[,2],data[,1],sep="_")
+	}
+	v3kTimes$atom<- v3kTimes$atom+ (Sys.time() - t)
+
+
+	t=Sys.time()
+	#message("parsing bond block")
+	bondPos = tagPositions[5]
+	if(bondPos == -1){
+		warning("No BOND block found in ",sdf[1]," returning a dummy bond block")
+		bondblock <- matrix(rep(0,2), 1, 2, dimnames=list("0", c("C1", "C2"))) # Creates dummy matrix in case there is none.
+	}else{
+		bondEndPos = tagPositions[6]
+		if(bondEndPos == -1){
+	  		warning("Could not find the end of the BOND block in ",sdf[1])
+	  		bondEndPos = bondPos + 1 #assume and emtpy atom block
+		}
+
+#t2=Sys.time()
+		data = Reduce(rbind,Map(function(line) {
+				#cstrsplit(line)[3:6]
+				parts = cstrsplit(line)
+				attrs=  if(length(parts) > 6)
+								paste(parts[7:length(parts)],collapse=" ")
+						  else ""
+				c(parts[3:6],attrs)
+			}, sdf[(bondPos+1):(bondEndPos-1)]))  #TODO: check for empty range
+#v3kTimes$atomCore<- v3kTimes$atomCore+ (Sys.time() - t2)
+		extBondAttrs = parseAttributes(data[,5])  # +2.6s
+
+		# CFG  bond configuration(stereo)  change: 0 -> 0, 1-> 1, 2-> 4, 3->6
+		# empty slot
+		# TOPO  same
+		# RXCTR same
+		standardAttrs = matrix(0,nrow(data),4)  # +0.8s
+		for(i in seq(along=extBondAttrs)){  # +1.3s
+			cfg=extBondAttrs[[i]]$CFG
+			if(!is.null(cfg)){
+				#cfg = extBondAttrs[[i]]$CFG
+				if(cfg == 2) cfg = 4
+				else if(cfg == 3) cfg = 6
+				standardAttrs[i,1] = cfg
+			}
+			topo=extBondAttrs[[i]]$TOPO
+			if(!is.null(topo)){
+				standardAttrs[i,3] = topo
+			}
+			rxctr=extBondAttrs[[i]]$rxctr
+			if(!is.null(rxctr)){
+				standardAttrs[i,4] = rxctr
+			}
+		}
+
+		bondblock = cbind(data[,c(3,4,2)],standardAttrs) # +0.5s
+		#bondblock = data[,c(3,4,2)]
+		mode(bondblock)="numeric"
+		colnames(bondblock) = paste("C",1:7,sep="")
+		rownames(bondblock) = data[,1]
+	}
+	v3kTimes$bond<- v3kTimes$bond+ (Sys.time() - t)
+
+
+	#message("parsing extra data")
+	t=Sys.time()
+	endPos = tagPositions[7]
+	if(endPos == -1){
+		warning("no END tag found in ",sdf[1])
+		extradata = vector("character",length=0)
+	}else{
+		if(endPos+2 < sdfLength){
+			extradata = if(tail2vec==TRUE) ex2vec(sdf[(endPos+1):sdfLength])
+							else sdf[(endPos+1):sdfLength]
+		}
+		else
+			extradata = vector("character",length=0)
+	}
+	v3kTimes$data <- v3kTimes$data + (Sys.time() - t)
 
 	## Assemble components in object of class SDF
-	if(datablock==TRUE) {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock, datablock=extradata)
-	} else {
-		sdf <- new("SDF", header=header, atomblock=atomblock, bondblock=bondblock)
+	className = "SDF"
+	args = list( header=header, atomblock=atomblock, bondblock=bondblock,version="V3000")
+	if(datablock==TRUE) 
+		args = c(args,datablock=list(extradata))
+	
+	if(extendedAttributes==TRUE) {
+		className = "ExtSDF"
+		args = c(args,extendedAtomAttributes =list(extAtomAttrs),
+					extendedBondAttributes = list(extBondAttrs) )
 	}
-	return(sdf)
-}
+	#message("className: ",className," args: ")
+	#print(str(args))
 
+	sdf = do.call("new",c(className,args))
+
+	return(sdf)
+
+}
+trim <- function(str) gsub("^\\s+|\\s+$","",str)
+parseAttributes <- function(attributes){
+	#message("attributes: ")
+	#print(attributes)
+
+	if(all(attributes=="")){
+		return(sapply(seq(along=attributes),function(i) list()))
+	}
+
+
+	starts = gregexpr("(^|\\s)[a-zA-Z0-9]+=",attributes)
+	sapply(seq(along=attributes),function(i) {
+			 if(attributes[i]=="")
+				 list()
+			 else{
+				 starts[[i]][length(starts[[i]])+1] = nchar(attributes[i])
+	#			 message("starts[[",i,"]]:")
+	#			 print(starts[[i]])
+				 sapply(1:(length(starts[[i]])-1),function(j){
+						pair = unlist(strsplit(
+											  substring(attributes[i],starts[[i]][j],starts[[i]][j+1])
+											  ,"=",fixed=TRUE) )
+	#					print(pair)
+						if(length(pair) != 2)
+							warning("bad key value pair found:
+									  ",substring(attributes[i],starts[[i]][j],starts[[i]][j+1]))
+						l=list()
+						l[[trim(pair[1])]] = trim(pair[2])
+						l
+				
+				})
+			 }
+	 })
+}
 ## Accessor methods for SDF class
 setGeneric(name="sdf2list", def=function(x) standardGeneric("sdf2list"))
 setMethod(f="sdf2list", signature="SDF", definition=function(x) {return(list(header=header(x), atomblock=atomblock(x), bondblock=bondblock(x), datablock=datablock(x)))}) 
@@ -353,6 +648,42 @@ setAs(from="list", to="SDF",
 		new("SDF", bondblock=from$bondblock, header=from$header, atomblock=from$atomblock, datablock=from$datablock)
 })
 
+################################################# 
+##  ExtSDF
+################################################# 
+
+setClass("ExtSDF",representation(extendedAtomAttributes="list",
+											extendedBondAttributes="list"),contains="SDF")
+
+setGeneric(name="getAtomAttr", def=function(x,atomId,tag) standardGeneric("getAtomAttr"))
+setMethod(f="getAtomAttr", signature="ExtSDF",definition = 
+			 function(x,atomId,tag) x@extendedAtomAttributes[[atomId]][[tag]])
+
+setGeneric(name="getBondAttr", def=function(x,bondId,tag) standardGeneric("getBondAttr"))
+setMethod(f="getBondAttr", signature="ExtSDF",definition = 
+			 function(x,bondId,tag) x@extendedBondAttributes[[bondId]][[tag]])
+setMethod(f="show", signature="ExtSDF",                
+   definition=function(object) {
+		callNextMethod(object)
+		nonEmptyAtoms = which(sapply(object@extendedAtomAttributes,
+											  function(x) length(x)!=0))
+		message("<<Extended Atom Attributes>>")
+		count = min(5,length(nonEmptyAtoms))
+		for(i in nonEmptyAtoms[seq(1,count,length.out=count)]){
+			message("Atom ",i)
+			print(object@extendedAtomAttributes[[i]])
+		}
+
+		nonEmptyBonds = which(sapply(object@extendedBondAttributes,
+											  function(x) length(x)!=0))
+		message("<<Extended Bond Attributes>>")
+		count = min(5,length(nonEmptyBonds))
+		for(i in nonEmptyBonds[seq(1,count,length.out=count)]){
+			message("Bond ",i)
+			print(object@extendedBondAttributes[[i]])
+		}
+	})
+ 
 ################################################# 
 ## (3) Class and Method Definitions for SDFset ##
 #################################################
@@ -785,18 +1116,16 @@ SDF2apcmp <- function(SDF) {
 
 	cmp = list(atoms=atoms, bonds=list(u=u, v=v, t=t), n_atoms=n_atoms, n_bonds=n_bonds)
 
-	if(.has.pp()){
-	   # assume we have an SDF object, not an SDFset
-		sdfstr=as(as(SDF,"SDFstr"),"list")[[1]]
-		defs = paste(sdfstr,collapse="\n")
-		#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
-		d <- Descriptors()
-		if (Descriptors_parse_sdf(self=d, sdf=defs) == 0) {
-			stop("SDF format not available or SDF not well-formatted!")
-			return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
-		}
-		cmp$desc_obj=d
+	# assume we have an SDF object, not an SDFset
+	sdfstr=as(as(SDF,"SDFstr"),"list")[[1]]
+	defs = paste(sdfstr,collapse="\n")
+	#defs = unlist(Map(function(x) paste(x,collapse="\n"), sdfstrList) )
+	d <- Descriptors()
+	if (Descriptors_parse_sdf(self=d, sdf=defs) == 0) {
+		stop("SDF format not available or SDF not well-formatted!")
+		return(list(n_atoms=0, n_bonds=0, desc_obj=NULL))
 	}
+	cmp$desc_obj=d
 
 	return(cmp)
 }
@@ -806,31 +1135,29 @@ setClass("AP", representation(AP="numeric"))
 setClass("APset", representation(AP="list", ID="character"))
 
 ## Create instance of APset form SDFset 
-sdf2ap <- function(sdfset, type="AP") {
+sdf2ap <- function(sdfset, type="AP",uniquePairs=TRUE) {
         if(!class(sdfset) %in% c("SDF", "SDFset")) stop("Functions expects input of classes SDF or SDFset.")
         if(class(sdfset)=="SDF") {
 	         if(type=="AP") {
-                	#return(new("AP", AP=.gen_atom_pair(SDF2apcmp(sdfset))))
-                	return(new("AP", AP=genAPDescriptors(sdfset)))
+                	return(new("AP",
+										AP=genAPDescriptors(sdfset,uniquePairs)))
         	   }
 	         if(type=="character") {
-                	#return(paste(.gen_atom_pair(SDF2apcmp(sdfset)), collapse=", "))
-                	return(paste(genAPDescriptors(sdfset), collapse=", "))
+                	return(paste(genAPDescriptors(sdfset,uniquePairs), collapse=", "))
         	   }
 	     }
         if(class(sdfset)=="SDFset") {
                 aplist <- as.list(seq(along=sdfset))
                 exception <- FALSE
                 for(i in seq(along=aplist)) {
-                        #tmp <- try(.gen_atom_pair(SDF2apcmp(sdfset[[i]])), silent=TRUE)
-                        tmp <- try(genAPDescriptors(sdfset[[i]]))
+                        tmp <- try(genAPDescriptors(sdfset[[i]],uniquePairs))
                         if(length(tmp) > 0 & class(tmp)!="try-error") {
                                 aplist[[i]] <- tmp
                         } else if(length(tmp) == 0 & class(tmp)!="try-error") {
-                                aplist[[i]] <- 0 # Value to use if no atom pairs are returned by .gen_atom_pair
+                                aplist[[i]] <- 0 # Value to use if no atom pairs are returned 
                                 exception <- TRUE
                         } else if(class(tmp)=="try-error") {
-                                aplist[[i]] <- 1 # Value to use if error is returned by .gen_atom_pair
+                                aplist[[i]] <- 1 # Value to use if error is returned 
                                 exception <- TRUE
                         }
                 }
@@ -1282,6 +1609,7 @@ makeUnique <- function(x, silent=FALSE) {
 atomcountMA <- function(x, ...) {
         if(class(x)=="SDF") x <- as(x, "SDFset")
 	atomcountlist <- atomcount(x, ...) 	
+
 	columns <- unique(unlist(lapply(seq(along=atomcountlist), function(x) names(atomcountlist[[x]]))))
         myMA <- matrix(NA, length(atomcountlist), length(columns), dimnames=list(NULL, columns))
         for(i in seq(along=atomcountlist)) myMA[i, names(atomcountlist[[i]])] <- atomcountlist[[i]]
@@ -1291,12 +1619,13 @@ atomcountMA <- function(x, ...) {
 }
 
 ## (6.3.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
-data(atomprop); atomprop <- atomprop # Import MW data frame from /data into workspace.
 MW <- function(x, mw=atomprop, ...) {
-        if(class(x)=="SDF") x <- as(x, "SDFset")
-	## Create MW vector with atom symbols in name slot
-	AW <- mw$Atomic_weight; names(AW) <- mw$Symbol
+   if(class(x)=="SDF") x <- as(x, "SDFset")
 	
+	## Create MW vector with atom symbols in name slot
+	AW <- mw$Atomic_weight
+	names(AW) <- mw$Symbol
+
 	## Calculate MW
 	propma <- atomcountMA(x, ...)
 	MW <- rowSums(t(t(propma) * AW[colnames(propma)]), na.rm = TRUE) 
@@ -1561,7 +1890,7 @@ rings <- function(x, upper=Inf, type="all", arom=FALSE, inner=FALSE) {
 			myrings <- .rings(cyclist, upper+1) # Plus 'upper+1' is required because at this step all rings have duplicated atoms at ring closure
 			myrings <- lapply(myrings, function(x) x[-1]) # Removes duplicated atom at ring closure 
 			if(upper==Inf & inner==TRUE) myrings <- .is.inner(x=myrings) # Reduces myrings to inner rings only 
-                        if(arom==TRUE) {
+			if(arom==TRUE) {
 				myarom <- .is.arom(sdf=x, rings=myrings)
 				if(type=="all") return(list(RINGS=myrings, AROMATIC=myarom))
 				if(type=="arom") return(list(AROMATIC_RINGS=myrings[myarom]))
@@ -2333,3 +2662,20 @@ setMethod("show", signature=signature(
         cat("status:\t\t", response, "\n")
     }
 )
+
+cstrsplit <- function(line) .Call(cstrsplitSym,line)
+#cstrsplit <- cxxfunction(signature(l="character"),includes='
+#					#include <R.h>
+#					#include <boost/algorithm/string.hpp>
+#								',body='
+#					std::vector<std::string> strs;
+#					const char *line = CHAR(STRING_ELT(l,0));
+#					boost::split(strs, line, boost::is_any_of("\t "),boost::token_compress_on);
+#
+#					he
+#					CharacterVector output2(strs.begin(),strs.end());
+#					return output2;
+#
+#					',plugin="Rcpp")
+
+	

@@ -16,20 +16,32 @@ test.formatConversions <- function() {
 
 test.genAPDescriptors <- function(){
 
+	DEACTIVATED("removed old version of function")
+
 	data(sdfsample)
 	
 	for(i in 1:100){
 		sdf = sdfsample[[i]]
-		desc = genAPDescriptors(sdf)
-		#print(desc);
+		desc = genAPDescriptors(sdf) 
+		#print(head(desc));
 
 		oldDesc=ChemmineR:::.gen_atom_pair(ChemmineR:::SDF2apcmp(sdf))
                  
 		#print(oldDesc);
-		checkTrue(all(desc == oldDesc))
-		#print(all(desc == oldDesc))
-	}
+		compResult = desc==oldDesc
+		if(!all(compResult)){
+			message("descriptor mismatch")
+			print(oldDesc[!compResult])
+			print(desc[!compResult])
+			message("----------")
+			firstFalse = match(FALSE,compResult)
+			print(oldDesc[(firstFalse-5):(firstFalse+5)])
+			print(desc[(firstFalse-5):(firstFalse+5)])
 
+		}
+		checkTrue(all(compResult))
+		#checkEqualsNumeric(desc,oldDesc)
+	}
 }
 test.propOB <- function() {
 	data(sdfsample)
@@ -114,5 +126,45 @@ test.canonicalize <- function(){
 
 	checkEqualsNumeric(bb[1,1:3],c(2,3,1))
 	checkEqualsNumeric(bb[2,1:3],c(2,4,1))
+
+}
+test.parseV3000 <- function() {
+
+	DEACTIVATED("requires local files")
+	sdfset2 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.v2k.sdf")
+	sdfset3 = read.SDFset("~/runs/v3000/DrugLike-0_2-3K3K_1.sdf")  
+
+	compareSdfVersions = function(v2k,v3k){
+		checkEquals(sdfid(v2k),sdfid(v3k))
+
+		#message("v2k: ",nrow(atomblock(v2k)),"x",ncol(atomblock(v2k)))
+		#message("v3k: ",nrow(atomblock(v3k)),"x",ncol(atomblock(v3k)))
+		#print(head(atomblock(v2k)))
+		#print(head(atomblock(v3k)))
+		toCompare = c(1:5,7:10) #exclude colum 6
+		checkTrue( all(atomblock(v2k)[,toCompare] ==
+							atomblock(v3k)[,toCompare]))
+
+#		cmp = bondblock(v2k)[,1:3] == bondblock(v3k)
+#		if(! all(cmp)){
+#			mismatched = which(cmp==FALSE)
+#			print(cmp)
+#			print("mismatched: ")
+#			print(mismatched)
+#			print("data:")
+#			print(bondblock(v2k)[mismatched,1:3])
+#			print(bondblock(v3k)[mismatched,])
+#		}
+#		checkTrue( all(bondblock(v2k)[,1:3] == bondblock(v3k)))
+
+		checkTrue( all(datablock(v2k) == datablock(v3k)))
+	}
+	for(i in seq(along=sdfset2)){
+		#if(!(i  %in% c(38,39,89))){ # this differ in acceptable ways
+		#	message("testing ",i, " id: ",sdfid(sdfset2[i]))
+			compareSdfVersions(sdfset2[[i]],sdfset3[[i]])
+		#}
+	}
+
 
 }

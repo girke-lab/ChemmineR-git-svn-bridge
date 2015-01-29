@@ -43,6 +43,7 @@ Objects can be created by calls of the form \code{new("SDF", ...)}.
     \item{\code{bondblock}:}{Object of class \code{"matrix"} }
     \item{\code{datablock}:}{Object of class \code{"character"} }
     \item{\code{obmolRef}:}{Object of class \code{"ExternalReferenceOrNULL"} }
+    \item{\code{version}:}{Object of class \code{"character"} }
   }
 }
 \section{Methods}{

@@ -26,6 +26,7 @@ if(!file.exists(fpsetDataName)){
 	message("desc time: ",ChemmineR:::times$descT)
 	message("fac time: ",ChemmineR:::times$facT)
 	message("vec time: ",ChemmineR:::times$vecT)
+	message("uniquify time: ",ChemmineR:::times$uniqueT)
 
 	save(fpset,file=fpsetDataName)
 
