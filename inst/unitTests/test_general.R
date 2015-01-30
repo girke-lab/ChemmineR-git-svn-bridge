@@ -103,6 +103,31 @@ test.fpSim <- function(){
 		#print(simFast)
 		checkEqualsNumeric(sim,simFast,tolerance=0.00001)
 	}
+
+	
+}
+test.fpSimParameters<- function(){
+	data(apset)
+	fpset = desc2fp(apset)
+
+	params = genParameters(fpset)
+
+	similarities = fpSim(fpset[[1]],fpset,top=6,parameters=params)
+	#print(similarities)
+
+	checkEqualsNumeric(similarities$similarity, 
+							 c(1,0.471910112359551,0.428849902534113,0.427522935779817,0.424742268041237,0.418738049713193),
+							 tolerance = 0.0001)
+	checkEqualsNumeric(similarities$zscore, 
+							 c(6.41202501933441,1.6379277432492,1.24865001753133,1.23665382424036,1.21151572069559,1.15723571451518),
+							 tolerance = 0.0001)
+	checkEqualsNumeric(similarities$evalue, 
+							 c(0.00000,6.36243,11.64270,11.84515,12.27769,13.25050),
+							 tolerance = 0.0001)
+	checkEqualsNumeric(similarities$pvalue, 
+							 c(0,0.998274830604939,0.999991217102066,0.999992826756578,0.999995345559029,0.999998240535916),
+							 tolerance = 0.0001)
+
 }
 test.exactMassOB <- function(){
 	data(sdfsample)
