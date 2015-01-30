@@ -4,12 +4,6 @@ cstrsplitSym=NA
 	#message("libname: ",libname)
 	#message("pkgname: ",pkgname)
 	cstrsplitSym <<- getNativeSymbolInfo("cstrsplit")
-
-	require(utils)
-	data(atomprop,package=pkgname)
-	## Create MW vector with atom symbols in name slot
-	AW <- atomprop$Atomic_weight
-	names(AW) <- atomprop$Symbol
 }
 
 .db.header.size <- 16

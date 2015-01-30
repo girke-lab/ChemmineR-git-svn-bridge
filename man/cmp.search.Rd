@@ -10,7 +10,7 @@
 }
 \usage{
     cmp.search(db, query, type=1, cutoff = 0.5, return.score = FALSE, quiet = FALSE,
-		    mode = 1)
+		    mode = 1,visualize = FALSE, visualize.browse = TRUE, visualize.query = NULL)
 }
 \arguments{
 	\item{db}{The compound descriptor database returned by 'cmp.parse'.}
@@ -27,6 +27,12 @@
 	\item{quiet}{Whether to disable progress information.}
 	\item{mode}{Mode used when computing similarity scores. This value is
 	passed to 'cmp.similarity'.}
+	\item{visualize}{
+	}
+	\item{visualize.browse}{
+	}
+	\item{visualize.query}{
+	}
 }
 \details{
 	'cmp.search' will go through all the compound descriptors in the

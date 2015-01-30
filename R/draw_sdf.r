@@ -1,4 +1,6 @@
 library(ggplot2)
+library(grid)
+library(gridExtra)
 
 default_node_policy = function() {
 	return(c(	'N'='blue',
@@ -20,18 +22,21 @@ default_edge_policy = function() {
 	
 	}
 
-concatenate_plots = function(sdf_list, filename='./../.html/test.jpg', ...) {
-	require(grid)
-	require(gridExtra)
+concatenate_plots = function(sdf_list, filename=NULL, ...) {
 
 	image_list = list()
 	for (i in 1:length(sdf_list)) {
 		image_list[[i]] = draw_sdf(sdf_list[[i]], filename=NULL,...)
 		}
 
+	image_list = do.call(arrangeGrob, image_list)
 	if (!is.null(filename)) {
-		ggsave(filename, do.call(arrangeGrob, image_list))
+		#ggsave(filename, do.call(arrangeGrob, image_list))
+		ggsave(filename, image_list)
 		}
+	#image_list = do.call(arrangeGrob, image_list)
+	return(image_list)
+	# todo figure out how to return concatenated images
 	} # end function concatenate_plots
 
 handle_raster = function(plot_target, raster) {
@@ -48,7 +53,7 @@ handle_raster = function(plot_target, raster) {
 	return(plot_target)
 	}
 
-handle_text = function(sdf, plot_target, alpha_node = 1.0, numbered = FALSE, font_size = 7, node_vertical_offset = 0, node_policy = default_node_policy(), fmcs_result = NULL) {
+handle_text = function(sdf, plot_target, alpha_node = 1.0, numbered = FALSE, font_size = 7, node_vertical_offset = 0, node_background_color = FALSE, node_policy = default_node_policy(), fmcs_result = NULL) {
 	# handles printing of text to a plot_target
 	# Args:
 	#	sdf: from main draw_sdf function
@@ -94,6 +99,13 @@ handle_text = function(sdf, plot_target, alpha_node = 1.0, numbered = FALSE, fon
 	# draw atoms as text
 	node_frame[,2] = node_frame[,2] + node_vertical_offset
 	node_frame = data.frame(node_frame)
+	
+	# add coloration editing here
+	if (node_background_color != FALSE) {
+		# presumably it's a color...
+		plot_target = plot_target + geom_point(data = node_frame, aes(x=C1, y = C2), color = node_background_color, size = font_size + 1)
+		}
+
 	plot_target = plot_target + geom_text(alpha = alpha_node, data=node_frame, aes(x=C1, y=C2), label = toprint, color=color_list, size = font_size)
 
 	if (!is.null(fmcs_result)) {
@@ -197,7 +209,6 @@ handle_segs = function(sdf, plot_target, alpha_edge = 0.5, edge_policy = default
 	rownames(edge_matrix) = NULL
 	edge_matrix = data.frame(edge_matrix)
 	plot_target = plot_target + geom_segment(alpha = alpha_edge, data=edge_matrix, aes(x=C1, y=C2, xend=C1.1, yend=C2.1), color = color_vec)
-
 	return(plot_target)
 	}
 
@@ -208,6 +219,7 @@ draw_sdf = function(	sdf,
 			numbered=FALSE,
 			font_size=5,
 			node_vertical_offset = 0,
+			node_background_color = FALSE,
 			bgcolor = rgb(1,1,1,1),
 			bgraster = NULL,
 			node_policy = default_node_policy(),
@@ -247,7 +259,7 @@ draw_sdf = function(	sdf,
 	#	> draw_sdf(sdfsample[[2]], filename='././file_one.png', bgraster = 'demo_raster.png', fmcsR_sdf = sdfsample[[2]])
 	
 	if (length(sdf) > 1) {
-		return(concatenate_plots(sdf, filename, alpha_edge, alpha_node, numbered, font_size, node_vertical_offset, bgcolor, bgraster, node_policy, edge_policy, fmcsR_sdf))
+		return(concatenate_plots(sdf, filename, alpha_edge, alpha_node, numbered, font_size, node_vertical_offset, node_background_color, bgcolor, bgraster, node_policy, edge_policy, fmcsR_sdf))
 		# todo add in all args as we develop this function
 		} # end if: multiple SDF
 
@@ -265,7 +277,7 @@ draw_sdf = function(	sdf,
 		fmcs_result = fmcs_result@mcs1$mcs1$CMP1_fmcs_1
 		}
 	plot_target = handle_segs(sdf, plot_target, alpha_edge, edge_policy, bond_dist_offset, fmcs_result)
-	plot_target = handle_text(sdf, plot_target, alpha_node, numbered, font_size, node_vertical_offset, node_policy, fmcs_result)
+	plot_target = handle_text(sdf, plot_target, alpha_node, numbered, font_size, node_vertical_offset, node_background_color, node_policy, fmcs_result)
 
 	# fix background
 	plot_target = plot_target + theme(panel.background = element_rect(fill=bgcolor, color='black'))

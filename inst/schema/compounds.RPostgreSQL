@@ -32,7 +32,7 @@ CREATE TABLE compound_descriptors (
 	priority INTEGER NOT NULL DEFAULT 0,
 	UNIQUE(compound_id,descriptor_id)
 );
-CREATE INDEX compound_descriptors_descriptor_id_key ON compounds(name);
+CREATE INDEX compound_descriptors_descriptor_id_key ON compound_descriptors(descriptor_id);
 
 
 CREATE VIEW compounds_grouped_by_descriptors AS
