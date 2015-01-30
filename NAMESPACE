@@ -35,6 +35,7 @@ exportMethods(
 export(
     ## Data sets
     ## Source: ./data/
+	 ## these are exporting variables, not "data" objects (though they may also be "data" objects)
     "atomprop", "pubchemFPencoding", 
     
     ## Import/exports

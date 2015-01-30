@@ -1619,6 +1619,7 @@ atomcountMA <- function(x, ...) {
 }
 
 ## (6.3.2) Molecular weight (MW data from http://iupac.org/publications/pac/78/11/2051/)
+data(atomprop); atomprop=atomprop
 MW <- function(x, mw=atomprop, ...) {
    if(class(x)=="SDF") x <- as(x, "SDFset")
 	
