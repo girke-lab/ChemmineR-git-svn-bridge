@@ -36,7 +36,7 @@
 }
 
 \usage{
-setPriorities(conn,priorityFn,descriptorIds=c(),cl=NULL,connSource=NULL){
+setPriorities(conn,priorityFn,descriptorIds=c(),cl=NULL,connSource=NULL)
 forestSizePriorities(conn,compIds)
 randomPriorities(conn,compIds)
 }

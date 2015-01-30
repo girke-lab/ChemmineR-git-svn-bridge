@@ -10,7 +10,9 @@ sdf.visualize(sdf)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+	\item{sdf}{
 	  A \code{SDFset} object which containing the given compounds
+	}
 }
 \references{
 ChemMine Tools web service: http://chemmine.ucr.edu

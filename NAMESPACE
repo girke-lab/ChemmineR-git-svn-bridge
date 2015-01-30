@@ -53,6 +53,7 @@ export(
     ## Plotting
     ## Source: AllClasses.R
     "plotStruc", 
+	 "draw_sdf",
 
     ## Atom pair functions
     ## Source: sim.R
@@ -92,7 +93,6 @@ export(
 	##ChemmineDrugs functions
 	 "DUD","DrugBank",
 
-	#"draw_sdf",  #needs man page
 
     ## Chemmine Tools
     "status","browseJob","result","listCMTools","toolDetails","launchCMTool"
