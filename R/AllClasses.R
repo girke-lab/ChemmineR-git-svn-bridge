@@ -1571,11 +1571,16 @@ setMethod(f="view", signature="FPset", definition=function(x) { as(x, "FP") })
 ## (6.1) Detect Invalid SDFs in SDFset Objects ##
 #################################################
 validSDF <- function(x, Nabcol = 3, Nbbcol = 3, logic="&", checkNA=TRUE) {
-        if(class(x)!="SDFset") warning("x needs to be of class SDFset")
-	ab <- atomblock(x); abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
-        bb <- bondblock(x); bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
-        if(logic=="|") { validsdf <- abcol >= Nabcol | bbcol >= Nbbcol }
-	if(logic=="&") { validsdf <- abcol >= Nabcol & bbcol >= Nbbcol }
+	if(class(x)!="SDFset") 
+		warning("x needs to be of class SDFset")
+	ab <- atomblock(x); 
+	abcol <- sapply(names(ab), function(x) length(ab[[x]][1,]))
+	bb <- bondblock(x); 
+	bbcol <- sapply(names(bb), function(x) length(bb[[x]][1,]))
+	if(logic=="|") 
+		validsdf <- abcol >= Nabcol | bbcol >= Nbbcol 
+	if(logic=="&") 
+		validsdf <- abcol >= Nabcol & bbcol >= Nbbcol 
 	if(checkNA==TRUE) {
         	abNA <- sapply(names(ab), function(x) !any(is.na(ab[[x]])))
         	bbNA <- sapply(names(bb), function(x) !any(is.na(bb[[x]])))
