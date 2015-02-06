@@ -11,6 +11,9 @@
 library(ChemmineR) 
 library(knitcitations)
 RefManageR:::BibOptions(style="markdown",no.print.fields=c("doi"))
+sapply(read.bibtex(file="references.bib"),record_as_cited)
+
+
 ```
 <!--<font color='red'>Porting this vignette to knitr is causing some formatting issues. This will be
  resolved soon.</font>
@@ -43,16 +46,16 @@ of chemoinformatic tools with the R programming environment has many
 advantages, such as easy access to a wide spectrum of statistical
 methods, machine learning algorithms and graphic utilities. The first
 version of this package was published in 
-`r citet(c("10.1093/bioinformatics/btn307"))` . Since then many additional
+`r message("mark a"); citet(c("Cao_2008"))` . Since then many additional
 utilities and add-on packages have been added to the environment and
 many more are under development for future releases (Figure 2; 
-`r citep(c("10.1093/nar/gkr320","10.1093/bioinformatics/btt475"))`).
+`r message("mark b"); citep(c("Backman_2011","Wang_2013"))`).
 
 -   Improved SMILES support via new *SMIset* object class
     and SMILES import/export functions
 
 -   Integration of a subset of OpenBabel functionalities via new
-    *ChemmineOB* add-on package `r citep(c("10.1093/bioinformatics/btn307"))`
+    *ChemmineOB* add-on package `r citep(c("Cao_2008"))`
 
 -   Streaming functionality for processing millions of molecules on a
     laptop
@@ -241,7 +244,7 @@ OpenBabel Functions
 
 *ChemmineR* integrates now a subset of cheminformatics
 functionalities implemented in the OpenBabel C++ library 
-`r citep(c("http://journal.chemistrycentral.com/content/2/1/5", "10.1093/bioinformatics/btn307" ))` . These
+`r citep(c("greycite13432", "Cao_2008" ))` . These
 utilities can be accessed by installing the *ChemmineOB*
 package and the OpenBabel software itself. *ChemmineR*
 will automatically detect the availability of
@@ -1310,7 +1313,7 @@ Ring Perception and Aromaticity Assignment
 
 The function *rings* identifies all possible rings in one
 or many molecules (here *sdfset[1]*) using the exhaustive
-ring perception algorithm from `r citet(c("10.1021/ci960322f"))` . In addition, the function can return
+ring perception algorithm from `r citet(c("Hanser_1996"))` . In addition, the function can return
 all smallest possible rings as well as aromaticity information.
 
 The following example returns all possible rings in a
@@ -1439,7 +1442,7 @@ compound comparisons, structure similarity searching and clustering. The
 manual describing this functionality is available
 [](http://www.bioconductor.org/packages/devel/bioc/vignettes/fmcsR/inst/doc/fmcsR.pdf)
 and the associated publication is available in 
-`r citet(c("10.1093/bioinformatics/btt475"))`. The following gives a
+`r citet(c("Wang_2013"))`. The following gives a
 short preview of some functionalities provided by the
 *fmcsR* package.  
 
@@ -1458,7 +1461,7 @@ AP/APset Classes for Storing Atom Pair Descriptors
 
 The function *sdf2ap* computes atom pair descriptors for
 one or many compounds 
-`r citep(c("10.1021/ci00046a002","10.1021/ci025531g"))` . It returns a searchable atom pair database
+`r citep(c("Carhart_1985","Chen_2002"))` . It returns a searchable atom pair database
 stored in a container of class *APset*, which can be used
 for structural similarity searching and clustering. As similarity
 measure, the Tanimoto coefficient or related coefficients can be used.
@@ -1930,7 +1933,7 @@ Jarvis-Patrick Clustering
 -------------------------
 
 The Jarvis-Patrick clustering algorithm is widely used in
-cheminformatics `r citep("http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=1672233")`. It requires a nearest neighbor table, which consists
+cheminformatics `r citep("greycite13371")`. It requires a nearest neighbor table, which consists
 of *j* nearest neighbors for each item (*e.g.* compound).
 The nearest neighbor table is then used to join items into clusters when
 they meet the following requirements: (a) they are contained in each
@@ -2304,6 +2307,7 @@ References
 
 	for(i in 1:length(b))
 		b[i]$title = fix(b[i]$title)
+#	write.bibtex(file="references.bib")
 	b
 
 ```
