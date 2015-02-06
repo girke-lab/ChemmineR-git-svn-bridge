@@ -1,7 +1,7 @@
 Package: ChemmineR
 Type: Package
 Title: Cheminformatics Toolkit for R
-Version: 2.19.9
+Version: 2.19.10
 Date: 2015-2-6
 Author: Y. Eddie Cao, Kevin Horan, Tyler Backman, Thomas Girke
 Maintainer: ChemmineR Team <khoran@cs.ucr.edu>
