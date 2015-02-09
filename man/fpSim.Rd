@@ -35,27 +35,27 @@ return results sorted or unsorted
 	  back to using the R version. 
 }
   \item{addone}{
-Value to add to numerator and denominator of similarity coefficient to avoid devision by zero when fingerprint(s) contain only "off-bits" (zeros). Note: if \code{addone > 0} then fingerprints with no "on-bits" will receive the highest similarity score. Typically, this occurs only with extremely small molecules.
-}
+		Value to add to numerator and denominator of similarity coefficient to avoid devision by zero when fingerprint(s) contain only "off-bits" (zeros). Note: if \code{addone > 0} then fingerprints with no "on-bits" will receive the highest similarity score. Typically, this occurs only with extremely small molecules.
+	}
   \item{cutoff}{
-allows to restrict results to hits above a similarity cutoff value; default \code{cutoff=0} returns results for all compounds in \code{y}.
-}
+		allows to restrict results to hits above a similarity cutoff value; default \code{cutoff=0} returns results for all compounds in \code{y}.
+	}
   \item{top}{
-allows to restrict number of subject molecules to return; default \code{top="all"} returns results for all compounds in \code{y} above \code{cutoff} value.
-}
+		allows to restrict number of subject molecules to return; default \code{top="all"} returns results for all compounds in \code{y} above \code{cutoff} value.
+	}
   \item{alpha}{
-Only used when method="Tversky". Allows to specify the weighting variable 'alpha' of the Tversky index: c/(alpha*a + beta*b + c)
-}
+		Only used when method="Tversky". Allows to specify the weighting variable 'alpha' of the Tversky index: c/(alpha*a + beta*b + c)
+	}
   \item{beta}{
-Only used when method="Tversky". Allows to specify the weighting variable 'beta' of the Tversky index. 
-}
+		Only used when method="Tversky". Allows to specify the weighting variable 'beta' of the Tversky index. 
+	}
 	\item{parameters}{
 		Parameters for computing Z-scores, E-values, and p-values. Pass this data if you want these
 		scores returned. This data can be generated with the \code{\link{genParameters}} function.
 	}
 	\item{scoreType}{
 		If using the \code{parameters} argument, this argument specified which type of score the
-		\code{cutoff} argument should be applied to. It should be one of "similarity" (default),
+		\code{cutoff} and \code{sorted} arguments should be applied to. It should be one of "similarity" (default),
 		"zscore", "evalue", or "pvalue".
 	}
 }
@@ -68,7 +68,7 @@ Tanimoto similarity coefficient: Tanimoto TT (1957) IBM Internal Report 17th Nov
 PubChem fingerprint specification: ftp://ftp.ncbi.nih.gov/pubchem/specifications/pubchem_fingerprints.txt
 }
 \author{
-Thomas Girke
+Thomas Girke, Kevin Horan
 }
 
 \seealso{

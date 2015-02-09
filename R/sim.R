@@ -718,7 +718,6 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 		#stop("invalid method type found: ",class(method))
 
 
-
 	if(!any(c(is.vector(x), class(x)=="FP", class(x)=="FPset" & length(x)==1))) 
 		stop("x needs to be object of class FP, FPset of length one, or vector")
    if(!any(c(is.vector(y), is.matrix(y), class(y)=="FP", class(y)=="FPset"))) 
@@ -731,7 +730,6 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 	if(class(y)=="FPset") y <- as.matrix(y)
 	if(is.vector(y)) y <- t(as.matrix(y))
    
-
 
 	result=.Call("similarity",x,y,method,addone,alpha,beta)
 	names(result) = rownames(y)
@@ -754,12 +752,12 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 		alpha = parameters$alpha[numBitsSet]
 		beta = parameters$beta[numBitsSet]
 
-		scores = Reduce(rbind,Map(function(i){
-				 zscore = (result[i] - avg) / sqrt(varience)
-				 evalue = N*(1-pbeta(result[i],alpha,beta))
-				 pvalue = 1-exp(-evalue)
-				 data.frame(similarity=result[i],zscore=zscore,evalue=evalue,pvalue=pvalue)
-			},seq(along=result)))
+		evalues = N*(1-pbeta(result,alpha,beta))
+		scores <<- data.frame(similarity=result,
+									 zscore=(result - avg) /sqrt(varience),
+									 evalue=evalues,
+									 pvalue=1-exp(-evalues))
+		
 		titles = 1:4
 		names(titles)=colnames(scores)
 		if(sorted){

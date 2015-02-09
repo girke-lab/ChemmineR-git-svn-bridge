@@ -46,10 +46,10 @@ of chemoinformatic tools with the R programming environment has many
 advantages, such as easy access to a wide spectrum of statistical
 methods, machine learning algorithms and graphic utilities. The first
 version of this package was published in 
-`r message("mark a"); citet(c("Cao_2008"))` . Since then many additional
+`r citet(c("Cao_2008"))` . Since then many additional
 utilities and add-on packages have been added to the environment and
 many more are under development for future releases (Figure 2; 
-`r message("mark b"); citep(c("Backman_2011","Wang_2013"))`).
+`r citep(c("Backman_2011","Wang_2013"))`).
 
 -   Improved SMILES support via new *SMIset* object class
     and SMILES import/export functions
