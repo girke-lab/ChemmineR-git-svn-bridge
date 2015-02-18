@@ -33,6 +33,7 @@ CREATE TABLE compound_descriptors (
 	UNIQUE(compound_id,descriptor_id)
 );
 CREATE INDEX compound_descriptors_descriptor_id_key ON compound_descriptors(descriptor_id);
+CREATE INDEX compound_descriptors_compound_id_key ON compound_descriptors(compound_id);
 
 
 CREATE VIEW compounds_grouped_by_descriptors AS
