@@ -2005,10 +2005,7 @@ groups <- function(x, groups="fctgroup", type="countMA") {
 	}
         groupMA <- sapply(names(groups), function(x) rowSums(neighbors[, rep(grep(groups[x], colnames(neighbors), perl=TRUE),2)]/2))
 	## Fix counts for ambiguous functional groups
-        if(c("ROR" %in% colnames(groupMA))) {
-	        groupMA[, "ROR"] <- groupMA[, "ROR"] - groupMA[, "RCOOR"]
-                groupMA[groupMA < 0] <- 0
-        }
+        if(c("ROR" %in% colnames(groupMA))) groupMA[, "ROR"] <- groupMA[, "ROR"] - groupMA[, "RCOOR"] 
 	if(mylength>1) {
                 return(groupMA)
         } else {
