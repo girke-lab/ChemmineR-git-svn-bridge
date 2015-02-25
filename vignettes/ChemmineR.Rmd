@@ -15,9 +15,6 @@ sapply(read.bibtex(file="references.bib"),record_as_cited)
 
 
 ```
-<!--<font color='red'>Porting this vignette to knitr is causing some formatting issues. This will be
- resolved soon.</font>
--->
 
 ChemmineR
 =========
@@ -1733,7 +1730,43 @@ Clustering example:
  plot(as.dendrogram(hc), edgePar=list(col=4, lwd=2), horiz=TRUE) 
 ```
 
+Fingerprint E-values
+---------------------
+The *fpSim* function can also return Z-scores, E-values, and p-values
+if given a set of score distribution parameters. These parameters can
+be computed over an *fpSet* with the *genParameters* function.
 
+
+```{r eval=TRUE, tidy=FALSE}
+	params = genParameters(fpset)
+```
+This function will compute all pairwise distances between the given
+fingerprints and then fit a Beta distribution to the resulting
+Tanimoto scores, conditioned on the number of set bits in each
+fingerprint. For large data sets where you would not want to compute
+all pairwise distances, you can set what fraction to sample with the
+*sampleFraction* argument. This step only needs to be done once for
+each database of *fpSet* objects. Alternatively, if you have a large
+database of fingerprints, or you believe that the parameters computed
+on a single database are more generally applicable, you can use the
+resulting parameters for other databases as well. 
+
+Once you have a set of parameters, you can pass them to *fpSim* with
+the *parameters* argument. 
+
+```{r eval=TRUE, tidy=FALSE}
+	fpSim(fpset[[1]],fpset,top=10,parameters=params)	
+```
+
+This will then return a data frame with the similarity, Z-score,
+E-value, and p-value. You can change which value will be used as a
+cutoff and to sort by by setting the argument *scoreType* to one of
+these scores. In this way you could set an E-value cutoff of 0.04 for
+example.
+
+```{r eval=TRUE, tidy=FALSE}
+	fpSim(fpset[[1]],fpset,cutoff=0.04,scoreType="evalue",parameters=params)	
+```
 Pairwise Compound Comparisons with PubChem Fingerprints
 -------------------------------------------------------
 
