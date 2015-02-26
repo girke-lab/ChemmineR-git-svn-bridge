@@ -6,7 +6,6 @@
 		\itemize{
 			\item Fingerprint search now provides E-values
 			\item New SDF plotting function, draw_sdf
-			\item
 		}
 	}
 }

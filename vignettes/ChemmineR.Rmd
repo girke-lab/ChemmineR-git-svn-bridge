@@ -297,7 +297,7 @@ plot(sdfset[1], regenCoords=TRUE,print=FALSE)
 ```
 
 *generate3DCoords*: Generate 3D coordinates for compounds with only 2D coordinates.
-```{r eval=TRUE, tidy=FALSE}
+```{r eval=FALSE, tidy=FALSE}
 sdf3D = generate3DCoords(sdfset[1])
 ```
 
