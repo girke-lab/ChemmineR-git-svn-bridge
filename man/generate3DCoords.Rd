@@ -23,6 +23,8 @@ generate3DCoords(sdf)
 }
 
 \examples{
-	data(sdfsample)
-	sdf3D = generate3DCoords(sdfsample[1])
+	\dontrun{
+		data(sdfsample)
+		sdf3D = generate3DCoords(sdfsample[1])
+	}
 }

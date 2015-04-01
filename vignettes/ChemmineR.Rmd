@@ -2179,6 +2179,136 @@ Plot dendrogram with heatmap (here similarity matrix):
 			  density.info="none", trace="none") 
 ```
 
+Searching PubChem
+=================
+
+Get Compounds from PubChem by Id
+--------------------------------
+
+The function *getIds* accepts one or more numeric PubChem
+compound ids and downloads the corresponding compounds from PubChem
+Power User Gateway (PUG) returning results in an *SDFset*
+container. The ChemMine Tools web service is used as an intermediate, to
+translate queries from plain HTTP POST to a PUG SOAP query.  
+
+Fetch 2 compounds from PubChem:
+
+
+```{r getIds, eval=FALSE, tidy=FALSE}
+ compounds <- getIds(c(111,123))
+ compounds 
+```
+
+
+Search a SMILES Query in PubChem
+--------------------------------
+
+The function *searchString* accepts one SMILES string
+(Simplified Molecular Input Line Entry Specification) and performs a
+\>0.95 similarity PubChem fingerprint search, returning the hits in an
+*SDFset* container. The ChemMine Tools web service is
+used as an intermediate, to translate queries from plain HTTP POST to a
+PubChem Power User Gateway (PUG) query.  
+
+Search a SMILES string on PubChem:
+
+
+```{r searchString, eval=FALSE, tidy=FALSE}
+ compounds <- searchString("CC(=O)OC1=CC=CC=C1C(=O)O") compounds 
+```
+
+
+Search an SDF Query in PubChem
+------------------------------
+
+The function *searchSim* performs a PubChem similarity
+search just like *searchString*, but accepts a query in
+an *SDFset* container. If the query contains more than
+one compound, only the first is searched.  
+
+Search an *SDFset* container on PubChem:
+
+
+```{r searchSim, eval=FALSE, tidy=FALSE}
+ data(sdfsample); 
+ sdfset <- sdfsample[1] 
+ compounds <- searchSim(sdfset) 
+ compounds 
+```
+
+ChemMine Tools R Interface
+==========================
+
+ChemMine Web Tools is an online service for analyzing and clustering small molecules. It provides numerous cheminformatics tools which can be used directly on the website, or called remotely from within R. When called within R jobs are sent remotely to a queue on a compute cluster at UC Riverside, which is a free service offered to *ChemmineR* users.
+The website is free and open to all users and is available at <http://chemmine.ucr.edu>. When new tools are added to the service, they automatically become availiable within *ChemmineR* without updating your local R package.
+
+List all available tools:
+
+```{r listCMTools, eval=TRUE, tidy=FALSE}
+listCMTools()
+```
+
+Show options and description for a tool. This also provides an example function call which can be copied
+verbatim, and changed as necessary:
+
+```{r toolDetailsCMT, eval=TRUE, tidy=FALSE}
+toolDetails("Fingerprint Search")
+```
+
+Launch a Job
+------------------------------
+
+When a job is launched it returns a job token which refers to the running job on the UC Riverside cluster. You can check the status of a job or obtain the results as follows. If *result* is called on a job that is still running, it will loop internally until the job is completed, and then return the result.
+
+Launch the tool *pubchemID2SDF* to obtain the structure for PubChem cid 2244:
+
+```{r launchCMTool, eval=FALSE, tidy=FALSE}
+job1 <- launchCMTool("pubchemID2SDF", 2244)
+status(job1)
+result1 <- result(job1)
+```
+
+Use the previous result to search PubChem for similar compounds:
+
+```{r fingerprintSearchCMT, eval=FALSE, tidy=FALSE}
+job2 <- launchCMTool('Fingerprint Search', result1, 'Similarity Cutoff'=0.95, 'Max Compounds Returned'=200)
+result2 <- result(job2)
+job3 <- launchCMTool("pubchemID2SDF", result2)
+result3 <- result(job3)
+```
+
+Compute OpenBabel descriptors for these search results:
+
+```{r obDescriptorsCMT, eval=FALSE, tidy=FALSE}
+job4 <- launchCMTool("OpenBabel Descriptors", result3)
+result4 <- result(job4)
+result4
+```
+
+View Job Result in Browser
+------------------------------
+
+The function *browseJob* launches a web browser to view the results of a job online, just as if they
+had been run from the ChemMine Tools website itself. If you also want the result data within R, you must first call
+the *result* object from within R before calling *browseJob*. Once *browseJob* has been called on a job token,
+the results are no longer accessible within R. 
+
+If you have an account on ChemMine Tools and would like to save the web results from your job, you must first login to your account within the default web browser on your system before you launch *browseJob*. The job will then be assigned automatically to the currently logged in account.
+
+View OpenBabel descriptors online:
+
+```{r obDescriptorsWWW, eval=FALSE, tidy=FALSE}
+browseJob(job4)
+```
+
+Perform binning clustering and visualize result online:
+
+```{r binningClusterWWW, eval=FALSE, tidy=FALSE}
+job5 <- launchCMTool("Binning Clustering", result3, 'Similarity Cutoff'=0.9)
+browseJob(job5)
+```
+
+
 
 Version Information
 ===================
