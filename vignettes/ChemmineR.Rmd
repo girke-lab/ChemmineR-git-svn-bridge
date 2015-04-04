@@ -2244,7 +2244,7 @@ The website is free and open to all users and is available at <http://chemmine.u
 
 List all available tools:
 
-```{r listCMTools, eval=TRUE, tidy=FALSE}
+```{r listCMTools, eval=FALSE, tidy=FALSE}
 listCMTools()
 ```
 
