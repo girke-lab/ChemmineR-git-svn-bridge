@@ -720,7 +720,7 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 
 	if(!any(c(is.vector(x), class(x)=="FP", class(x)=="FPset" & length(x)==1))) 
 		stop("x needs to be object of class FP, FPset of length one, or vector")
-   if(!any(c(is.vector(y), is.matrix(y), class(y)=="FP", class(y)=="FPset"))) 
+   if(!any(c(is.vector(y), is.matrix(y), class(y)=="FP", class(y)=="FPset", class(y)=="big.matrix"))) 
 		stop("y needs to be object of class FP/FPset, vector or matrix")
 
 	## Convert FP/FPset inputs into vector/matrix format
@@ -730,8 +730,11 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 	if(class(y)=="FPset") y <- as.matrix(y)
 	if(is.vector(y)) y <- t(as.matrix(y))
    
+    ## convert regular matrix into big.matrix
+    options(bigmemory.typecast.warning=FALSE)
+    if(class(y)=="matrix") y <- as.big.matrix(y, type="char")
 
-	result=.Call("similarity",x,y,method,addone,alpha,beta)
+	result=.Call("bigMatrixSimilarity",x,y@address,method,addone,alpha,beta)
 	names(result) = rownames(y)
 
 	if(!is.null(parameters)){
