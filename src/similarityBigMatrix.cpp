@@ -12,50 +12,50 @@ using namespace Rcpp;
 RcppExport SEXP bigMatrixSimilarity(SEXP pQueryVector, SEXP pTargetMatrix, 
     SEXP typeS, SEXP addoneS, SEXP alphaS, SEXP betaS){
 BEGIN_RCPP
-	// tell Rcpp what class to use for function parameters
-	NumericVector queryVector(pQueryVector);
-	XPtr<BigMatrix> targetMatrix(pTargetMatrix);
-	MatrixAccessor<char> mat(*targetMatrix); // use char to save memory over int
-	IntegerVector addoneVector(addoneS);
+    // tell Rcpp what class to use for function parameters
+    NumericVector queryVector(pQueryVector);
+    XPtr<BigMatrix> targetMatrix(pTargetMatrix);
+    MatrixAccessor<char> mat(*targetMatrix); // use char to save memory over int
+    IntegerVector addoneVector(addoneS);
     NumericVector typeV(typeS), alphaV(alphaS),betaV(betaS);
-	int addone = addoneVector[0]; // add to numerator and denominator to avoid divide by zero
+    int addone = addoneVector[0]; // add to numerator and denominator to avoid divide by zero
     int type = typeV[0];
     double alpha = alphaV[0];
     double beta = betaV[0];
-	
-	// create R vector to store results
-	NumericVector similarities(targetMatrix->nrow());
+    
+    // create R vector to store results
+    NumericVector similarities(targetMatrix->nrow());
 
-	int sharedBits;
-	int unsharedBits;
+    int sharedBits;
+    int unsharedBits;
     int neither;
     int queryOnly;
     int targetOnly;
 
-	// loop over targets (rows) and compute simlarity
-	for(size_t i=0; i < targetMatrix->nrow(); ++i){
-		sharedBits = 0;
+    // loop over targets (rows) and compute simlarity
+    for(size_t i=0; i < targetMatrix->nrow(); ++i){
+        sharedBits = 0;
         neither = 0;
         queryOnly = 0;
         targetOnly = 0;
 
-		// loop over each bit (columns) and count shared vs unshared 
-		for(size_t j=0; j < targetMatrix->ncol(); ++j){
-			if(queryVector[j] && mat[j][i])
-				sharedBits++;
-			else if(queryVector[j] && ! mat[j][i])
-				queryOnly++;
-			else if(! queryVector[j] && mat[j][i])
-				targetOnly++;
+        // loop over each bit (columns) and count shared vs unshared 
+        for(size_t j=0; j < targetMatrix->ncol(); ++j){
+            if(queryVector[j] && mat[j][i])
+                sharedBits++;
+            else if(queryVector[j] && ! mat[j][i])
+                queryOnly++;
+            else if(! queryVector[j] && mat[j][i])
+                targetOnly++;
             else
                 neither++;
-		}
+        }
 
         unsharedBits = queryOnly + targetOnly;
 
         switch(type){
             case TANIMOTO:
-		        similarities[i] = (double)(sharedBits + addone) / (double)(sharedBits + unsharedBits + addone);
+                similarities[i] = (double)(sharedBits + addone) / (double)(sharedBits + unsharedBits + addone);
                 break;
             case EUCLIDIAN:
                 similarities[i] = sqrt( (double)(sharedBits + neither + addone) / (double)(neither + 
@@ -70,8 +70,8 @@ BEGIN_RCPP
                     (double)(unsharedBits + (2 * sharedBits) + addone);
                 break;
         }
-	}
+    }
 
-	return similarities;
+    return similarities;
 END_RCPP
 }
