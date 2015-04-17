@@ -640,7 +640,8 @@ fp2bit <- function(x, type=3, fptag="PUBCHEM_CACTVS_SUBSKEYS") {
         }
 	if(type==3) {
                 #return(as(fpbitma, "FPset"))
-                return(new("FPset",fpma=fpbitma,type="pubchem"))
+                options(bigmemory.typecast.warning=FALSE)
+                return(new("FPset",fpma=as.big.matrix(fpbitma, type="char"),type="pubchem"))
         }
 }
 
@@ -968,7 +969,8 @@ fingerprintOB <- function(sdfSet,fingerprintName){
    x = fingerprint_OB(obmol(sdfSet),fingerprintName)
 	if(is.vector(x)) x= t(as.matrix(x))
 
-	fpset = new("FPset",fpma=x,
+    options(bigmemory.typecast.warning=FALSE)
+	fpset = new("FPset",fpma=as.big.matrix(x, type="char"),
 					type=fingerprintName)
 	cid(fpset) = cid(sdfSet)
 	fpset
