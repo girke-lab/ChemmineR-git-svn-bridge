@@ -92,9 +92,11 @@ c(fpset[1:4], fpset[11:14]) # concatenation
 
 ## Coerce FPset from/to other objects
 fpma <- as.matrix(fpset) # coerces to matrix
+fpbigma <- as.big.matrix(fpset) # coerces to big.matrix
 fpchar <- as.character(fpset) # coerces to character strings
 as(fpma, "FPset")
 as(fpchar, "FPset")
+as(fpbigma, "FPset")
 
 ## Compound similarity searching with FPset 
 fpSim(x=fpset[1], y=fpset, method="Tanimoto", cutoff=0.4, top=4) 
