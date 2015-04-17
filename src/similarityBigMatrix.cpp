@@ -2,6 +2,8 @@
 #include <math.h>
 #include <bigmemory/MatrixAccessor.hpp>
 
+// Written by Tyler Backman April 2015
+
 using namespace Rcpp;
 
 #define  TANIMOTO 0
