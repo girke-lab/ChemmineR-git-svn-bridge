@@ -16,7 +16,7 @@ fpSim(x, y, sorted=TRUE, method="Tanimoto",
 Query molecule of class \code{numeric}, \code{FP} or \code{FPset} (of length one) containing binary fingerprint data. Both \code{x} and \code{y} need to have the same number of bits and should contain the same type of fingerprints.
 }
   \item{y}{
-Subject molecule(s) of class \code{numeric}, \code{matrix}, \code{FP} or \code{FPset} containing binary fingerprint data.
+Subject molecule(s) of class \code{numeric}, \code{matrix}, \code{big.matrix}, \code{FP} or \code{FPset} containing binary fingerprint data.
 }
   \item{sorted}{
 return results sorted or unsorted
@@ -33,6 +33,11 @@ return results sorted or unsorted
 	  The predefined methods will run a C++ version of this function which is about twice as
 	  fast as the R version. When a custom similarity function is given however, it will fall 
 	  back to using the R version. 
+
+      If a \code{big.matrix} or \code{FPset} is used for the subject molecule(s), performance
+      is roughly 3x faster than a \code{matrix} object, and a greater number of query
+      compounds can be analyzed. This is because the \code{FPset} object internally uses
+      an \code{big.matrix} which does not have a 32 bit size limitation.
 }
   \item{addone}{
 		Value to add to numerator and denominator of similarity coefficient to avoid devision by zero when fingerprint(s) contain only "off-bits" (zeros). Note: if \code{addone > 0} then fingerprints with no "on-bits" will receive the highest similarity score. Typically, this occurs only with extremely small molecules.
