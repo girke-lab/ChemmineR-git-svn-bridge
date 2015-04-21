@@ -50,7 +50,8 @@ test.fp <- function(){
 test.fpset <- function(){
 
 	data = matrix(replicate(1280,if(runif(1)>0.5)1 else 0),10,128)
-	fpset = new("FPset",fpma=data)
+    options(bigmemory.typecast.warning=FALSE)
+	fpset = new("FPset",fpma=as.big.matrix(data, type="char"))
 
 	checkTrue(inherits(fpset,"FPset"))
 
@@ -71,15 +72,15 @@ test.fpset <- function(){
 	checkEquals(foldCount(x),7)
 
 	
-	fpset2 = new("FPset",fpma=data,type="randFP")
+	fpset2 = new("FPset",fpma=as.big.matrix(data, type="char"),type="randFP")
 	checkEquals(fptype(fpset2),"randFP")
 	checkException(c(fpset,fpset2))
 
 	data = matrix(replicate(640,if(runif(1)>0.5)1 else 0),10,64)
-	fpset3 = new("FPset",fpma=data)
+	fpset3 = new("FPset",fpma=as.big.matrix(data, type="char"))
 	checkException(c(fpset,fpset3))
 
-	fpset4 = new("FPset",fpma=data,type="randFP")
+	fpset4 = new("FPset",fpma=as.big.matrix(data, type="char"),type="randFP")
 	catfp1=c(fpset2,fpset2,fpset2)
 	checkEquals(length(catfp1),30)
 

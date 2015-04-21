@@ -1176,16 +1176,17 @@ sdf2ap <- function(sdfset, type="AP",uniquePairs=TRUE) {
 
 ## Create AP Fingerprints
 desc2fp <- function(x, descnames=1024, type="FPset") {
+    options(bigmemory.typecast.warning=FALSE)
 	if(length(descnames) == 1) {
 		data(apfp)
 		descnames <- as.character(apfp$AP)[1:descnames]
 	}	
 	if(class(x)=="APset") { 
-        	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
+        	apfp <- big.matrix(init=0, type="char", nrow=length(x), ncol=length(descnames), dimnames=list(cid(x), descnames))
 		apsetlist <- ap(x)
                 for(i in cid(x)) apfp[i, descnames %in% as.character(apsetlist[[i]])] <- 1
         } else if(class(x)=="list") {
-        	apfp <- matrix(0, nrow=length(x), ncol=length(descnames), dimnames=list(names(x), descnames))
+        	apfp <- big.matrix(init=0, type="char", nrow=length(x), ncol=length(descnames), dimnames=list(names(x), descnames))
 		for(i in names(x)) apfp[i, descnames %in% as.character(x[[i]])] <- 1
 	} else {
 		stop("x needs to be of class APset or list")
@@ -1195,7 +1196,10 @@ desc2fp <- function(x, descnames=1024, type="FPset") {
                 return(new("FPset",fpma=apfp,type="apfp"))
         }
         if(type=="matrix") {
-                return(apfp)
+                return(as.matrix(apfp))
+        }
+        if(type=="big.matrix") {
+                return(as.matrix(apfp))
         }
         if(type=="character") {
                 return(sapply(rownames(apfp), function(x) paste(apfp[x,], collapse="")))
@@ -1339,7 +1343,7 @@ setMethod(f="initialize", signature="FP",definition= function(.Object, ...){
 			  obj
 			})
 
-setClass("FPset", representation(fpma="matrix",type="character",foldCount="numeric"),
+setClass("FPset", representation(fpma="big.matrix",type="character",foldCount="numeric"),
 			prototype=list(foldCount=0))
 setMethod(f="initialize", signature="FPset",definition= function(.Object, ...){
 			  obj <- callNextMethod(.Object, ...)
@@ -1352,8 +1356,9 @@ setMethod(f="initialize", signature="FPset",definition= function(.Object, ...){
 setMethod(f="as.vector", signature="FP", definition=function(x) {return(x@fp)})
 setMethod(f="as.numeric", signature="FP", definition=function(x) {return(x@fp)})
 setMethod(f="as.character", signature="FP", definition=function(x) {return(paste(x@fp, collapse=""))})
-setMethod(f="as.matrix", signature="FPset", definition=function(x) {return(x@fpma)})
-setMethod(f="as.character", signature="FPset", definition=function(x) {sapply(rownames(x@fpma), function(y) paste(x@fpma[y,], collapse=""))})
+setMethod(f="as.matrix", signature="FPset", definition=function(x) {return(as.matrix(x@fpma))})
+setMethod(f="as.big.matrix", signature="FPset", definition=function(x) {return(x@fpma)})
+setMethod(f="as.character", signature="FPset", definition=function(x) {sapply(rownames(x@fpma), function(y) paste(as.matrix(x@fpma)[y,], collapse=""))})
 
 ## Constructor methods
 ## Numeric vector to FP with: as(myvector, "FP")
@@ -1364,12 +1369,22 @@ setAs(from="numeric", to="FP",
 ## Matrix to FPset with: as(mymatrix, "FPset")
 setAs(from="matrix", to="FPset",  
         def=function(from) {
+        options(bigmemory.typecast.warning=FALSE)
+		new("FPset", fpma=as.big.matrix(from, type="char"))
+})
+
+## big.matrix to FPset with: as(mymatrix, "FPset")
+setAs(from="big.matrix", to="FPset",  
+        def=function(from) {
+        if(typeof(from) != "char")
+            stop("big.matrix not of type char")
 		new("FPset", fpma=from)
 })
 
 ## Character to FPset with: as(mychar, "FPset")
 setAs(from="character", to="FPset",  
         def=function(from) {
+        options(bigmemory.typecast.warning=FALSE)
 		read.AP(from, type="fp")
 })
 
@@ -1379,6 +1394,7 @@ setMethod(f="cid", signature="FPset", definition=function(x) { return(rownames(x
 
 ## Replacement method for ID component of FPset using accessor methods.
 setReplaceMethod(f="cid", signature="FPset", definition=function(x, value) {
+    options(bigmemory.allow.dimnames=TRUE)
 	rownames(x@fpma) <- value 
 	if(any(duplicated(rownames(x@fpma)))) { 
 		warning("The values in the CMP ID slot are not unique anymore. To fix this, run: cid(fpset) <- makeUnique(cid(fpset))")
@@ -1424,7 +1440,7 @@ setMethod(f="fold",signature="FP", definition=function(x,count,bits){
 })
 setMethod(f="fold",signature="FPset", definition=function(x,count,bits) {
 			 actualFolds=0
-			 data = apply(x@fpma,c(1),function(y){
+			 data = apply(as.matrix(x@fpma),c(1),function(y){
 								 result = foldVector(y,count,bits)
 								 actualFolds <<- result$actualFoldCount #just keep the last one, they should all be the same
 								 result$fp	 })
@@ -1432,7 +1448,8 @@ setMethod(f="fold",signature="FPset", definition=function(x,count,bits) {
 				 dim(data) = c(nrow(x@fpma),1)
 			 else
 				 data = t(data)
-			 x@fpma = data
+             options(bigmemory.typecast.warning=FALSE)
+			 x@fpma = as.big.matrix(data, type="char")
 			 x@foldCount = x@foldCount+actualFolds
 			 x
 })
@@ -1461,7 +1478,8 @@ setMethod(f="[", signature="FPset", definition=function(x, i, ..., drop) {
 	if(is.logical(i)) {
                 i <- which(i)
         }
-	x@fpma <- x@fpma[i, , drop=FALSE]                   
+    options(bigmemory.typecast.warning=FALSE)
+	x@fpma <- as.big.matrix(x@fpma[i, , drop=FALSE], type="char")                   
 	if(any(duplicated(i))) {
 		warning("The values in the CMP ID slot are not unique anymore. To fix this, run: cid(fpset) <- makeUnique(cid(fpset))")
 	}
@@ -1477,7 +1495,7 @@ setMethod(f="[[", signature="FPset", definition=function(x, i, ..., drop) {
 ## Length function
 setMethod(f="length", signature="FPset",
     definition=function(x) {
-    	return(length(as.matrix(x)[,1]))
+    	return(length(as.big.matrix(x)[,1]))
 })
 
 ## Define print behavior for FPset
@@ -1509,7 +1527,8 @@ setMethod(f="c",signature="FP",definition=function(x,...){
 
 		obj@fp
 	}))
-	fpset=new("FPset",fpma=fpma,type=type)
+    options(bigmemory.typecast.warning=FALSE)
+	fpset=new("FPset",fpma=as.big.matrix(fpma, type="char"),type=type)
 	if(any(duplicated(cid(fpset)))) 
 		warning("The values in the CMP ID slot are not unique anymore, makeUnique() can fix this!")
 	fpset
@@ -1533,9 +1552,10 @@ setMethod(f="c", signature="FPset", definition=function(x, ...) {
 		if(numBits(obj) != length)
 			stop("found differing number of bits: ",numBits(obj)," and ",length)
 
-		obj@fpma
+		as.matrix(obj@fpma)
 	},args))
-	fpset=new("FPset",fpma=fpma,type=type)
+    options(bigmemory.typecast.warning=FALSE)
+	fpset=new("FPset",fpma=as.big.matrix(fpma, type="char"),type=type)
 	if(any(duplicated(cid(fpset)))) 
 		warning("The values in the CMP ID slot are not unique anymore, makeUnique() can fix this!")
 
@@ -2449,7 +2469,8 @@ read.AP <- function(x, type, colid,isFile = class(x)=="character" & length(x)==1
                 }
                 descma <- matrix(as.numeric(unlist(strsplit(x, ""))), length(x), nchar(x[1]), byrow=TRUE, dimnames=list(names(x), 1:nchar(x[1])))
                 #return(as(descma, "FPset"))
-                return(new( "FPset",fpma=descma,type="apfp"))
+                options(bigmemory.typecast.warning=FALSE)
+                return(new( "FPset",fpma=as.big.matrix(descma, type="char"),type="apfp"))
         }
 }
 
