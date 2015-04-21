@@ -724,11 +724,11 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
    if(!any(c(is.vector(y), is.matrix(y), class(y)=="FP", class(y)=="FPset", class(y)=="big.matrix"))) 
 		stop("y needs to be object of class FP/FPset, vector, matrix, or char big.matrix")
 
-	## Convert FP/FPset inputs into vector/matrix format
+	## Convert FP/FPset inputs into vector/big.matrix format
 	if(class(x)=="FP") x <- as.numeric(x)
 	if(class(x)=="FPset") x <- as.numeric(x[[1]])
 	if(class(y)=="FP") y <- as.numeric(y)
-	if(class(y)=="FPset") y <- as.matrix(y)
+	if(class(y)=="FPset") y <- as.big.matrix(y)
 	if(is.vector(y)) y <- t(as.matrix(y))
    
     ## convert regular matrix into big.matrix
