@@ -7,13 +7,11 @@
 \alias{[<-,FPset-method}
 \alias{as.character,FPset-method}
 \alias{as.matrix,FPset-method}
-\alias{as.big.matrix,FPset-method}
 \alias{c,FPset-method}
 \alias{cid,FPset-method}
 \alias{cid<-,FPset-method}
 \alias{coerce,FPset,FP-method}
 \alias{coerce,matrix,FPset-method}
-\alias{coerce,big.matrix,FPset-method}
 \alias{coerce,character,FPset-method}
 \alias{length,FPset-method}
 \alias{show,FPset-method}
@@ -32,7 +30,7 @@ Objects can be created by calls of the form \code{new("FPset", ...)}.
 }
 \section{Slots}{
   \describe{
-    \item{\code{fpma}:}{Object of class \code{"big.matrix"} (type char) with compound identifiers stored in row names}
+    \item{\code{fpma}:}{Object of class \code{"matrix"} with compound identifiers stored in row names}
     \item{\code{foldCount}:}{Object of class \code{"numeric"} }
     \item{\code{type}:}{Object of class \code{"character"} }
   }
@@ -44,13 +42,11 @@ Objects can be created by calls of the form \code{new("FPset", ...)}.
     \item{[<-}{\code{signature(x = "FPset")}: replacement method for several components }
     \item{as.character}{\code{signature(x = "FPset")}: returns content as named character vector }
     \item{as.matrix}{\code{signature(x = "FPset")}: returns content as numeric matrix }
-    \item{as.big.matrix}{\code{signature(x = "FPset")}: returns content as char big.matrix }
     \item{c}{\code{signature(x = "FPset")}: concatenates any number of \code{FPset} containers }
     \item{cid}{\code{signature(x = "FPset")}: returns all compound identifiers from row names }
     \item{cid<-}{\code{signature(x = "FPset")}: replacement method for compound identifiers  }
     \item{coerce}{\code{signature(from = "FPset", to = "FP")}: \code{as(fpset, "FP")} }
     \item{coerce}{\code{signature(from = "matrix", to = "FPset")}: \code{as(fpma, "FPset")} }
-    \item{coerce}{\code{signature(from = "big.matrix", to = "FPset")}: \code{as(fpma, "FPset")} }
     \item{coerce}{\code{signature(from = "character", to = "FPset")}: \code{as(fpchar, "FPset")} }
     \item{length}{\code{signature(x = "FPset")}: returns number of entries stored in object }
     \item{show}{\code{signature(object = "FPset")}: prints summary of \code{FPset} }
@@ -92,11 +88,9 @@ c(fpset[1:4], fpset[11:14]) # concatenation
 
 ## Coerce FPset from/to other objects
 fpma <- as.matrix(fpset) # coerces to matrix
-fpbigma <- as.big.matrix(fpset) # coerces to big.matrix
 fpchar <- as.character(fpset) # coerces to character strings
 as(fpma, "FPset")
 as(fpchar, "FPset")
-as(fpbigma, "FPset")
 
 ## Compound similarity searching with FPset 
 fpSim(x=fpset[1], y=fpset, method="Tanimoto", cutoff=0.4, top=4) 
