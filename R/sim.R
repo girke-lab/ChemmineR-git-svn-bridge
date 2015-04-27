@@ -750,12 +750,11 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 
 	if(is.vector(y)) y <- t(as.matrix(y))
    
-    if(class(y)=="big.matrix"){
-	    result=.Call("bigMatrixSimilarity",x,y@address,method,addone,alpha,beta)
-    } else {
-        result=.Call("similarity",x,y,method,addone,alpha,beta)
-    }
+    ## convert regular matrix into big.matrix
+    options(bigmemory.typecast.warning=FALSE)
+    if(class(y)=="matrix") y <- as.big.matrix(y, type="char")
 
+	result=.Call("bigMatrixSimilarity",x,y@address,method,addone,alpha,beta)
 	names(result) = rownames(y)
 
 	if(!is.null(parameters)){
