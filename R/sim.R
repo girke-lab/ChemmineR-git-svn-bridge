@@ -727,27 +727,11 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
         if(typeof(y) != "char")
             stop("big.matrix not of type char")
 
-	## Convert FP/FPset inputs into vector/matrix format
-	if(class(x)=="FP") 
-		x <- as.numeric(x)
-	else if(class(x)=="FPset") 
-		x <- as.numeric(x[[1]])
-
-	if(class(y)=="FP") {
-		dbSize = 1
-		y <- as.numeric(y)
-	}
-	else if(class(y)=="FPset"){
-		 dbSize=length(y)
-		 y <- as.big.matrix(y)
-	}
-	else if(is.vector(y))
-		dbSize=1
-	else if(is.matrix(y))
-		dbSize=nrow(y)
-	else if(is.big.matrix(y))
-		dbSize=nrow(y)
-
+	## Convert FP/FPset inputs into vector/big.matrix format
+	if(class(x)=="FP") x <- as.numeric(x)
+	if(class(x)=="FPset") x <- as.numeric(x[[1]])
+	if(class(y)=="FP") y <- as.numeric(y)
+	if(class(y)=="FPset") y <- as.big.matrix(y)
 	if(is.vector(y)) y <- t(as.matrix(y))
    
     ## convert regular matrix into big.matrix
@@ -760,12 +744,11 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 	if(!is.null(parameters)){
 		numBitsSet = sum(x)+1
 
-		#N = parameters$count[numBitsSet]
-		#if(N==0){ # no stats collected for this number of bits so use global values
-		if(parameters$count[numBitsSet]==0){ # no stats collected for this number of bits so use global values
+		N = parameters$count[numBitsSet]
+		if(N==0){ # no stats collected for this number of bits so use global values
 			warning("no parameters avaliable for fingerprints with ",numBitsSet-1," bits set, using global parameters")
 			numBitsSet=nrow(parameters) #global stats are last element of parameters
-			#N = parameters$count[numBitsSet]
+			N = parameters$count[numBitsSet]
 		}
 
 		#message("using stats for ",numBitsSet-1," bits")
@@ -776,7 +759,7 @@ fpSim <- function(x, y, sorted=TRUE, method="Tanimoto",
 		alpha = parameters$alpha[numBitsSet]
 		beta = parameters$beta[numBitsSet]
 
-		evalues = dbSize*(1-pbeta(result,alpha,beta))
+		evalues = N*(1-pbeta(result,alpha,beta))
 		scores <<- data.frame(similarity=result,
 									 zscore=(result - avg) /sqrt(varience),
 									 evalue=evalues,
