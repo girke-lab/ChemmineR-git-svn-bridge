@@ -63,7 +63,7 @@ cmp.cluster <- function(db, cutoff, is.similarity=TRUE, save.distances=FALSE,
     ## ThG: added to make function easier to use with new S4 classes APset/AP
     else if (db$type=="FPset") {
         distf <- function(i, j) {
-            return(1-fpSimOrig(db$descdb[[i]], db$descdb[[j]], top=1, ...))
+            return(1-fpSim(db$descdb[[i]], db$descdb[[j]], top=1, ...))
         }
     ## ThG: end of lines
     } else {
