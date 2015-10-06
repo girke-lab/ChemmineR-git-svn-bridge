@@ -2248,11 +2248,39 @@ List all available tools:
 listCMTools()
 ```
 
+```{r eval=TRUE, echo=FALSE}
+# cache results from previous code chunk
+# NOTE: this must match the code in the previous code chunk but will be
+#   hidden. Delete cacheFileName to rebuild the cache from web data.
+cacheFileName <- "listCMTools.RData"
+if(! file.exists(cacheFileName)){
+    toolList <- listCMTools()
+    save(list=c("toolList"), file=cacheFileName)
+}
+load(cacheFileName)
+toolList
+```
+
 Show options and description for a tool. This also provides an example function call which can be copied
 verbatim, and changed as necessary:
 
-```{r toolDetailsCMT, eval=TRUE, tidy=FALSE}
+```{r toolDetailsCMT, eval=FALSE, tidy=FALSE}
 toolDetails("Fingerprint Search")
+```
+
+```{r eval=TRUE, echo=FALSE}
+# cache results from previous code chunk
+# NOTE: this must match the code in the previous code chunk but will be
+#   hidden. Delete cacheFileName to rebuild the cache from web data.
+cacheFileName <- "toolDetails.RData"
+if(! file.exists(cacheFileName)){
+    .serverURL <- "http://chemmine.ucr.edu/ChemmineR/"
+    library(RCurl)
+    response <- postForm(paste(.serverURL, "toolDetails", sep = ""), tool_name = "Fingerprint Search")[[1]]
+    save(list=c("response"), file=cacheFileName)
+}
+load(cacheFileName)
+cat(response)
 ```
 
 Launch a Job
@@ -2282,7 +2310,28 @@ Compute OpenBabel descriptors for these search results:
 ```{r obDescriptorsCMT, eval=FALSE, tidy=FALSE}
 job4 <- launchCMTool("OpenBabel Descriptors", result3)
 result4 <- result(job4)
-result4
+result4[1:10,] # show first 10 lines of result
+```
+
+```{r eval=TRUE, echo=FALSE}
+# cache results from previous code chunk
+# NOTE: this must match the code in the previous code chunk but will be
+#   hidden. Delete cacheFileName to rebuild the cache from web data.
+cacheFileName <- "launchCMTool.RData"
+if(! file.exists(cacheFileName)){
+    job1 <- launchCMTool("pubchemID2SDF", 2244)
+    status(job1)
+    result1 <- result(job1)
+    job2 <- launchCMTool('Fingerprint Search', result1, 'Similarity Cutoff'=0.95, 'Max Compounds Returned'=200)
+    result2 <- result(job2)
+    job3 <- launchCMTool("pubchemID2SDF", result2)
+    result3 <- result(job3)
+    job4 <- launchCMTool("OpenBabel Descriptors", result3)
+    result4 <- result(job4)
+    save(list=c("result4"), file=cacheFileName)
+}
+load(cacheFileName)
+result4[1:10,]
 ```
 
 View Job Result in Browser
