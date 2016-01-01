@@ -50,8 +50,9 @@ document.addEventListener("DOMContentLoaded", function() {
 <div id="header">
 <h1 class="title"><em>ChemmineR</em>: Cheminformatics Toolkit for R</h1>
 <h4 class="author"><em>Authors: Kevin Horan, Yiqun Cao, Tyler Backman, Thomas Girke (<a href="mailto:thomas.girke@ucr.edu">thomas.girke@ucr.edu</a>)</em></h4>
-<h4 class="date"><em>Last update: 31 December, 2015</em></h4>
+<h4 class="date"><em>Last update: 01 January, 2016</em></h4>
 </div>
+<h4 class="package">Package version: <span style="font-weight: normal">ChemmineR 2.23.1</span></h4>
 
 <h1>Contents</h1>
 <div id="TOC">
@@ -1218,19 +1219,19 @@ print(results[1:5])</code></pre>
  fpset &lt;- desc2fp(apset)
  view(fpset[1:2]) </code></pre>
 <pre><code>## $`650001`
-## An instance of &quot;FP&quot; of type &quot;unknown-1087&quot;
+## An instance of &quot;FP&quot; of type &quot;unknown-6270&quot;
 ## &lt;&lt;fingerprint&gt;&gt;
 ## 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ... length: 1024 
 ## 
 ## $`650002`
-## An instance of &quot;FP&quot; of type &quot;unknown-1368&quot;
+## An instance of &quot;FP&quot; of type &quot;unknown-296&quot;
 ## &lt;&lt;fingerprint&gt;&gt;
 ## 1 1 1 1 1 1 1 1 1 1 0 1 1 1 1 0 0 0 1 1 ... length: 1024</code></pre>
 <p><code>FPset</code> class usage:</p>
 <pre class="r"><code> fpset[1:4] # behaves like a list </code></pre>
 <pre><code>## An instance of a 1024 bit &quot;FPset&quot; of type &quot;apfp&quot; with 4 molecules</code></pre>
 <pre class="r"><code> fpset[[1]] # returns FP object </code></pre>
-<pre><code>## An instance of &quot;FP&quot; of type &quot;unknown-8287&quot;
+<pre><code>## An instance of &quot;FP&quot; of type &quot;unknown-8971&quot;
 ## &lt;&lt;fingerprint&gt;&gt;
 ## 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ... length: 1024</code></pre>
 <pre class="r"><code> length(fpset) # number of compounds ENDCOMMENT</code></pre>
@@ -1253,7 +1254,7 @@ print(results[1:5])</code></pre>
 <p>Construct <code>FPset</code> class form <code>matrix</code>:</p>
 <pre class="r"><code> fpma &lt;- as.matrix(fpset) # coerces FPset to matrix 
  as(fpma, &quot;FPset&quot;) </code></pre>
-<pre><code>## An instance of a 1024 bit &quot;FPset&quot; of type &quot;unknown-694&quot; with 100 molecules</code></pre>
+<pre><code>## An instance of a 1024 bit &quot;FPset&quot; of type &quot;unknown-4468&quot; with 100 molecules</code></pre>
 <p>Construct <code>FPset</code> class form <code>character vector</code>:</p>
 <pre class="r"><code> fpchar &lt;- as.character(fpset) # coerces FPset to character strings 
  as(fpchar, &quot;FPset&quot;) # construction of FPset class from character vector</code></pre>
@@ -1270,7 +1271,7 @@ print(results[1:5])</code></pre>
 <pre class="r"><code> fold(fpset, bits=128) #fold each FP down to 128 bits</code></pre>
 <pre><code>## An instance of a 128 bit &quot;FPset&quot; of type &quot;apfp&quot; with 100 molecules</code></pre>
 <pre class="r"><code> fold(fpset[[1]])  # fold an individual FP</code></pre>
-<pre><code>## An instance of &quot;FP&quot; of type &quot;unknown-8536&quot;
+<pre><code>## An instance of &quot;FP&quot; of type &quot;unknown-518&quot;
 ## &lt;&lt;fingerprint&gt;&gt;
 ## 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ... length: 512</code></pre>
 <pre class="r"><code> fptype(fpset) # get type of FPs</code></pre>
